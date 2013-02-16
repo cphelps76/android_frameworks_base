@@ -214,40 +214,44 @@ status_t BootAnimation::initTexture(void* buffer, size_t len)
     if (codec) {
         if(mRotation != 0){
             SkBitmap origbitmap;
-            codec->decode(&stream, &origbitmap,
-                    SkBitmap::kRGB_565_Config,
-                    SkImageDecoder::kDecodePixels_Mode);
+            codec->decode(&stream, &bitmap,
+                #ifdef USE_565
+                SkBitmap::kRGB_565_Config,
+                #else
+                SkBitmap::kARGB_8888_Config,
+                #endif
+                SkImageDecoder::kDecodePixels_Mode);
             // create a bitmap with rotated dimensions and draw the rotated original bitmap
-            if( 90 == mRotation ){
+            if ( 90 == mRotation ) {
                 bitmap.setConfig(origbitmap.config(), origbitmap.height(), origbitmap.width());
                 bitmap.allocPixels();
                 SkCanvas canvas(bitmap);
                 canvas.translate(SkIntToScalar(bitmap.width()), 0);
-                canvas.rotate(SkIntToScalar(mRotation)); 
+                canvas.rotate(SkIntToScalar(mRotation));
                 canvas.drawBitmap(origbitmap, 0, 0, NULL);
-            }else if( 180== mRotation ){
+            } else if ( 180== mRotation ) {
                 bitmap.setConfig(origbitmap.config(), origbitmap.width(), origbitmap.height() );
                 bitmap.allocPixels();
                 SkCanvas canvas(bitmap);
                 canvas.translate(SkIntToScalar(bitmap.width()), SkIntToScalar(bitmap.height()));
-                canvas.rotate(SkIntToScalar(mRotation)); 
+                canvas.rotate(SkIntToScalar(mRotation));
                 canvas.drawBitmap(origbitmap, 0, 0, NULL);
-            }else if( 270 == mRotation ){
+            } else if ( 270 == mRotation ) {
                 bitmap.setConfig(origbitmap.config(), origbitmap.height(), origbitmap.width());
                 bitmap.allocPixels();
                 SkCanvas canvas(bitmap);
                 canvas.translate(0, SkIntToScalar(bitmap.height()));
-                canvas.rotate(SkIntToScalar(mRotation)); 
+                canvas.rotate(SkIntToScalar(mRotation));
                 canvas.drawBitmap(origbitmap, 0, 0, NULL);
             }
-        }else{
+        } else {
             codec->decode(&stream, &bitmap,
                     SkBitmap::kARGB_8888_Config,
                     SkImageDecoder::kDecodePixels_Mode);
         }
-         delete codec;
+        delete codec;
     }
-    
+
     // ensure we can call getPixels(). No need to call unlock, since the
     // bitmap will go out of scope when we return from this method.
     bitmap.lockPixels();
@@ -378,6 +382,38 @@ status_t BootAnimation::readyToRun() {
         }
   	mShutdown = false;
   	}
+
+
+#ifdef PRELOAD_BOOTANIMATION
+    // Preload the bootanimation zip on memory, so we don't stutter
+    // when showing the animation
+    FILE* fd;
+    if (encryptedAnimation && access(SYSTEM_ENCRYPTED_BOOTANIMATION_FILE, R_OK) == 0)
+        fd = fopen(SYSTEM_ENCRYPTED_BOOTANIMATION_FILE, "r");
+    else if (access(USER_BOOTANIMATION_FILE, R_OK) == 0)
+        fd = fopen(USER_BOOTANIMATION_FILE, "r");
+    else if (access(SYSTEM_BOOTANIMATION_FILE, R_OK) == 0)
+        fd = fopen(SYSTEM_BOOTANIMATION_FILE, "r");
+    else
+        return NO_ERROR;
+
+    if (fd != NULL) {
+        // We could use readahead..
+        // ... if bionic supported it :(
+        //readahead(fd, 0, INT_MAX);
+        void *crappyBuffer = malloc(2*1024*1024);
+        if (crappyBuffer != NULL) {
+            // Read all the zip
+            while (!feof(fd))
+                fread(crappyBuffer, 1024, 2*1024, fd);
+
+            free(crappyBuffer);
+        } else {
+            ALOGW("Unable to allocate memory to preload the animation");
+        }
+        fclose(fd);
+    }
+#endif
 
     return NO_ERROR;
 }
@@ -573,7 +609,7 @@ bool BootAnimation::movie()
             const String8 path(entryName.getPathDir());
             const String8 leaf(entryName.getPathLeaf());
             if (leaf.size() > 0) {
-                for (int j=0 ; j<pcount ; j++) {
+                for (size_t j=0 ; j<pcount ; j++) {
                     if (path == animation.parts[j].path) {
                         int method;
                         // supports only stored png files
@@ -630,6 +666,15 @@ bool BootAnimation::movie()
     for (int i=0 ; i<pcount ; i++) {
         const Animation::Part& part(animation.parts[i]);
         const size_t fcount = part.frames.size();
+
+        // can be 1, 0, or not set
+        #ifdef NO_TEXTURE_CACHE
+        const int noTextureCache = NO_TEXTURE_CACHE;
+        #else
+        const int noTextureCache = ((animation.width * animation.height * fcount) >
+                                 48 * 1024 * 1024) ? 1 : 0;
+        #endif
+
         glBindTexture(GL_TEXTURE_2D, 0);
 
         for (int r=0 ; !part.count || r<part.count ; r++) {
@@ -641,7 +686,7 @@ bool BootAnimation::movie()
                 const Animation::Frame& frame(part.frames[j]);
                 nsecs_t lastFrame = systemTime();
 
-                if (r > 0) {
+                if (r > 0 && !noTextureCache) {
                     glBindTexture(GL_TEXTURE_2D, frame.tid);
                 } else {
                     if (part.count != 1) {
@@ -686,6 +731,9 @@ bool BootAnimation::movie()
                 }
 
                 checkExit();
+
+                if (noTextureCache)
+                    glDeleteTextures(1, &frame.tid);
             }
 
             usleep(part.pause * ns2us(frameDuration));
@@ -696,8 +744,8 @@ bool BootAnimation::movie()
         }
 
         // free the textures for this part
-        if (part.count != 1) {
-            for (int j=0 ; j<fcount ; j++) {
+        if (part.count != 1 && !noTextureCache) {
+            for (size_t j=0 ; j<fcount ; j++) {
                 const Animation::Frame& frame(part.frames[j]);
                 glDeleteTextures(1, &frame.tid);
             }
