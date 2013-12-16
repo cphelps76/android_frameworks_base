@@ -111,6 +111,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private final AlarmHandler mHandler = new AlarmHandler();
     private ClockReceiver mClockReceiver;
     private UninstallReceiver mUninstallReceiver;
+    private QuickBootReceiver mQuickBootReceiver;
     private final ResultReceiver mResultReceiver = new ResultReceiver();
     private final PendingIntent mTimeTickSender;
     private final PendingIntent mDateChangeSender;
@@ -200,6 +201,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
         mClockReceiver.scheduleTimeTickEvent();
         mClockReceiver.scheduleDateChangedEvent();
         mUninstallReceiver = new UninstallReceiver();
+        mQuickBootReceiver = new QuickBootReceiver();
         
         if (mDescriptor != -1) {
             mWaitThread.start();
@@ -886,6 +888,22 @@ class AlarmManagerService extends IAlarmManager.Stub {
         }
     }
     
+    private void filtQuickBootAlarms(ArrayList<Alarm> triggerList) {
+
+        ArrayList<String> whiteList = new ArrayList();
+        whiteList.add("android");
+        whiteList.add("com.android.deskclock");
+
+        for (int i = triggerList.size() - 1; i >= 0; i--) {
+            Alarm alarm = triggerList.get(i);
+
+            if (!whiteList.contains(alarm.operation.getTargetPackage())) {
+                triggerList.remove(i);
+                Slog.v(TAG, "ignore -> " + alarm.operation.getTargetPackage());
+            }
+        }
+    }
+
     private class AlarmThread extends Thread
     {
         public AlarmThread()
@@ -917,6 +935,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                         TAG, "Checking for alarms... rtc=" + nowRTC
                         + ", elapsed=" + nowELAPSED);
 
+<<<<<<< HEAD
                     if ((result & RTC_WAKEUP_MASK) != 0)
                         triggerAlarmsLocked(mRtcWakeupAlarms, triggerList, nowRTC);
                     
@@ -933,6 +952,10 @@ class AlarmManagerService extends IAlarmManager.Stub {
                     Iterator<Alarm> it = triggerList.iterator();
                     while (it.hasNext()) {
                         Alarm alarm = it.next();
+                    if (SystemProperties.getInt("sys.quickboot.enable", 0) == 1) {
+                        filtQuickBootAlarms(triggerList);
+                    }
+
                         try {
                             if (localLOGV) Slog.v(TAG, "sending alarm " + alarm);
                             alarm.operation.send(mContext, 0,
@@ -1040,7 +1063,32 @@ class AlarmManagerService extends IAlarmManager.Stub {
             }
         }
     }
-    
+
+    private class QuickBootReceiver extends BroadcastReceiver {
+
+        public QuickBootReceiver() {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("org.codeaurora.quickboot.appkilled");
+            mContext.registerReceiver(this, filter,
+                    "android.permission.DEVICE_POWER", null);
+        }
+
+        @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                String pkgList[] = null;
+                if ("org.codeaurora.quickboot.appkilled".equals(action)) {
+                    pkgList = intent.getStringArrayExtra(Intent.EXTRA_PACKAGES);
+                    if (pkgList != null && (pkgList.length > 0)) {
+                        for (String pkg : pkgList) {
+                            removeLocked(pkg);
+                            mBroadcastStats.remove(pkg);
+                        }
+                    }
+                }
+            }
+    }
+
     class ClockReceiver extends BroadcastReceiver {
         public ClockReceiver() {
             IntentFilter filter = new IntentFilter();
