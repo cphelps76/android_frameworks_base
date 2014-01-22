@@ -22,4 +22,10 @@
     <color name="title_background">#ccc</color>
     <color name="save_background">#ddd</color>
     <color name="grid_item_background">#fff</color>
+
+    <!-- background colors from layout -->
+    <color name="bg1">#fff</color>
+    <color name="bg2">#ddd</color>
+    <color name="bg3">#ccc</color>
+
 </resources>
