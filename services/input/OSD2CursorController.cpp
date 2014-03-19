@@ -34,7 +34,7 @@ static uint32_t xscale = 0;
 static uint32_t yscale = 0;
 
 // ----------------------------- cursor data --------------------------------
-//#define USE_OLD_CURSOR
+#define USE_OLD_CURSOR
 #ifdef USE_OLD_CURSOR
 // white cursor, black border, transparent background
 #define CURSOR_WIDTH  13
