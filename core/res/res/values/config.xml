@@ -1052,4 +1052,8 @@
 
     <!-- Flag indicating if the speed up audio on mt call code should be executed -->
     <bool name="config_speed_up_audio_on_mt_calls">false</bool>
+
+    <!-- Device has no physical battery -->
+    <bool name="config_deviceHasNoPhysicalBattery">false</bool>
+
 </resources>

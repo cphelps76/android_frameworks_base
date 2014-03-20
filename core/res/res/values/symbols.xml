@@ -1865,4 +1865,7 @@
 
   <!-- From PinyinIME(!!!) -->
   <java-symbol type="string" name="inputMethod" />
+
+  <!-- Matricom Symbols -->
+  <java-symbol type="bool" name="config_deviceHasNoPhysicalBattery" />
 </resources>

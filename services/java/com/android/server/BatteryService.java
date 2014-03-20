@@ -144,6 +144,8 @@ public final class BatteryService extends Binder {
 
     private boolean mSentLowBatteryBroadcast = false;
 
+    private boolean mNoBattery;
+
     private native void native_update();
 
     public BatteryService(Context context, LightsService lights) {
@@ -151,6 +153,9 @@ public final class BatteryService extends Binder {
         mHandler = new Handler(true /*async*/);
         mLed = new Led(context, lights);
         mBatteryStats = BatteryStatsService.getService();
+
+        mNoBattery = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_deviceHasNoPhysicalBattery);
 
         mCriticalBatteryLevel = mContext.getResources().getInteger(
                 com.android.internal.R.integer.config_criticalBatteryWarningLevel);
@@ -161,14 +166,14 @@ public final class BatteryService extends Binder {
         mShutdownBatteryTemperature = mContext.getResources().getInteger(
                 com.android.internal.R.integer.config_shutdownBatteryTemperature);
 
-        mPowerSupplyObserver.startObserving("SUBSYSTEM=power_supply");
+       // mPowerSupplyObserver.startObserving("SUBSYSTEM=power_supply");
 
         // watch for invalid charger messages if the invalid_charger switch exists
         if (new File("/sys/devices/virtual/switch/invalid_charger/state").exists()) {
             mInvalidChargerObserver.startObserving(
                     "DEVPATH=/devices/virtual/switch/invalid_charger");
         }
-        
+
         mChipTempObserver.startObserving("SUBSYSTEM=chip_temp");
 
         // set initial status
@@ -279,7 +284,7 @@ public final class BatteryService extends Binder {
     private void updateLocked() {
         if (!mUpdatesStopped) {
             // Update the values of mAcOnline, et. all.
-            native_update();
+            //native_update();
 
             // Process the new values.
             processValuesLocked();
@@ -290,16 +295,27 @@ public final class BatteryService extends Binder {
         boolean logOutlier = false;
         long dischargeDuration = 0;
 
-        mBatteryLevelCritical = (mBatteryLevel <= mCriticalBatteryLevel);
-        if (mAcOnline) {
+        if (mNoBattery) {
             mPlugType = BatteryManager.BATTERY_PLUGGED_AC;
-        } else if (mUsbOnline) {
-            mPlugType = BatteryManager.BATTERY_PLUGGED_USB;
-        } else if (mWirelessOnline) {
-            mPlugType = BatteryManager.BATTERY_PLUGGED_WIRELESS;
+            mBatteryStatus = BatteryManager.BATTERY_STATUS_FULL;
+            mBatteryHealth = BatteryManager.BATTERY_HEALTH_GOOD;
+            mBatteryLevel = 100;
+            mBatteryPresent = true;
+            mBatteryVoltage = 5;
+            mBatteryTemperature = 30;
         } else {
-            mPlugType = BATTERY_PLUGGED_NONE;
+            if (mAcOnline) {
+                mPlugType = BatteryManager.BATTERY_PLUGGED_AC;
+            } else if (mUsbOnline) {
+                mPlugType = BatteryManager.BATTERY_PLUGGED_USB;
+            } else if (mWirelessOnline) {
+                mPlugType = BatteryManager.BATTERY_PLUGGED_WIRELESS;
+            } else {
+                mPlugType = BATTERY_PLUGGED_NONE;
+            }
         }
+
+        mBatteryLevelCritical = (mBatteryLevel <= mCriticalBatteryLevel);
 
         if (DEBUG) {
             Slog.d(TAG, "Processing new values: "
