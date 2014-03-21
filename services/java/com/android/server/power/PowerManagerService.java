@@ -1373,10 +1373,9 @@ public final class PowerManagerService extends IPowerManager.Stub
 
     private int getScreenOffTimeoutLocked() {
 
-        if (!SystemProperties.getBoolean(SCREENSAVER_PROP, false)) {
-            boolean mMBXTimeoutEnable = SystemProperties.getBoolean("mbx.timeout.enable",true);
-            if(!mMBXTimeoutEnable)
-                return Integer.MAX_VALUE;
+        boolean mMbxTimeoutEnabled = SystemProperties.getBoolean("mbx.timeout.enable",true);
+        if (!mMbxTimeoutEnabled) {
+            return Integer.MAX_VALUE;
         }
 
         int timeout = mScreenOffTimeoutSetting;
