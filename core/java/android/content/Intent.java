@@ -831,6 +831,12 @@ public class Intent implements Parcelable, Cloneable {
     public static final String ACTION_CHOOSER = "android.intent.action.CHOOSER";
 
     /**
+     * Custom intent to let a receiving app know of a file change that they might be
+     * listening for
+     */
+    public static final String ACTION_CONFIG_CHANGED = "android.intent.action.CONFIG_CHANGED";
+
+    /**
      * Convenience function for creating a {@link #ACTION_CHOOSER} Intent.
      *
      * <p>Builds a new {@link #ACTION_CHOOSER} Intent that wraps the given
