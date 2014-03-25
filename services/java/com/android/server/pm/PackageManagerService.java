@@ -191,6 +191,9 @@ public class PackageManagerService extends IPackageManager.Stub {
 
     private static final boolean GET_CERTIFICATES = true;
 
+    private boolean mAllowUnknownSources = false;
+    private boolean mDisableAppVerification = false;
+
     private static final int REMOVE_EVENTS =
         FileObserver.CLOSE_WRITE | FileObserver.DELETE | FileObserver.MOVED_FROM;
     private static final int ADD_EVENTS =
@@ -5880,6 +5883,14 @@ public class PackageManagerService extends IPackageManager.Stub {
             return false;
         }
 
+        mDisableAppVerification = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_disableAppVerification);
+        if (mDisableAppVerification) {
+            android.provider.Settings.Global.putInt(mContext.getContentResolver(),
+                    android.provider.Settings.Global.PACKAGE_VERIFIER_ENABLE, 0);
+            return false;
+        }
+
         // Check if installing from ADB
         if ((flags & PackageManager.INSTALL_FROM_ADB) != 0) {
             // Do not run verification in a test harness environment
@@ -5903,6 +5914,14 @@ public class PackageManagerService extends IPackageManager.Stub {
      * @return the current "allow unknown sources" setting
      */
     private int getUnknownSourcesSettings() {
+        mAllowUnknownSources = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_allowUnknownSources);
+        if (mAllowUnknownSources) {
+            android.provider.Settings.Global.putInt(mContext.getContentResolver(),
+                    android.provider.Settings.Global.INSTALL_NON_MARKET_APPS, 1);
+            return 1;
+        }
+
         return android.provider.Settings.Global.getInt(mContext.getContentResolver(),
                 android.provider.Settings.Global.INSTALL_NON_MARKET_APPS,
                 -1);

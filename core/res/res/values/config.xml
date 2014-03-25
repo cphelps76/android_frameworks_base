@@ -1056,4 +1056,10 @@
     <!-- Device has no physical battery -->
     <bool name="config_deviceHasNoPhysicalBattery">false</bool>
 
+    <!-- Verify apps is wanted to be disabled -->
+    <bool name="config_disableAppVerification">false</bool>
+
+    <!-- Unknown sources is requested to be enabled -->
+    <bool name="config_allowUnknownSources">false</bool>
+
 </resources>
