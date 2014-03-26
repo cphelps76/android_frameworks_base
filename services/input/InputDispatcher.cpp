@@ -1276,7 +1276,7 @@ int32_t InputDispatcher::findTouchedWindowTargetsLocked(nsecs_t currentTime,
                     goto Unresponsive;
                 }
 
-                ALOGI("Dropping event because there is no touched window.");
+                ALOGV("Dropping event because there is no touched window.");
                 injectionResult = INPUT_EVENT_INJECTION_FAILED;
                 goto Failed;
             }
