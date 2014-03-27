@@ -33,6 +33,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.UserInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.ServiceConnection;
 import android.database.ContentObserver;
 import android.graphics.drawable.Drawable;
@@ -236,9 +237,18 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         onAirplaneModeChanged();
 
         mItems = new ArrayList<Action>();
-        final boolean quickbootEnabled = Settings.System.getInt(
-               mContext.getContentResolver(), "enable_quickboot", 0) == 1;
 
+	int quickbootAvailable = 1;
+	final PackageManager pm = mContext.getPackageManager();
+	try {
+	    pm.getPackageInfo("com.qapp.quickboot", PackageManager.GET_META_DATA);
+	} catch (NameNotFoundException e) {
+                quickbootAvailable = 0;
+	}
+
+	final boolean quickbootEnabled = Settings.Global.getInt(
+		mContext.getContentResolver(), Settings.Global.ENABLE_QUICKBOOT,
+		quickbootAvailable) == 1;
 
         // first: power off
         mItems.add(
@@ -255,10 +265,11 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                     mWindowManagerFuncs.shutdown(true);
                 }
 
-                public boolean onLongPress() {
-                    mWindowManagerFuncs.rebootSafeMode(true);
-                    return true;
-                }
+		public boolean onLongPress() {
+		    // long press always does a full shutdown in case quickboot is enabled
+		    mWindowManagerFuncs.shutdown(true);
+		    return true;
+		}
 
                 public boolean showDuringKeyguard() {
                     return true;

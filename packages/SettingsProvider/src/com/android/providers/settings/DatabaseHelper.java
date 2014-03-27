@@ -23,8 +23,10 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.XmlResourceParser;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
@@ -71,7 +73,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // database gets upgraded properly. At a minimum, please confirm that 'upgradeVersion'
     // is properly propagated through your change.  Not doing so will result in a loss of user
     // settings.
+<<<<<<< HEAD
     private static final int DATABASE_VERSION = 95;
+=======
+    private static final int DATABASE_VERSION = 99;
+>>>>>>> 3c62dca... quickboot: Only enable QuickBoot if package is installed
 
     private Context mContext;
     private int mUserHandle;
@@ -1535,6 +1541,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             upgradeVersion = 95;
         }
 
+        if (upgradeVersion == 95) {
+            if (mUserHandle == UserHandle.USER_OWNER) {
+                db.beginTransaction();
+                try {
+                    String[] settingsToMove = { Settings.Global.BUGREPORT_IN_POWER_MENU };
+                    moveSettingsToNewTable(db, TABLE_SECURE, TABLE_GLOBAL, settingsToMove, true);
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+            }
+            upgradeVersion = 96;
+        }
+
+        if (upgradeVersion == 96) {
+            // NOP bump due to a reverted change that some people got on upgrade.
+            upgradeVersion = 97;
+        }
+
+        if (upgradeVersion == 97) {
+            if (mUserHandle == UserHandle.USER_OWNER) {
+                db.beginTransaction();
+                SQLiteStatement stmt = null;
+                try {
+                    stmt = db.compileStatement("INSERT OR REPLACE INTO global(name,value)"
+                            + " VALUES(?,?);");
+                    loadIntegerSetting(stmt, Settings.Global.LOW_BATTERY_SOUND_TIMEOUT,
+                            R.integer.def_low_battery_sound_timeout);
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                    if (stmt != null) stmt.close();
+                }
+            }
+            upgradeVersion = 98;
+        }
+
+        if (upgradeVersion == 98) {
+            if (mUserHandle == UserHandle.USER_OWNER) {
+                loadQuickBootSetting(db);
+            }
+            upgradeVersion = 99;
+        }
+
         // *** Remember to update DATABASE_VERSION above!
 
         if (upgradeVersion != currentVersion) {
@@ -1928,6 +1978,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    private void loadQuickBootSetting(SQLiteDatabase db) {
+        boolean qbEnabled = true;
+        final PackageManager pm = mContext.getPackageManager();
+        try {
+            pm.getPackageInfo("com.qapp.quickboot", PackageManager.GET_META_DATA);
+        } catch (NameNotFoundException e) {
+            qbEnabled = false;
+        }
+        db.beginTransaction();
+        SQLiteStatement stmt = null;
+        try {
+            stmt = db.compileStatement("INSERT OR REPLACE INTO global(name,value)"
+                    + " VALUES(?,?);");
+            loadSetting(stmt, Settings.Global.ENABLE_QUICKBOOT, qbEnabled ? 1 : 0);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+            if (stmt != null) stmt.close();
+        }
+    }
+
     private void loadSettings(SQLiteDatabase db) {
         loadSystemSettings(db);
         loadSecureSettings(db);
@@ -2277,6 +2348,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             // --- New global settings start here
             loadBooleanSetting(stmt, Settings.Global.HARD_KEYBOARD_DEFAULT_ENABLE,R.bool.def_hard_input_enable);
+
+            loadQuickBootSetting(db);
+
         } finally {
             if (stmt != null) stmt.close();
         }
