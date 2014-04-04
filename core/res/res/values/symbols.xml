@@ -1870,5 +1870,6 @@
   <java-symbol type="bool" name="config_deviceHasNoPhysicalBattery" />
   <java-symbol type="bool" name="config_disableAppVerification" />
   <java-symbol type="bool" name="config_allowUnknownSources" />
+  <java-symbol type="bool" name="config_hardwareKeyboardEnabledByDefault" />
 
 </resources>

@@ -556,6 +556,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
     boolean mHardKeyboardAvailable;
     boolean mHardKeyboardEnabled;
+    boolean mHardKeyboardEnabledDefault;
     OnHardKeyboardStatusChangeListener mHardKeyboardStatusChangeListener;
 
     final ArrayList<WindowToken> mWallpaperTokens = new ArrayList<WindowToken>();
@@ -7085,6 +7086,7 @@ public class WindowManagerService extends IWindowManager.Stub
             if (hardKeyboardAvailable != mHardKeyboardAvailable) {
                 mHardKeyboardAvailable = hardKeyboardAvailable;
                 mHardKeyboardEnabled = hardKeyboardAvailable;
+                mHardKeyboardEnabledDefault = mContext.getResources().getBoolean(com.android.internal.R.bool.config_hardwareKeyboardEnabledByDefault);
 				if(mIsHardKeyBoardEnableDef == 0)
 				    mHardKeyboardEnabled = false;
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
@@ -7112,6 +7114,9 @@ public class WindowManagerService extends IWindowManager.Stub
 
     public boolean isHardKeyboardEnabled() {
         synchronized (mWindowMap) {
+            if (mHardKeyboardEnabledDefault) {
+                return true;
+            }
             return mHardKeyboardEnabled;
         }
     }

@@ -1062,4 +1062,7 @@
     <!-- Unknown sources is requested to be enabled -->
     <bool name="config_allowUnknownSources">false</bool>
 
+    <!-- Enabled hardware keyboard by default -->
+    <bool name="config_hardwareKeyboardEnabledByDefault">false</bool>
+
 </resources>
