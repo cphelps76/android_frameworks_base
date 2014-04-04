@@ -107,5 +107,7 @@
     <bool name="config_hasFlipSettingsPanel">true</bool>
 
     <bool name="config_connectEthernetOnBoot">false</bool>
+
+    <bool name="config_deviceHasBrokenBluetooth">false</bool>
 </resources>
 

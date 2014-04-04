@@ -115,6 +115,7 @@ class QuickSettings {
 
     boolean mTilesSetUp = false;
     private final boolean isSupportAirPlaneMode = false ;
+    private boolean mDeviceHasBrokenBluetooth;
     private Handler mHandler;
 
     // The set of QuickSettingsTiles that have dynamic spans (and need to be updated on
@@ -150,6 +151,8 @@ class QuickSettings {
                 r.getInteger(R.integer.quick_settings_brightness_dialog_long_timeout);
         mBrightnessDialogShortTimeout =
                 r.getInteger(R.integer.quick_settings_brightness_dialog_short_timeout);
+
+        mDeviceHasBrokenBluetooth = r.getBoolean(R.bool.config_deviceHasBrokenBluetooth);
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED);
@@ -579,13 +582,13 @@ class QuickSettings {
                 tv.setText(state.label);
             }
         });
-        
+
         if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false")) && isSupportAirPlaneMode){
             parent.addView(airplaneTile);
         }
 
         // Bluetooth
-        if (mModel.deviceSupportsBluetooth()) {
+        if (mModel.deviceSupportsBluetooth() && !mDeviceHasBrokenBluetooth) {
             final QuickSettingsTileView bluetoothTile = (QuickSettingsTileView)
                     inflater.inflate(R.layout.quick_settings_tile, parent, false);
             bluetoothTile.setContent(R.layout.quick_settings_tile_bluetooth, inflater);
