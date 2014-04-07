@@ -59,7 +59,7 @@ public class StorageNotification extends StorageEventListener {
     private static final String INT_STORAGE_PATH =
             Environment.getInternalStorageDirectory().toString();
     //filter wifi storage in MBX
-    private static final String WIFI_STORAGE_PATH = "/storage/external_storage/sda";     
+    private static final String WIFI_STORAGE_PATH = "/storage/usb";     
     /**
      * Binder context for this service
      */
