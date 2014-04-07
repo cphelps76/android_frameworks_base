@@ -2958,38 +2958,40 @@ public final class ActivityManagerService extends ActivityManagerNative
     }
         
     private void onVideoPlayerCrashed(ProcessRecord app) {
-        Intent intent = new Intent("android.intent.action.APP_CRASH");
-        intent.putExtra("componentName", app.processName);
-        mContext.sendBroadcast(intent);
-        Log.d(TAG,"send app_CRASH broadcast,packageName:"+app.processName);
-        if (app.processName.equals("com.farcore.videoplayer")) {
-            Slog.w(TAG, "VideoPlayer Crashed!!!");
+        if (SystemProperties.get("sys.boot_completed").equals("1")) {
+            Intent intent = new Intent("android.intent.action.APP_CRASH");
+            intent.putExtra("componentName", app.processName);
+            mContext.sendBroadcast(intent);
+            Log.d(TAG,"send app_CRASH broadcast,packageName:"+app.processName);
+            if (app.processName.equals("com.farcore.videoplayer")) {
+                Slog.w(TAG, "VideoPlayer Crashed!!!");
 
-            /*int m1080scale = SystemProperties.getInt("ro.platform.has.1080scale", 0);
-            if(m1080scale == 2){
-                int i = mMainStack.mHistory.size();
-                while (i > 0) {
-                    i--;
-                    ActivityRecord a = (ActivityRecord)mMainStack.mHistory.get(i);
-                    if (a.app == app) {
-                        if(a.shortComponentName.equals("com.farcore.videoplayer/.playermenu")){
-                            SystemProperties.set("sys.hideStatusBar.enable","false");
-                            writeSysfs(OSD_BLANK_PATH, "1");
-                            Intent intent_video_off = new Intent(ACTION_REALVIDEO_OFF);
-                            mContext.sendBroadcast(intent_video_off);
-                            break;
+                /*int m1080scale = SystemProperties.getInt("ro.platform.has.1080scale", 0);
+                if(m1080scale == 2){
+                    int i = mMainStack.mHistory.size();
+                    while (i > 0) {
+                        i--;
+                        ActivityRecord a = (ActivityRecord)mMainStack.mHistory.get(i);
+                        if (a.app == app) {
+                            if(a.shortComponentName.equals("com.farcore.videoplayer/.playermenu")){
+                                SystemProperties.set("sys.hideStatusBar.enable","false");
+                                writeSysfs(OSD_BLANK_PATH, "1");
+                                Intent intent_video_off = new Intent(ACTION_REALVIDEO_OFF);
+                                mContext.sendBroadcast(intent_video_off);
+                                break;
+                            }
                         }
                     }
-                }
-            }*/
+                }*/
 
-            mContext.sendBroadcast(new Intent("com.farcore.videoplayer.PLAYER_CRASHED"));
-            
-            SystemProperties.set("sys.statusbar.forcehide","false");
-            SystemProperties.set("vplayer.hideStatusBar.enable","false");
-            writeSysfs(OSD_BLANK_PATH, "0");
-            writeSysfs(OSD_BLOCK_MODE_PATH, "0");  
-        }        
+                mContext.sendBroadcast(new Intent("com.farcore.videoplayer.PLAYER_CRASHED"));
+                
+                SystemProperties.set("sys.statusbar.forcehide","false");
+                SystemProperties.set("vplayer.hideStatusBar.enable","false");
+                writeSysfs(OSD_BLANK_PATH, "0");
+                writeSysfs(OSD_BLOCK_MODE_PATH, "0");  
+            }
+        }     
     }
     /// patch for videoplayer crashed    
     
