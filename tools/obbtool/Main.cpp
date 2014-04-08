@@ -182,7 +182,7 @@ int main(int argc, char* const argv[])
 {
     int opt;
     int option_index = 0;
-    struct PackageInfo package_info;
+    PackageInfo package_info;
 
     int result = 1;    // pessimistically assume an error.
 
