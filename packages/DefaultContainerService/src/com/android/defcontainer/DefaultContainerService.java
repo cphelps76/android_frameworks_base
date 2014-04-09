@@ -451,11 +451,30 @@ public class DefaultContainerService extends IntentService {
     }
 
     private static void copyToFile(InputStream inputStream, OutputStream out) throws IOException {
+        /*
         byte[] buffer = new byte[16384];
         int bytesRead;
         while ((bytesRead = inputStream.read(buffer)) >= 0) {
             out.write(buffer, 0, bytesRead);
+        }*/
+
+        try {
+            byte[] buffer = new byte[16384];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) >= 0) {
+                out.write(buffer, 0, bytesRead);
+            }
+        } finally {
+            out.flush();
+
+            java.io.FileOutputStream syncOut = (java.io.FileOutputStream)out;
+            try {
+                syncOut.getFD().sync();
+            } catch (IOException e) {
+            }
+            //out.close();
         }
+            
     }
 
     private void copyFile(Uri pPackageURI, OutputStream outStream,

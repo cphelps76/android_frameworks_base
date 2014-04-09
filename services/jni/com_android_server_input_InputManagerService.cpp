@@ -53,6 +53,7 @@
 #include "com_android_server_power_PowerManagerService.h"
 #include "com_android_server_input_InputApplicationHandle.h"
 #include "com_android_server_input_InputWindowHandle.h"
+#include <cutils/properties.h>
 
 namespace android {
 
@@ -177,6 +178,9 @@ public:
     void setSystemUiVisibility(int32_t visibility);
     void setPointerSpeed(int32_t speed);
     void setShowTouches(bool enabled);
+    int setMouseCursorType(int type);
+    int getMouseCursorType();
+    void setMouseStatus(bool enabled);
 
     /* --- InputReaderPolicyInterface implementation --- */
 
@@ -237,6 +241,8 @@ private:
 
         // Show touches feature enable/disable.
         bool showTouches;
+        // Enable/disable cursor input devices.
+        bool cursorEnabled;
 
         // Sprite controller singleton, created on first use.
         sp<SpriteController> spriteController;
@@ -272,6 +278,7 @@ NativeInputManager::NativeInputManager(jobject contextObj,
 
     {
         AutoMutex _l(mLock);
+
         mLocked.systemUiVisibility = ASYSTEM_UI_VISIBILITY_STATUS_BAR_VISIBLE;
         mLocked.pointerSpeed = 0;
         mLocked.pointerGesturesEnabled = true;
@@ -407,6 +414,8 @@ void NativeInputManager::getReaderConfiguration(InputReaderConfiguration* outCon
         outConfig->pointerGesturesEnabled = mLocked.pointerGesturesEnabled;
 
         outConfig->showTouches = mLocked.showTouches;
+
+        outConfig->cursorEnabled = mLocked.cursorEnabled;
 
         outConfig->setDisplayInfo(false /*external*/, mLocked.internalViewport);
         outConfig->setDisplayInfo(true /*external*/, mLocked.externalViewport);
@@ -731,6 +740,42 @@ void NativeInputManager::setShowTouches(bool enabled) {
 
     mInputManager->getReader()->requestRefreshConfiguration(
             InputReaderConfiguration::CHANGE_SHOW_TOUCHES);
+}
+
+int NativeInputManager::setMouseCursorType(int type) {
+    AutoMutex _l(mLock);
+
+    sp<PointerController> controller = mLocked.pointerController.promote();
+    if (controller != NULL) {
+        return controller->setMouseCursorType(type);
+    }
+    return -1;
+}
+
+int NativeInputManager::getMouseCursorType() {
+    AutoMutex _l(mLock);
+
+    sp<PointerController> controller = mLocked.pointerController.promote();
+    if (controller != NULL) {
+        return controller->getMouseCursorType();
+    }
+    return -1;
+}
+
+void NativeInputManager::setMouseStatus(bool enabled) {
+    { // acquire lock
+        AutoMutex _l(mLock);
+
+        if (mLocked.cursorEnabled == enabled) {
+            return;
+        }
+
+        ALOGI("Setting cursor input to %s.", enabled ? "enabled" : "disabled");
+        mLocked.cursorEnabled = enabled;
+    } // release lock
+
+    mInputManager->getReader()->requestRefreshConfiguration(
+            InputReaderConfiguration::CHANGE_CURSOR_INPUT_STATUS);
 }
 
 bool NativeInputManager::isScreenOn() {
@@ -1292,6 +1337,29 @@ static void nativeMonitor(JNIEnv* env, jclass clazz, jint ptr) {
     im->getInputManager()->getDispatcher()->monitor();
 }
 
+static void nativeSetTvOutStatus(JNIEnv* env,
+        jclass clazz, jint ptr, jboolean on) {
+    NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
+    im->getInputManager()->getReader()->setTvOutStatus(on);
+}
+
+static int nativeSetMouseCursorType(JNIEnv* env,
+        jclass clazz, jint ptr, jint type) {
+    NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
+    return im->setMouseCursorType(type);
+}
+
+static int nativeGetMouseCursorType(JNIEnv* env, jclass clazz, jint ptr) {
+    NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
+    return im->getMouseCursorType();
+}
+
+static void nativeSetMouseStatus(JNIEnv* env,
+        jclass clazz, jint ptr, jboolean enabled) {
+     NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
+    im->setMouseStatus(enabled);
+}
+
 // ----------------------------------------------------------------------------
 
 static JNINativeMethod gInputManagerMethods[] = {
@@ -1340,12 +1408,21 @@ static JNINativeMethod gInputManagerMethods[] = {
             (void*) nativeCancelVibrate },
     { "nativeReloadKeyboardLayouts", "(I)V",
             (void*) nativeReloadKeyboardLayouts },
+
     { "nativeReloadDeviceAliases", "(I)V",
             (void*) nativeReloadDeviceAliases },
     { "nativeDump", "(I)Ljava/lang/String;",
             (void*) nativeDump },
     { "nativeMonitor", "(I)V",
             (void*) nativeMonitor },
+    { "nativeSetTvOutStatus","(IZ)V",
+            (void*) nativeSetTvOutStatus},
+    { "nativeSetMouseCursorType","(II)I",
+            (void*) nativeSetMouseCursorType},
+    { "nativeGetMouseCursorType","(I)I",
+            (void*) nativeGetMouseCursorType},
+    { "nativeSetMouseStatus","(IZ)V",
+            (void*) nativeSetMouseStatus},
 };
 
 #define FIND_CLASS(var, className) \

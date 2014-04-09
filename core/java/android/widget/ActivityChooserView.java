@@ -523,7 +523,7 @@ public class ActivityChooserView extends ViewGroup implements ActivityChooserMod
      */
     private void updateAppearance() {
         // Expand overflow button.
-        if (mAdapter.getCount() > 0) {
+        if (mAdapter.getActivityCount() > 0) {
             mExpandActivityOverflowButton.setEnabled(true);
         } else {
             mExpandActivityOverflowButton.setEnabled(false);

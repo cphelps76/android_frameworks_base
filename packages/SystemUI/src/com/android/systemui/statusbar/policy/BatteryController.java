@@ -60,6 +60,25 @@ public class BatteryController extends BroadcastReceiver {
                     break;
             }
 
+            /*
+            final int icon = (plugged && (level<100)) ? R.drawable.stat_sys_battery_charge
+                                     : R.drawable.stat_sys_battery;
+
+            int N = mIconViews.size();
+            for (int i=0; i<N; i++) {
+                ImageView v = mIconViews.get(i);
+                v.setImageResource(icon);
+                v.setImageLevel(level);
+                v.setContentDescription(mContext.getString(R.string.accessibility_battery_level,
+                        level));
+            }
+            N = mLabelViews.size();
+            for (int i=0; i<N; i++) {
+                TextView v = mLabelViews.get(i);
+                v.setText(mContext.getString(R.string.status_bar_settings_battery_meter_format,
+                        level));
+            }*/
+
             for (BatteryStateChangeCallback cb : mChangeCallbacks) {
                 cb.onBatteryLevelChanged(level, plugged);
             }

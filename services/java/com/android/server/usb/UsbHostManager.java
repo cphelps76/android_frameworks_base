@@ -82,14 +82,14 @@ public class UsbHostManager {
     /* returns true if the USB device should not be accessible by applications */
     private boolean isBlackListed(int clazz, int subClass, int protocol) {
         // blacklist hubs
-        if (clazz == UsbConstants.USB_CLASS_HUB) return true;
+      /*  if (clazz == UsbConstants.USB_CLASS_HUB) return true;
 
         // blacklist HID boot devices (mouse and keyboard)
         if (clazz == UsbConstants.USB_CLASS_HID &&
                 subClass == UsbConstants.USB_INTERFACE_SUBCLASS_BOOT) {
             return true;
         }
-
+        */
         return false;
     }
 

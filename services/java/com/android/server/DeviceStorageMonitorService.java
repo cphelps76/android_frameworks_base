@@ -223,7 +223,7 @@ public class DeviceStorageMonitorService extends Binder {
         }
     }
 
-    private final void checkMemory(boolean checkCache) {
+    private final synchronized void checkMemory(boolean checkCache) {
         //if the thread that was started to clear cache is still running do nothing till its
         //finished clearing cache. Ideally this flag could be modified by clearCache
         // and should be accessed via a lock but even if it does this test will fail now and
@@ -439,6 +439,8 @@ public class DeviceStorageMonitorService extends Binder {
      * @return true is memory is low
      */
     public boolean isMemoryLow() {
+
+        checkMemory(true);
         return mLowMemFlag;
     }
 

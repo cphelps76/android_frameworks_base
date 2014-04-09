@@ -28,6 +28,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
@@ -276,6 +277,8 @@ public class TimePicker extends FrameLayout {
         // set the content descriptions
         setContentDescriptions();
 
+		setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+
         // If not explicitly specified this view is important for accessibility.
         if (getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
             setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
@@ -502,7 +505,21 @@ public class TimePicker extends FrameLayout {
         return mIs24HourView;
     }
 
-    /**
+    /** {@hide} */
+	public View getLeftSpinner() {
+			return findViewById(R.id.hour);
+	}
+	
+	/** {@hide} */
+	public View getRightSpinner() {
+		if (is24HourView()){
+			return findViewById(R.id.minute);
+		} else {
+			return findViewById(R.id.amPm);
+		}
+	}
+	
+	/**
      * @return The current minute.
      */
     public Integer getCurrentMinute() {

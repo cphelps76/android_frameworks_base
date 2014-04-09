@@ -27,9 +27,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.database.ContentObserver;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
 import android.os.FileUtils;
 import android.os.Handler;
 import android.os.Looper;
@@ -194,9 +197,14 @@ public class UsbDeviceManager {
         // The legacy mass storage UI will be used instead.
         boolean massStorageSupported = false;
         final StorageManager storageManager = StorageManager.from(mContext);
-        final StorageVolume primary = storageManager.getPrimaryVolume();
-        massStorageSupported = primary != null && primary.allowMassStorage();
-        mUseUsbNotification = !massStorageSupported;
+        StorageVolume[] volumes = storageManager.getVolumeList();
+        if (volumes.length > 0) {
+            massStorageSupported = volumes[0].allowMassStorage();
+        }
+        //mUseUsbNotification = !massStorageSupported;
+        
+        // allow MTP + Mass storage
+        mUseUsbNotification = true;
 
         // make sure the ADB_ENABLED setting value matches the current state
         Settings.Global.putInt(mContentResolver, Settings.Global.ADB_ENABLED, mAdbEnabled ? 1 : 0);
@@ -679,6 +687,21 @@ public class UsbDeviceManager {
                     mNotificationManager.cancelAsUser(null, mUsbNotificationId,
                             UserHandle.ALL);
                     mUsbNotificationId = 0;
+					if(getStorageSoundStatus()){
+						Slog.d("UsbDeviceManager","add for notification sound when usb disconnect");
+						playDefaultSound();
+						/*
+						Notification notification = new Notification();
+					   	notification.icon = com.android.internal.R.drawable.stat_sys_warning ;
+						notification.defaults |= Notification.DEFAULT_SOUND;
+						CharSequence title = r.getText(com.android.internal.R.string.usb_storage_disconnect_notification_title);
+						CharSequence message = r.getText(com.android.internal.R.string.usb_storage_disconnect_notification_message);
+						notification.setLatestEventInfo(mContext, title, message, null);
+						mNotificationManager.notify(notification.icon, notification);
+						SystemClock.sleep(1200);
+						mNotificationManager.cancel(notification.icon);
+						*/
+					}
                 }
                 if (id != 0) {
                     CharSequence message = r.getText(
@@ -690,8 +713,14 @@ public class UsbDeviceManager {
                     notification.when = 0;
                     notification.flags = Notification.FLAG_ONGOING_EVENT;
                     notification.tickerText = title;
-                    notification.defaults = 0; // please be quiet
-                    notification.sound = null;
+                    //notification.defaults = 0; // please be quiet
+					if (getStorageSoundStatus()) {   //add for notification sound
+						//notification.defaults |= Notification.DEFAULT_SOUND;
+						playDefaultSound();
+					} else {
+						notification.defaults &= ~Notification.DEFAULT_SOUND;
+						notification.sound = null;
+					}
                     notification.vibrate = null;
                     notification.priority = Notification.PRIORITY_MIN;
 
@@ -708,6 +737,16 @@ public class UsbDeviceManager {
             }
         }
 
+		private boolean getStorageSoundStatus(){
+			boolean SoundStatus  = (Settings.System.getInt(mContext.getContentResolver(),Settings.System.STORAGE_SOUNDS_ENABLED, 0) != 0);	
+			return SoundStatus ;
+		}
+
+		private void playDefaultSound(){
+			Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+			Ringtone r = RingtoneManager.getRingtone(mContext,notification);
+			r.play();	
+		}
         private void updateAdbNotification() {
             if (mNotificationManager == null) return;
             final int id = com.android.internal.R.string.adb_active_notification_title;

@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
+import android.provider.Settings;
 import android.telephony.Rlog;
 
 import com.android.internal.telephony.IPhoneSubInfo;
@@ -59,6 +60,7 @@ import java.util.regex.Pattern;
 public class TelephonyManager {
     private static final String TAG = "TelephonyManager";
 
+    private boolean mHwHasData = false;
     private static ITelephonyRegistry sRegistry;
     private final Context mContext;
 
@@ -237,6 +239,27 @@ public class TelephonyManager {
     }
 
     /**
+     * Returns the ANDROID_ID as fake device id
+     */
+    private String getFakeDeviceId(){
+        String id = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (id != null && id.length() > 0) {
+            StringBuilder strBuilder = new StringBuilder();
+            int offset = 0, radix = 16;
+            long result = 0, length = id.length();
+            while (offset < length) {
+                int digit = Character.digit(id.charAt(offset++), radix);
+                strBuilder.append(digit);
+            }
+            String strID = strBuilder.toString();
+            if (strID.length() > 15) {
+                String  IMEI = strID.substring(0, 15);
+                return IMEI;
+            }
+        }
+        return "012345678901237";
+    }
+    /**
      * Returns the unique device ID, for example, the IMEI for GSM and the MEID
      * or ESN for CDMA phones. Return null if device ID is not available.
      *
@@ -244,12 +267,24 @@ public class TelephonyManager {
      *   {@link android.Manifest.permission#READ_PHONE_STATE READ_PHONE_STATE}
      */
     public String getDeviceId() {
+        mContext.enforceCallingOrSelfPermission(
+            android.Manifest.permission.READ_PHONE_STATE,
+            "Requires READ_PHONE_STATE");
+        mHwHasData = !SystemProperties.getBoolean("hw.nophone", true); 
+        if (mHwHasData) {
         try {
-            return getSubscriberInfo().getDeviceId();
+                String str = getSubscriberInfo().getDeviceId();
+                if(str != null)
+                    return str;
+                else
+                    return getFakeDeviceId();
         } catch (RemoteException ex) {
-            return null;
+                return getFakeDeviceId();
         } catch (NullPointerException ex) {
-            return null;
+                return getFakeDeviceId();
+            }
+        } else {
+           return getFakeDeviceId();
         }
     }
 
@@ -388,7 +423,7 @@ public class TelephonyManager {
      * @see #PHONE_TYPE_SIP
      */
     public int getPhoneType() {
-        if (!isVoiceCapable()) {
+        if (!isVoiceCapable() || SystemProperties.getBoolean("hw.nophone", true)) {
             return PHONE_TYPE_NONE;
         }
         return getCurrentPhoneType();

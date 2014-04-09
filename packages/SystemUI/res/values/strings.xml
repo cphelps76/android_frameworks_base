@@ -328,6 +328,11 @@
     <!-- Content description of the bluetooth tethering icon for accessibility (not shown on the screen). [CHAR LIMIT=NONE] -->
     <string name="accessibility_bluetooth_tether">Bluetooth tethering.</string>
 
+    <!-- Content description of the Ethernet connected icon for accessibility (not shown on the screen). [CHAR LIMIT=NONE] -->
+    <string name="accessibility_ethernet_connected">Ethernet connected.</string>
+    <string name="accessibility_ethernet_disconnected">Ethernet disconnected.</string>
+    <string name="accessibility_ethernet_connecting">Ethernet connecting.</string>
+
     <!-- Content description of the airplane mode icon for accessibility (not shown on the screen). [CHAR LIMIT=NONE] -->
     <string name="accessibility_airplane_mode">Airplane mode.</string>
 

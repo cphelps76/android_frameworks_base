@@ -2054,6 +2054,10 @@ public abstract class Context {
      * @see android.app.AlarmManager
      */
     public static final String ALARM_SERVICE = "alarm";
+    /**
+     * {@hide}
+     */
+    public static final String SYSTEM_WRITE_SERVICE = "system_write";
 
     /**
      * Use with {@link #getSystemService} to retrieve a
@@ -2222,6 +2226,24 @@ public abstract class Context {
     public static final String WIFI_P2P_SERVICE = "wifip2p";
 
     /**
+     * Use with {@link #getSystemService} to retrieve a {@link
+     * android.net.ethernet.EthernetManager} for handling management of
+     * Ethernet access.
+     *
+     * @see #getSystemService
+     * @see android.net.ethernet.EthernetManager
+     */
+    public static final String ETH_SERVICE = "ethernet";
+
+    /**
+     * Use with {@link #getSystemService} 
+     *
+     * @see #getSystemService
+     * @see android.net.pppoe.PppoeManager
+     */
+    public static final String PPPOE_SERVICE = "pppoe";
+
+	/**
      * Use with {@link #getSystemService} to retrieve a {@link
      * android.net.nsd.NsdManager} for handling management of network service
      * discovery
@@ -2413,6 +2435,8 @@ public abstract class Context {
      * @see android.os.UserManager
      */
     public static final String USER_SERVICE = "user";
+
+    public static final String OVERLAYVIEW_SERVICE = "overlayview";
 
     /**
      * Use with {@link #getSystemService} to retrieve a

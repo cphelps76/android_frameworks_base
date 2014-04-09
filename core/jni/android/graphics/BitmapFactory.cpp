@@ -215,7 +215,8 @@ static jobject doDecode(JNIEnv* env, SkStreamRewindable* stream, jobject padding
     int sampleSize = 1;
 
     SkImageDecoder::Mode mode = SkImageDecoder::kDecodePixels_Mode;
-    SkBitmap::Config prefConfig = SkBitmap::kARGB_8888_Config;
+    //SkBitmap::Config prefConfig = SkBitmap::kARGB_8888_Config;
+    SkBitmap::Config prefConfig = SkBitmap::kNo_Config;
 
     bool doDither = true;
     bool isMutable = false;

@@ -322,6 +322,32 @@ public final class Sensor {
     private int     mFifoReservedEventCount;
     private int     mFifoMaxEventCount;
 
+	/*
+		use remote control simulate a sensor device
+	*/
+	Sensor(int type) {
+		if( TYPE_ACCELEROMETER == type ){
+			mName = "amlogic";
+			mVendor = "remote_control accelerometer";
+			mVersion = 1;
+			mHandle = 0x20;
+			mType = type;
+			mMaxRange = 2.0f;
+			mResolution = 0.15322891f;
+			mPower = 0.005f;			
+		}
+		else if( TYPE_GYROSCOPE == type ){
+			mName = "amlogic";
+			mVendor = "remote_control gyro";
+			mVersion = 1;
+			mHandle = 0x21;
+			mType = type;
+			mMaxRange = 2.0f;
+			mResolution = 0.15322891f;
+			mPower = 0.005f;		
+		}
+    }
+
     Sensor() {
     }
 

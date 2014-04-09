@@ -20,7 +20,7 @@
 #include "VideoBrowserInternal.h"
 #include "LVOSA_FileReader_optim.h"
 
-//#define M4OSA_TRACE_LEVEL 1
+#define M4OSA_TRACE_LEVEL 1
 #if (M4OSA_TRACE_LEVEL >= 1)
 #undef M4OSA_TRACE1_0
 #undef M4OSA_TRACE1_1

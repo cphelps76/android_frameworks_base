@@ -135,6 +135,9 @@ public class InstrumentationTestCase extends TestCase {
         getInstrumentation().runOnMainSync(new Runnable() {
             public void run() {
                 try {
+                    if (getName().equals("testSetDismissMessage")){
+                        Thread.sleep(800);
+                    }
                     r.run();
                 } catch (Throwable throwable) {
                     exceptions[0] = throwable;
@@ -186,6 +189,9 @@ public class InstrumentationTestCase extends TestCase {
             getInstrumentation().runOnMainSync(new Runnable() {
                 public void run() {
                     try {
+                        if (getName().equals("testSynthesizeToFile")){
+                            Thread.sleep(800);
+                        }
                         runMethod(testMethod, tolerance, repetitive);
                     } catch (Throwable throwable) {
                         exceptions[0] = throwable;

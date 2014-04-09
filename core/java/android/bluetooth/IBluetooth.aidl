@@ -35,6 +35,9 @@ interface IBluetooth
     boolean enableNoAutoConnect();
     boolean disable();
 
+    boolean isRadioEnabled();
+    boolean enableRadio();
+    boolean disableRadio();
     String getAddress();
     ParcelUuid[] getUuids();
     boolean setName(in String name);
@@ -66,6 +69,8 @@ interface IBluetooth
     int getRemoteClass(in BluetoothDevice device);
     ParcelUuid[] getRemoteUuids(in BluetoothDevice device);
     boolean fetchRemoteUuids(in BluetoothDevice device);
+
+    boolean get_rx_count();
 
     boolean setPin(in BluetoothDevice device, boolean accept, int len, in byte[] pinCode);
     boolean setPasskey(in BluetoothDevice device, boolean accept, int len, in byte[]

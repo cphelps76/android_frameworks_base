@@ -19,7 +19,6 @@
 //#define LOG_NDEBUG 0
 
 #include "InputManager.h"
-
 #include <cutils/log.h>
 
 namespace android {
@@ -47,7 +46,7 @@ InputManager::~InputManager() {
 
 void InputManager::initialize() {
     mReaderThread = new InputReaderThread(mReader);
-    mDispatcherThread = new InputDispatcherThread(mDispatcher);
+    mDispatcherThread = new InputDispatcherThread(mDispatcher);    
 }
 
 status_t InputManager::start() {
@@ -64,7 +63,7 @@ status_t InputManager::start() {
         mDispatcherThread->requestExit();
         return result;
     }
-
+   
     return OK;
 }
 

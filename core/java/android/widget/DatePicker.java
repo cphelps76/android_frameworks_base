@@ -31,6 +31,8 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
@@ -285,6 +287,8 @@ public class DatePicker extends FrameLayout {
 
         // accessibility
         setContentDescriptions();
+
+		setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
 
         // If not explicitly specified this view is important for accessibility.
         if (getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
@@ -712,6 +716,23 @@ public class DatePicker extends FrameLayout {
      */
     public int getDayOfMonth() {
         return mCurrentDate.get(Calendar.DAY_OF_MONTH);
+    }
+
+	/** {@hide} */
+	public View getRightSpinner() {
+        char[] order = DateFormat.getDateFormatOrder(getContext());
+        final int spinnerCount = order.length;
+	
+        switch (order[spinnerCount -1]) {
+            case DateFormat.DATE:
+				return mDaySpinner;
+            case DateFormat.MONTH:
+                return mMonthSpinner;
+            case DateFormat.YEAR:
+				return mYearSpinner;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     /**

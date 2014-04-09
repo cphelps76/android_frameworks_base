@@ -23,6 +23,9 @@ import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.KeyEvent;
+import android.widget.Button;
+import android.widget.NumberPicker;
 import android.widget.DatePicker;
 import android.widget.DatePicker.OnDateChangedListener;
 
@@ -46,6 +49,7 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
     private final DatePicker mDatePicker;
     private final OnDateSetListener mCallBack;
     private final Calendar mCalendar;
+	private Button mButton;
 
     private boolean mTitleNeedsUpdate = true;
 
@@ -112,6 +116,19 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
         updateTitle(year, monthOfYear, dayOfMonth);
     }
 
+	@Override
+	protected void onCreate (Bundle savedInstanceState){
+		super.onCreate(savedInstanceState);
+
+		mButton = (Button)getButton(BUTTON_POSITIVE);	
+		mButton.setNextFocusUpId((mDatePicker.getRightSpinner()).getId());
+		mButton.setNextFocusLeftId((mDatePicker.getRightSpinner()).getId());
+		(mDatePicker.getRightSpinner()).setNextFocusRightId(mButton.getId());
+
+		mButton.requestFocus();
+	}
+
+
     public void onClick(DialogInterface dialog, int which) {
         tryNotifyDateSet();
     }
@@ -149,6 +166,17 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
                     mDatePicker.getMonth(), mDatePicker.getDayOfMonth());
         }
     }
+
+	public boolean onKeyDown (int keyCode, KeyEvent event){
+		if (getCurrentFocus() instanceof NumberPicker){
+			if(keyCode==KeyEvent.KEYCODE_DPAD_UP || keyCode==KeyEvent.KEYCODE_DPAD_DOWN
+							|| keyCode==KeyEvent.KEYCODE_DPAD_LEFT || keyCode==KeyEvent.KEYCODE_DPAD_RIGHT){
+				return ((NumberPicker)getCurrentFocus()).onKeyDown(keyCode, event);	
+			}	
+		}
+
+		return super.onKeyDown(keyCode, event);
+	}
 
     @Override
     protected void onStop() {

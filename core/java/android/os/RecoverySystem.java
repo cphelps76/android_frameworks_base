@@ -20,6 +20,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.os.Environment;
+import android.os.SystemProperties;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -331,10 +333,81 @@ public class RecoverySystem {
     public static void installPackage(Context context, File packageFile)
         throws IOException {
         String filename = packageFile.getCanonicalPath();
-        Log.w(TAG, "!!! REBOOTING TO INSTALL " + filename + " !!!");
-        String arg = "--update_package=" + filename +
-            "\n--locale=" + Locale.getDefault().toString();
-        bootCommand(context, arg);
+        String strExt2Path =Environment.getExternalStorage2Directory().toString();
+        if(filename.startsWith(strExt2Path))
+        {
+            if(Environment.isExternalStorageBeSdcard())
+            {
+            	String newpath = filename.substring(4); 
+            	Log.w(TAG, "!!! REBOOTING TO INSTALL 1 " + newpath + " !!!");
+    	        String arg = "--update_package=" + newpath;
+                arg += "\n--locale=" + Locale.getDefault().toString();
+    	        bootCommand(context, arg, true);
+    	    }
+	        else
+	        {
+            	String newpath =new String("/sdcard")+filename.substring(strExt2Path.length()); 
+            	Log.w(TAG, "!!! REBOOTING TO INSTALL 2 " + newpath + " !!!");
+    	        String arg = "--update_package=" + newpath;
+                arg += "\n--locale=" + Locale.getDefault().toString();
+    	        bootCommand(context, arg, true);
+	        }
+
+        }
+        else if(filename.startsWith(Environment.getExternalStorageDirectory().toString()))
+        {
+            if(Environment.isExternalStorageBeSdcard())
+            {
+            	String absPath = packageFile.getAbsolutePath();
+            	if(SystemProperties.getInt("vold.fakesdcard.enable",0)==1 && absPath.startsWith("/mnt/sda1/"))
+                    {
+                        String newpath =new String("/udisk/")+absPath.substring(10); 
+                        Log.w(TAG, "!!! REBOOTING TO INSTALL 3-1 " + newpath + " !!!");
+                        String arg = "--update_package=" + newpath;
+                        arg += "\n--locale=" + Locale.getDefault().toString();
+                        bootCommand(context, arg, true);
+                    }
+                else
+                {
+                	String newpath = filename.substring(4); 
+                	Log.w(TAG, "!!! REBOOTING TO INSTALL 3-2 " + newpath + " !!!");
+        	        String arg = "--update_package=" + newpath;
+                    arg += "\n--locale=" + Locale.getDefault().toString();
+        	        bootCommand(context, arg, true);
+                }
+            }
+            else
+            {
+            	String newpath = new String("/media/"+packageFile.getName()); 
+            	Log.w(TAG, "!!! REBOOTING TO INSTALL 4 " + newpath + " !!!");
+    	        String arg = "--update_package=" + newpath;
+                arg += "\n--locale=" + Locale.getDefault().toString();
+    	        bootCommand(context, arg, true);
+            }
+        }
+        else if(filename.startsWith(Environment.getInternalStorageDirectory().toString()))
+        {
+        	String newpath = new String("/media/"+packageFile.getName()); 
+        	Log.w(TAG, "!!! REBOOTING TO INSTALL 5 " + newpath + " !!!");
+	        String arg = "--update_package=" + newpath;
+            arg += "\n--locale=" + Locale.getDefault().toString();
+	        bootCommand(context, arg, true);
+        }
+        else if(filename.startsWith("/udisk"))
+        {
+                String newpath =new String("/udisk/")+filename.substring(7);
+                Log.w(TAG, "!!! REBOOTING TO INSTALL 6 " + newpath + " !!!");
+                String arg = "--update_package=" + newpath;
+                arg += "\n--locale=" + Locale.getDefault().toString();
+                bootCommand(context, arg, true);
+        }
+        else
+        {
+            Log.w(TAG, "!!! REBOOTING TO INSTALL 7 " + filename + " !!!");
+        String arg = "--update_package=" + filename;
+        arg += "\n--locale=" + Locale.getDefault().toString();
+        bootCommand(context, arg, true);
+        }
     }
 
     /**
@@ -365,7 +438,7 @@ public class RecoverySystem {
         // Block until the ordered broadcast has completed.
         condition.block();
 
-        bootCommand(context, "--wipe_data\n--locale=" + Locale.getDefault().toString());
+        bootCommand(context, "--wipe_data\n--locale=" + Locale.getDefault().toString(), false);
     }
 
     /**
@@ -373,15 +446,19 @@ public class RecoverySystem {
      * @throws IOException if something goes wrong.
      */
     public static void rebootWipeCache(Context context) throws IOException {
-        bootCommand(context, "--wipe_cache\n--locale=" + Locale.getDefault().toString());
+        bootCommand(context, "--wipe_cache\n--locale=" + Locale.getDefault().toString(), false);
     }
+
+    public static void rebootRestoreSystem(Context context) throws IOException {
+	bootCommand(context, "--restore_system\n--locale=" + Locale.getDefault().toString(), false);
+}
 
     /**
      * Reboot into the recovery system with the supplied argument.
      * @param arg to pass to the recovery utility.
      * @throws IOException if something goes wrong.
      */
-    private static void bootCommand(Context context, String arg) throws IOException {
+    private static void bootCommand(Context context, String arg, Boolean update) throws IOException {
         RECOVERY_DIR.mkdirs();  // In case we need it
         COMMAND_FILE.delete();  // In case it's not writable
         LOG_FILE.delete();
@@ -396,7 +473,10 @@ public class RecoverySystem {
 
         // Having written the command file, go ahead and reboot
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        pm.reboot("recovery");
+        if(update)
+	    pm.reboot("update");
+        else 
+            pm.reboot("recovery");
 
         throw new IOException("Reboot failed (no permissions?)");
     }

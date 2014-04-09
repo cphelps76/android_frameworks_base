@@ -26,6 +26,7 @@ import android.os.Build.VERSION_CODES;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
+import android.os.SystemProperties;
 import android.provider.Settings;
 
 import java.net.InetAddress;
@@ -361,11 +362,29 @@ public class ConnectivityManager {
      */
     public static final int TYPE_MOBILE_IA = 14;
 
+    /**
+     * A PPPoE connection. Only requesting processes will have access to
+     * the peers connected.
+     * {@hide}
+     */
+    public static final int TYPE_PPPOE = 15;
+    
     /** {@hide} */
-    public static final int MAX_RADIO_TYPE   = TYPE_MOBILE_IA;
+    public static final int MAX_RADIO_TYPE;
 
     /** {@hide} */
-    public static final int MAX_NETWORK_TYPE = TYPE_MOBILE_IA;
+    public static final int MAX_NETWORK_TYPE;
+
+    static {
+        //if (SystemProperties.getBoolean("ro.platform.has.pppoe", false)) {
+            MAX_RADIO_TYPE = TYPE_PPPOE;
+            MAX_NETWORK_TYPE = TYPE_PPPOE;
+        //} else {
+            //MAX_RADIO_TYPE = TYPE_MOBILE_IA;
+            //MAX_NETWORK_TYPE = TYPE_MOBILE_IA;
+        //}
+    }
+
 
     /**
      * If you want to set the default network preference,you can directly
@@ -1310,6 +1329,17 @@ public class ConnectivityManager {
             return false;
         }
     }
+
+	/** {@hide} */
+	public void sendMessage(int what, NetworkInfo info){
+		try{
+			mService.sendMessage(what, info);
+			return ;
+		}
+		catch(RemoteException e){
+			return ;
+		}
+	}
 
     /**
      * If the LockdownVpn mechanism is enabled, updates the vpn

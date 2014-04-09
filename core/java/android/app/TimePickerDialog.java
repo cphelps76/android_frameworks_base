@@ -24,6 +24,9 @@ import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.KeyEvent;
+import android.widget.Button;
+import android.widget.NumberPicker;
 import android.widget.TimePicker;
 import android.widget.TimePicker.OnTimeChangedListener;
 
@@ -56,6 +59,7 @@ public class TimePickerDialog extends AlertDialog
 
     private final TimePicker mTimePicker;
     private final OnTimeSetListener mCallback;
+	private Button mButton;
 
     int mInitialHourOfDay;
     int mInitialMinute;
@@ -110,10 +114,38 @@ public class TimePickerDialog extends AlertDialog
         mTimePicker.setCurrentMinute(mInitialMinute);
         mTimePicker.setOnTimeChangedListener(this);
     }
+	 
+    @Override
+    protected void onCreate (Bundle savedInstanceState){
+        super.onCreate(savedInstanceState);
+
+        mButton = (Button)getButton(BUTTON_POSITIVE);   
+		mButton.setNextFocusUpId((mTimePicker.getRightSpinner()).getId());
+		mButton.setNextFocusRightId((mTimePicker.getRightSpinner()).getId());
+		mButton.setNextFocusLeftId((mTimePicker.getLeftSpinner()).getId());
+        (mTimePicker.getRightSpinner()).setNextFocusRightId(mButton.getId());
+		(mTimePicker.getLeftSpinner()).setNextFocusLeftId(mButton.getId());
+
+		mButton.requestFocus();
+    }
+
+
 
     public void onClick(DialogInterface dialog, int which) {
         tryNotifyTimeSet();
     }
+
+	
+	public boolean onKeyDown (int keyCode, KeyEvent event){
+		if (getCurrentFocus() instanceof NumberPicker){
+			if(keyCode==KeyEvent.KEYCODE_DPAD_UP || keyCode==KeyEvent.KEYCODE_DPAD_DOWN
+						|| keyCode==KeyEvent.KEYCODE_DPAD_LEFT || keyCode==KeyEvent.KEYCODE_DPAD_RIGHT){
+				return ((NumberPicker)getCurrentFocus()).onKeyDown(keyCode, event);	
+			}	
+		}
+
+		return super.onKeyDown(keyCode, event);
+	}
 
     public void updateTime(int hourOfDay, int minutOfHour) {
         mTimePicker.setCurrentHour(hourOfDay);

@@ -54,6 +54,7 @@ namespace android {
  * InputDispatchPolicy is responsible for performing all external interactions with the
  * system, including calling DVM services.
  */
+
 class InputManagerInterface : public virtual RefBase {
 protected:
     InputManagerInterface() { }

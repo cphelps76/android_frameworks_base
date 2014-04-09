@@ -439,6 +439,11 @@ void JNICameraContext::clearCallbackBuffers_l(JNIEnv *env, Vector<jbyteArray> *b
     }
 }
 
+static void android_hardware_Camera_usbCameraAttach(JNIEnv *env, jobject thiz, jboolean isAttach)
+{
+    Camera::usbCameraAttach(isAttach);
+}
+
 static jint android_hardware_Camera_getNumberOfCameras(JNIEnv *env, jobject thiz)
 {
     return Camera::getNumberOfCameras();
@@ -448,6 +453,11 @@ static void android_hardware_Camera_getCameraInfo(JNIEnv *env, jobject thiz,
     jint cameraId, jobject info_obj)
 {
     CameraInfo cameraInfo;
+    if(cameraId >= Camera::getNumberOfCameras()){
+        if(Camera::findApk()){
+            cameraId = 0;
+         }
+    }
     status_t rc = Camera::getCameraInfo(cameraId, &cameraInfo);
     if (rc != NO_ERROR) {
         jniThrowRuntimeException(env, "Fail to get camera info");
@@ -609,9 +619,10 @@ static void android_hardware_Camera_setPreviewCallbackSurface(JNIEnv *env,
 static void android_hardware_Camera_startPreview(JNIEnv *env, jobject thiz)
 {
     ALOGV("startPreview");
+    int state=-10;
     sp<Camera> camera = get_native_camera(env, thiz, NULL);
     if (camera == 0) return;
-
+    status_t rc = camera->sendCommand(state, 0, 0);
     if (camera->startPreview() != NO_ERROR) {
         jniThrowRuntimeException(env, "startPreview failed");
         return;
@@ -880,12 +891,24 @@ static void android_hardware_Camera_enableFocusMoveCallback(JNIEnv *env, jobject
     }
 }
 
+static jboolean android_hardware_Camera_findApk(JNIEnv *env,jobject thiz)
+{    
+    ALOGV("enablefindApk--------%d",Camera::findApk());
+    return Camera::findApk();
+}
+
 //-------------------------------------------------
 
 static JNINativeMethod camMethods[] = {
+  { "usbCameraAttach",
+    "(Z)V",
+    (void *)android_hardware_Camera_usbCameraAttach },
   { "getNumberOfCameras",
     "()I",
     (void *)android_hardware_Camera_getNumberOfCameras },
+  { "findApk",
+    "()Z",
+    (void *)android_hardware_Camera_findApk },
   { "_getCameraInfo",
     "(ILandroid/hardware/Camera$CameraInfo;)V",
     (void*)android_hardware_Camera_getCameraInfo },

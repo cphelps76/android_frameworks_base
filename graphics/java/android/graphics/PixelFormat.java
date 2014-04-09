@@ -81,6 +81,9 @@ public class PixelFormat
     @Deprecated
     public static final int JPEG        = 0x100;
 
+    public static final int VIDEO_HOLE  = 0x101;
+	public static final int VIDEO_HOLE_REAL  = 0x102;
+	
     public static void getPixelFormatInfo(int format, PixelFormat info) {
         switch (format) {
             case RGBA_8888:

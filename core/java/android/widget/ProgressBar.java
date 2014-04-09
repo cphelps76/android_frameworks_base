@@ -54,6 +54,8 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.Transformation;
 import android.widget.RemoteViews.RemoteView;
 
+import android.os.SystemProperties;
+
 import java.util.ArrayList;
 
 
@@ -230,6 +232,7 @@ public class ProgressBar extends View {
 
     private AccessibilityEventSender mAccessibilityEventSender;
 
+    private boolean mIsBenchMark = false;
     /**
      * Create a new progress bar with range 0...100 and initial progress of 0.
      * @param context the application environment
@@ -872,6 +875,12 @@ public class ProgressBar extends View {
                 mAnimation.reset();
             }
 
+            String tmp = SystemProperties.get("sys.optimization.benchapk");
+            if (tmp != null) {
+                if (tmp.equals("true")) {
+                    mIsBenchMark = true;
+                }
+            }
             mAnimation.setRepeatMode(mBehavior);
             mAnimation.setRepeatCount(Animation.INFINITE);
             mAnimation.setDuration(mDuration);
@@ -890,6 +899,7 @@ public class ProgressBar extends View {
             ((Animatable) mIndeterminateDrawable).stop();
             mShouldStartAnimationDrawable = false;
         }
+        mIsBenchMark = false;
         postInvalidate();
     }
 
@@ -1046,6 +1056,21 @@ public class ProgressBar extends View {
                     d.setLevel((int) (scale * MAX_LEVEL));
                 } finally {
                     mInDrawing = false;
+                }
+                if (mIsBenchMark == true) {
+                    try {                           // slow down, have a rest
+                        Thread.sleep(300);
+                    } catch(InterruptedException e) {
+                            
+                    }
+                } else {
+                    int interval = SystemProperties.getInt("rw.progressbar.interval",-1);
+                    if(interval > 0)
+                        try {                           
+                            Thread.sleep(interval);
+                        } catch(InterruptedException e) {
+                                
+                        }
                 }
                 postInvalidateOnAnimation();
             }

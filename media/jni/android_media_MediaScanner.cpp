@@ -107,19 +107,23 @@ static bool isValidUtf8(const char* bytes) {
 class MyMediaScannerClient : public MediaScannerClient
 {
 public:
-    MyMediaScannerClient(JNIEnv *env, jobject client)
+    MyMediaScannerClient(JNIEnv *env, jobject client, jobject scanner)
         :   mEnv(env),
             mClient(env->NewGlobalRef(client)),
+            mScanner(env->NewGlobalRef(scanner)),
             mScanFileMethodID(0),
             mHandleStringTagMethodID(0),
-            mSetMimeTypeMethodID(0)
+            mSetMimeTypeMethodID(0),
+            mNeedStopFileID(0)
     {
         ALOGV("MyMediaScannerClient constructor");
         jclass mediaScannerClientInterface =
                 env->FindClass(kClassMediaScannerClient);
+        jclass mediaScannerClass =
+                env->FindClass(kClassMediaScanner);
 
-        if (mediaScannerClientInterface == NULL) {
-            ALOGE("Class %s not found", kClassMediaScannerClient);
+        if ( (mediaScannerClientInterface == NULL) || (mediaScannerClass == NULL) ) {
+            ALOGE("Class %s or %snot found", kClassMediaScannerClient, kClassMediaScanner);
         } else {
             mScanFileMethodID = env->GetMethodID(
                                     mediaScannerClientInterface,
@@ -135,6 +139,9 @@ public:
                                     mediaScannerClientInterface,
                                     "setMimeType",
                                     "(Ljava/lang/String;)V");
+
+
+            mNeedStopFileID = env->GetFieldID(mediaScannerClass,"mStopScan","Z");
         }
     }
 
@@ -142,6 +149,7 @@ public:
     {
         ALOGV("MyMediaScannerClient destructor");
         mEnv->DeleteGlobalRef(mClient);
+        mEnv->DeleteGlobalRef(mScanner);
     }
 
     virtual status_t scanFile(const char* path, long long lastModified,
@@ -215,12 +223,19 @@ public:
         return checkAndClearExceptionFromCallback(mEnv, "setMimeType");
     }
 
+    virtual bool needStopScan() {
+        jboolean rtn = mEnv->GetBooleanField(mScanner,mNeedStopFileID);
+        return rtn;
+    }
+
 private:
     JNIEnv *mEnv;
     jobject mClient;
+    jobject mScanner;
     jmethodID mScanFileMethodID;
     jmethodID mHandleStringTagMethodID;
     jmethodID mSetMimeTypeMethodID;
+    jfieldID  mNeedStopFileID;
 };
 
 
@@ -233,6 +248,7 @@ static void setNativeScanner_l(JNIEnv* env, jobject thiz, MediaScanner *s)
 {
     env->SetIntField(thiz, fields.context, (int)s);
 }
+
 
 static void
 android_media_MediaScanner_processDirectory(
@@ -255,7 +271,8 @@ android_media_MediaScanner_processDirectory(
         return;
     }
 
-    MyMediaScannerClient myClient(env, client);
+
+    MyMediaScannerClient myClient(env, client,thiz);
     MediaScanResult result = mp->processDirectory(pathStr, myClient);
     if (result == MEDIA_SCAN_RESULT_ERROR) {
         ALOGE("An error occurred while scanning directory '%s'.", pathStr);
@@ -295,7 +312,7 @@ android_media_MediaScanner_processFile(
         return;
     }
 
-    MyMediaScannerClient myClient(env, client);
+    MyMediaScannerClient myClient(env, client, thiz);
     MediaScanResult result = mp->processFile(pathStr, mimeTypeStr, myClient);
     if (result == MEDIA_SCAN_RESULT_ERROR) {
         ALOGE("An error occurred while scanning file '%s'.", pathStr);

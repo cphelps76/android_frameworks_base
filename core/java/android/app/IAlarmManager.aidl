@@ -31,6 +31,9 @@ interface IAlarmManager {
     void setTime(long millis);
     void setTimeZone(String zone);
     void remove(in PendingIntent operation);
+    void setAlignEnable(boolean align);
+    void addToWhitelist(String packageName);
+    void removeFromWhitelist(String packageName);   
 }
 
 

@@ -1702,4 +1702,9 @@ public class ActionBarView extends AbsActionBarView {
         public void onRestoreInstanceState(Parcelable state) {
         }
     }
+
+    public View getActionBarSpinner(){
+
+        return mSpinner ;
+    }    
 }

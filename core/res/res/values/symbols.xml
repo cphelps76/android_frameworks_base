@@ -755,6 +755,7 @@
   <java-symbol type="string" name="shareactionprovider_share_with_application" />
   <java-symbol type="string" name="shutdown_confirm" />
   <java-symbol type="string" name="shutdown_confirm_question" />
+  <java-symbol type="string" name="shutdown_confirm_question_chiptemp_hot" />
   <java-symbol type="string" name="shutdown_progress" />
   <java-symbol type="string" name="sim_added_message" />
   <java-symbol type="string" name="sim_added_title" />
@@ -843,6 +844,38 @@
   <java-symbol type="string" name="media_route_status_not_available" />
   <java-symbol type="string" name="media_route_status_in_use" />
   <java-symbol type="string" name="owner_name" />
+  <java-symbol type="string" name="usb_storage_disconnect_notification_title" />
+  <java-symbol type="string" name="usb_storage_disconnect_notification_message" />
+  <java-symbol type="string" name="ext2_media_checking_notification_title" />
+  <java-symbol type="string" name="ext2_media_checking_notification_message" />
+  <java-symbol type="string" name="int_media_checking_notification_title" />
+  <java-symbol type="string" name="other_ext_media_checking_notification_title" />
+  <java-symbol type="string" name="ext2_media_safe_unmount_notification_title" />
+  <java-symbol type="string" name="ext2_media_safe_unmount_notification_message" />
+  <java-symbol type="string" name="other_ext_media_safe_unmount_notification_title" />
+  <java-symbol type="string" name="other_ext_media_safe_unmount_notification_message" />
+  <java-symbol type="string" name="external_storage_unplug_notification_title" />
+  <java-symbol type="string" name="external_storage_unplug_notification_message" />
+  <java-symbol type="string" name="ext2_media_nofs_notification_title" />
+  <java-symbol type="string" name="ext2_media_nofs_notification_message" />
+  <java-symbol type="string" name="int_media_nofs_notification_title" />
+  <java-symbol type="string" name="int_media_nofs_notification_message" />
+  <java-symbol type="string" name="other_ext_media_nofs_notification_title" />
+  <java-symbol type="string" name="other_ext_media_nofs_notification_message" />
+  <java-symbol type="string" name="ext2_media_unmountable_notification_title" />
+  <java-symbol type="string" name="ext2_media_unmountable_notification_message" />
+  <java-symbol type="string" name="int_media_unmountable_notification_title" />
+  <java-symbol type="string" name="int_media_unmountable_notification_message" />
+  <java-symbol type="string" name="other_ext_media_unmountable_notification_title" />
+  <java-symbol type="string" name="other_ext_media_unmountable_notification_message" />
+  <java-symbol type="string" name="ext2_media_nomedia_notification_title" />
+  <java-symbol type="string" name="ext2_media_nomedia_notification_message" />
+  <java-symbol type="string" name="other_ext_media_nomedia_notification_title" />
+  <java-symbol type="string" name="other_ext_media_nomedia_notification_message" />
+  <java-symbol type="string" name="ext2_media_badremoval_notification_title" />
+  <java-symbol type="string" name="ext2_media_badremoval_notification_message" />
+  <java-symbol type="string" name="other_ext_media_badremoval_notification_title" />
+  <java-symbol type="string" name="other_ext_media_badremoval_notification_message" />
   <java-symbol type="string" name="config_chooseAccountActivity" />
   <java-symbol type="string" name="config_chooseTypeAndAccountActivity" />
   <java-symbol type="string" name="config_customResolverActivity" />
@@ -1507,6 +1540,8 @@
   <java-symbol type="integer" name="config_shutdownBatteryTemperature" />
   <java-symbol type="integer" name="config_undockedHdmiRotation" />
   <java-symbol type="integer" name="config_virtualKeyQuietTimeMillis" />
+  <java-symbol type="integer" name="config_defaultWallPaper_width" />
+  <java-symbol type="integer" name="config_defaultWallPaper_height" />
   <java-symbol type="layout" name="am_compat_mode_dialog" />
   <java-symbol type="layout" name="launch_warning" />
   <java-symbol type="layout" name="safe_mode" />
@@ -1667,6 +1702,7 @@
   <java-symbol type="string" name="usb_storage_stop_notification_title" />
   <java-symbol type="string" name="usb_storage_stop_title" />
   <java-symbol type="string" name="usb_storage_title" />
+  <java-symbol type="string" name="storage_usb" />
   <java-symbol type="style" name="Animation.RecentApplications" />
 
   <!-- ImfTest -->

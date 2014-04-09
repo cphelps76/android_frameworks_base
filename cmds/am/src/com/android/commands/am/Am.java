@@ -27,6 +27,7 @@ import android.app.IInstrumentationWatcher;
 import android.app.Instrumentation;
 import android.app.UiAutomationConnection;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.content.pm.IPackageManager;
@@ -40,6 +41,7 @@ import android.os.ServiceManager;
 import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.util.AndroidException;
+import android.view.Display;
 import android.view.IWindowManager;
 import com.android.internal.os.BaseCommand;
 
@@ -102,6 +104,8 @@ public class Am extends BaseCommand {
                 "       am restart\n" +
                 "       am idle-maintenance\n" +
                 "       am screen-compat [on|off] <PACKAGE>\n" +
+                "       am display-size [reset|WxH]\n" +
+                "       am display-density [reset|DENSITY]\n" +
                 "       am to-uri [INTENT]\n" +
                 "       am to-intent-uri [INTENT]\n" +
                 "       am switch-user <USER_ID>\n" +
@@ -193,6 +197,10 @@ public class Am extends BaseCommand {
                 "am idle-maintenance: perform idle maintenance now.\n" +
                 "\n" +
                 "am screen-compat: control screen compatibility mode of <PACKAGE>.\n" +
+                "\n" +
+                "am display-size: override display size.\n" +
+                "\n" +
+                "am display-density: override display density.\n" +
                 "\n" +
                 "am to-uri: print the given Intent specification as a URI.\n" +
                 "\n" +
@@ -302,7 +310,11 @@ public class Am extends BaseCommand {
             runIdleMaintenance();
         } else if (op.equals("screen-compat")) {
             runScreenCompat();
-        } else if (op.equals("to-uri")) {
+        } else if (op.equals("display-size")) {
+            runDisplaySize();
+        } else if (op.equals("display-density")) {
+            runDisplayDensity();
+        }else if (op.equals("to-uri")) {
             runToUri(false);
         } else if (op.equals("to-intent-uri")) {
             runToUri(true);
@@ -1435,7 +1447,83 @@ public class Am extends BaseCommand {
             packageName = nextArg();
         } while (packageName != null);
     }
+    
+    private void runDisplaySize() throws Exception {
+        String size = nextArgRequired();
+        int w, h;
+        if ("reset".equals(size)) {
+            w = h = -1;
+        } else {
+            int div = size.indexOf('x');
+            if (div <= 0 || div >= (size.length()-1)) {
+                System.err.println("Error: bad size " + size);
+                return;
+            }
+            String wstr = size.substring(0, div);
+            String hstr = size.substring(div+1);
+            try {
+                w = Integer.parseInt(wstr);
+                h = Integer.parseInt(hstr);
+            } catch (NumberFormatException e) {
+                System.err.println("Error: bad number " + e);
+                return;
+            }
+        }
 
+        IWindowManager wm = IWindowManager.Stub.asInterface(ServiceManager.checkService(
+                Context.WINDOW_SERVICE));
+        if (wm == null) {
+            System.err.println(NO_SYSTEM_ERROR_CODE);
+            throw new AndroidException("Can't connect to window manager; is the system running?");
+        }
+
+        try {
+            if (w >= 0 && h >= 0) {
+                // TODO(multidisplay): For now Configuration only applies to main screen.
+                wm.setForcedDisplaySize(Display.DEFAULT_DISPLAY, w, h);
+            } else {
+                wm.clearForcedDisplaySize(Display.DEFAULT_DISPLAY);
+            }
+        } catch (RemoteException e) {
+        }
+    }
+
+    private void runDisplayDensity() throws Exception {
+        String densityStr = nextArgRequired();
+        int density;
+        if ("reset".equals(densityStr)) {
+            density = -1;
+        } else {
+            try {
+                density = Integer.parseInt(densityStr);
+            } catch (NumberFormatException e) {
+                System.err.println("Error: bad number " + e);
+                return;
+            }
+            if (density < 72) {
+                System.err.println("Error: density must be >= 72");
+                return;
+            }
+        }
+
+        IWindowManager wm = IWindowManager.Stub.asInterface(ServiceManager.checkService(
+                Context.WINDOW_SERVICE));
+        if (wm == null) {
+            System.err.println(NO_SYSTEM_ERROR_CODE);
+            throw new AndroidException("Can't connect to window manager; is the system running?");
+        }
+
+        try {
+            if (density > 0) {
+                // TODO(multidisplay): For now Configuration only applies to main screen.
+                wm.setForcedDisplayDensity(Display.DEFAULT_DISPLAY, density);
+            } else {
+                wm.clearForcedDisplayDensity(Display.DEFAULT_DISPLAY);
+            }
+        } catch (RemoteException e) {
+        }
+    }
+    
     private void runToUri(boolean intentScheme) throws Exception {
         Intent intent = makeIntent(UserHandle.USER_CURRENT);
         System.out.println(intent.toUri(intentScheme ? Intent.URI_INTENT_SCHEME : 0));

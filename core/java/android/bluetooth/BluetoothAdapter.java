@@ -106,6 +106,14 @@ public final class BluetoothAdapter {
             "android.bluetooth.adapter.action.STATE_CHANGED";
 
     /**
+     * Broadcast Action: The state of the local Bluetooth adapter has been
+     * changed due to radio state change
+     * @hide
+     **/
+    public static final String ACTION_RADIO_STATE_CHANGED =
+            "android.bluetooth.adapter.action.RADIO_STATE_CHANGED";
+
+    /**
      * Used as an int extra field in {@link #ACTION_STATE_CHANGED}
      * intents to request the current power state. Possible values are:
      * {@link #STATE_OFF},
@@ -145,6 +153,21 @@ public final class BluetoothAdapter {
      * should immediately attempt graceful disconnection of any remote links.
      */
     public static final int STATE_TURNING_OFF = 13;
+
+    // TODO:TBD move all the FM related code changes to FM Proxy
+
+
+    /**
+     * Indicates the local Bluetooth adapter radio is turned on.
+     * @hide
+     **/
+    public static final int STATE_RADIO_ON = 14;
+    /**
+     * Indicates the local Bluetooth adapter radio is turned off.
+     * @hide
+     **/
+    public static final int STATE_RADIO_OFF = 15;
+
 
     /**
      * Activity Action: Show a system activity that requests discoverable mode.
@@ -456,6 +479,21 @@ public final class BluetoothAdapter {
     }
 
     /**
+     * Return true if Radio is currently enabled and ready for use.
+     *
+     * @hide
+     */
+    public boolean isRadioEnabled() {
+
+        try {
+            synchronized(mManagerCallback) {
+                if (mService != null) return mService.isRadioEnabled();
+            }
+        } catch (RemoteException e) {Log.e(TAG, "", e);}
+        return false;
+    }
+
+    /**
      * Get the current state of the local Bluetooth adapter.
      * <p>Possible return values are
      * {@link #STATE_OFF},
@@ -522,6 +560,18 @@ public final class BluetoothAdapter {
     }
 
     /**
+     * Turn on Radio.This turns on the  combo chip.
+     * Can be used as generic API for any other radio turn on also.
+     * @hide
+     */
+        public boolean enableRadio() {
+        boolean enabled = false;
+        try {
+            return mManagerService.enableRadio();
+        } catch (RemoteException e) {Log.e(TAG, "", e);}
+        return false;
+    }
+    /**
      * Turn off the local Bluetooth adapter&mdash;do not use without explicit
      * user action to turn off Bluetooth.
      * <p>This gracefully shuts down all Bluetooth connections, stops Bluetooth
@@ -548,6 +598,19 @@ public final class BluetoothAdapter {
     public boolean disable() {
         try {
             return mManagerService.disable(true);
+        } catch (RemoteException e) {Log.e(TAG, "", e);}
+        return false;
+    }
+
+
+    /**
+     * Turn Off Radio.This turns Off the  combo chip.
+     * Can be used as generic API for any other radio turn Off also.
+     * @hide
+     */
+    public boolean disableRadio() {
+        try {
+            return mManagerService.disableRadio();
         } catch (RemoteException e) {Log.e(TAG, "", e);}
         return false;
     }

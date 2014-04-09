@@ -124,6 +124,7 @@ public abstract class Window {
     public static final int ID_ANDROID_CONTENT = com.android.internal.R.id.content;
 
     private static final String PROPERTY_HARDWARE_UI = "persist.sys.ui.hw";
+    private static final String PROPERTY_OPTIMIZATION_HARDWARE_UI = "sys.optimization.ui.hw";
 
     private final Context mContext;
     
@@ -478,8 +479,9 @@ public abstract class Window {
             boolean hardwareAccelerated) {
         mAppToken = appToken;
         mAppName = appName;
+        boolean optHwUiFlag = SystemProperties.getBoolean(PROPERTY_OPTIMIZATION_HARDWARE_UI, false);
         mHardwareAccelerated = hardwareAccelerated
-                || SystemProperties.getBoolean(PROPERTY_HARDWARE_UI, false);
+                || optHwUiFlag || SystemProperties.getBoolean(PROPERTY_HARDWARE_UI, false);
         if (wm == null) {
             wm = (WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE);
         }

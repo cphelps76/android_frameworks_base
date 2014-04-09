@@ -50,6 +50,13 @@ enum {
     TRANSACTION_isExternalStorageEmulated,
     TRANSACTION_decryptStorage,
     TRANSACTION_encryptStorage,
+    TRANSACTION_getVolumeLabel,
+    TRANSACTION_getVolumeFSLabel,
+    TRANSACTION_isUsbMassStorageAllEnabled,
+    TRANSACTION_getAllVolume,
+    TRANSACTION_getVolumedevtype,
+    TRANSACTION_getVolumedevnode,
+    TRANSACTION_getVolumeUUID,
 };
 
 class BpMountService: public BpInterface<IMountService>
@@ -135,6 +142,22 @@ public:
         int32_t err = reply.readExceptionCode();
         if (err < 0) {
             ALOGD("isUsbMassStorageEnabled caught exception %d\n", err);
+            return false;
+        }
+        return reply.readInt32() != 0;
+    }
+
+    virtual bool isUsbMassStorageAllEnabled()
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        if (remote()->transact(TRANSACTION_isUsbMassStorageAllEnabled, data, &reply) != NO_ERROR) {
+            ALOGD("isUsbMassStorageAllEnabled could not contact remote\n");
+            return false;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("isUsbMassStorageAllEnabled caught exception %d\n", err);
             return false;
         }
         return reply.readInt32() != 0;
@@ -509,6 +532,24 @@ public:
         return true;
     }
 
+    int32_t getVolumeLabel(const String16& mountPoint)
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        data.writeString16(mountPoint);
+        if (remote()->transact(TRANSACTION_getVolumeLabel, data, &reply) != NO_ERROR) {
+            ALOGD("getVolumeLabel could not contact remote\n");
+            return -1;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("getVolumeLabel caught exception %d\n", err);
+            return err;
+        }
+        return reply.readInt32();
+    }
+
+
     int32_t decryptStorage(const String16& password)
     {
         Parcel data, reply;
@@ -542,6 +583,90 @@ public:
         }
         return reply.readInt32();
     }
+
+    int32_t getVolumeFSLabel(const String16& mountPoint)
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        data.writeString16(mountPoint);
+        if (remote()->transact(TRANSACTION_getVolumeFSLabel, data, &reply) != NO_ERROR) {
+            ALOGD("getVolumeFSLabel could not contact remote\n");
+            return -1;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("getVolumeFSLabel caught exception %d\n", err);
+            return err;
+        }
+        return reply.readInt32();
+    }
+
+    int32_t getVolumeAllVolume()
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        if (remote()->transact(TRANSACTION_getAllVolume, data, &reply) != NO_ERROR) {
+            ALOGD("getVolumeAllVolume could not contact remote\n");
+            return -1;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("getVolumeAllVolume caught exception %d\n", err);
+            return err;
+        }
+        return reply.readInt32();
+    }
+
+    int32_t getVolumedevtype(const String16& mountPoint)
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        data.writeString16(mountPoint);
+        if (remote()->transact(TRANSACTION_getVolumedevtype, data, &reply) != NO_ERROR) {
+            ALOGD("getVolumedevtype could not contact remote\n");
+            return -1;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("getVolumedevtype caught exception %d\n", err);
+            return err;
+        }
+        return reply.readInt32();
+    }
+
+    int32_t getVolumedevnode(const String16& mountPoint)
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        data.writeString16(mountPoint);
+        if (remote()->transact(TRANSACTION_getVolumedevnode, data, &reply) != NO_ERROR) {
+            ALOGD("getVolumedevnode could not contact remote\n");
+            return -1;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("getVolumedevnode caught exception %d\n", err);
+            return err;
+        }
+        return reply.readInt32();
+    }
+
+    int32_t getVolumeUUID(const String16& mountPoint)
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IMountService::getInterfaceDescriptor());
+        data.writeString16(mountPoint);
+        if (remote()->transact(TRANSACTION_getVolumeUUID, data, &reply) != NO_ERROR) {
+            ALOGD("getVolumeUUID could not contact remote\n");
+            return -1;
+        }
+        int32_t err = reply.readExceptionCode();
+        if (err < 0) {
+            ALOGD("getVolumeUUID caught exception %d\n", err);
+            return err;
+        }
+        return reply.readInt32();
+    }	
 };
 
 IMPLEMENT_META_INTERFACE(MountService, "IMountService");

@@ -88,6 +88,15 @@
                 systemui:glowBackground="@drawable/ic_sysbar_highlight"
                 android:contentDescription="@string/accessibility_recent"
                 />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/rotation_setting"
+                android:layout_width="@dimen/navigation_key_width"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_rotate0"
+                android:layout_weight="0"
+                android:visibility="gone"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                android:contentDescription="@string/accessibility_recent"
+                />
             <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/menu"
                 android:layout_width="@dimen/navigation_menu_key_width"
                 android:layout_height="match_parent"
@@ -108,7 +117,15 @@
             android:id="@+id/lights_out"
             android:visibility="gone"
             >
+             <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
             <ImageView
+                android:id="@+id/dot0"
+                android:visibility="gone"
                 android:layout_width="80dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="40dp"
@@ -116,26 +133,94 @@
                 android:scaleType="center"
                 android:layout_weight="0"
                 />
-            <View 
+            <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:visibility="invisible"
+                android:visibility="gone"
                 />
             <ImageView
+                android:id="@+id/dot1"
+                android:visibility="gone"
                 android:layout_width="80dp"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_sysbar_lights_out_dot_large"
                 android:scaleType="center"
                 android:layout_weight="0"
                 />
-            <View 
+            <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:visibility="invisible"
+                android:visibility="gone"
                 />
             <ImageView
+                android:id="@+id/dot2"
+                android:visibility="gone"
+                android:layout_width="80dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot3"
+                android:visibility="gone"
+                android:layout_width="80dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot4"
+                android:visibility="gone"
+                android:layout_width="80dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot5"
+                android:visibility="gone"
+                android:layout_width="80dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />	
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot6"
+                android:visibility="gone"
                 android:layout_width="80dp"
                 android:layout_marginEnd="40dp"
                 android:layout_height="match_parent"
@@ -213,6 +298,21 @@
                 android:contentDescription="@string/accessibility_menu"
                 systemui:glowBackground="@drawable/ic_sysbar_highlight_land"
                 />
+           <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/rotation_setting"
+                android:layout_height="80dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_rotate_land"
+                android:layout_weight="0"
+                android:visibility="gone"
+                android:contentDescription="@string/accessibility_recent"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight_land"
+                />
+            <View 
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
             <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/recent_apps"
                 android:layout_height="80dp"
                 android:layout_width="match_parent"
@@ -269,7 +369,15 @@
             android:id="@+id/lights_out"
             android:visibility="gone"
             >
+          <View
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
             <ImageView
+                android:id="@+id/dot0"
+                android:visibility="gone"
                 android:layout_height="80dp"
                 android:layout_marginTop="40dp"
                 android:layout_width="match_parent"
@@ -277,26 +385,97 @@
                 android:scaleType="center"
                 android:layout_weight="0"
                 />
-            <View 
+            <View
                 android:layout_height="match_parent"
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:visibility="invisible"
+                android:visibility="gone"
                 />
             <ImageView
+                android:id="@+id/dot1"
+                android:visibility="gone"
                 android:layout_height="80dp"
                 android:layout_width="match_parent"
                 android:src="@drawable/ic_sysbar_lights_out_dot_large"
                 android:scaleType="center"
                 android:layout_weight="0"
                 />
-            <View 
+            <View
                 android:layout_height="match_parent"
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:visibility="invisible"
+                android:visibility="gone"
                 />
             <ImageView
+                android:id="@+id/dot2"
+                android:visibility="gone"
+                android:layout_height="80dp"
+                android:layout_marginBottom="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+
+            <View
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot3"
+                android:visibility="gone"
+                android:layout_height="80dp"
+                android:layout_marginBottom="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+
+           <View
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot4"
+                android:visibility="gone"
+                android:layout_height="80dp"
+                android:layout_marginBottom="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+
+            <View
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot5"
+                android:visibility="gone"
+                android:layout_height="80dp"
+                android:layout_marginBottom="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone"
+                />
+            <ImageView
+                android:id="@+id/dot6"
+                android:visibility="gone"
                 android:layout_height="80dp"
                 android:layout_marginBottom="40dp"
                 android:layout_width="match_parent"

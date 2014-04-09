@@ -887,7 +887,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 AudioManager audioManager = (AudioManager) getContext().getSystemService(
                         Context.AUDIO_SERVICE);
                 if (audioManager != null) {
-                    audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
+                    //audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
                 } else {
                     Log.w(TAG, "Couldn't get audio manager");
                 }

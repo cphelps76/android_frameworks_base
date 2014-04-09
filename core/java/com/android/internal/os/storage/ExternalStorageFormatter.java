@@ -51,19 +51,25 @@ public class ExternalStorageFormatter extends Service
     private boolean mFactoryReset = false;
     private boolean mAlwaysReset = false;
 
+    // If !true, v-sdcard in enabled
+    private boolean mTryMountExtStorage2 = false;
+    private static boolean mExternalStoragebeSD = true;
+
     StorageEventListener mStorageListener = new StorageEventListener() {
         @Override
         public void onStorageStateChanged(String path, String oldState, String newState) {
             Log.i(TAG, "Received storage state changed notification that " +
                     path + " changed state from " + oldState +
                     " to " + newState);
-            updateProgressState();
+            updateProgressState(path,newState);
         }
     };
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+         mExternalStoragebeSD = Environment.isExternalStorageBeSdcard();
 
         if (mStorageManager == null) {
             mStorageManager = (StorageManager) getSystemService(Context.STORAGE_SERVICE);
@@ -94,7 +100,8 @@ public class ExternalStorageFormatter extends Service
             if (!mAlwaysReset) {
                 mProgressDialog.setOnCancelListener(this);
             }
-            updateProgressState();
+            tryUnmountExternalStorage2();
+	    updateProgressState(null,null);
             mProgressDialog.show();
         }
 
@@ -129,6 +136,15 @@ public class ExternalStorageFormatter extends Service
         } catch (RemoteException e) {
             Log.w(TAG, "Failed talking with mount service", e);
         }
+        if((!mExternalStoragebeSD)
+	    &&(extStoragePath.equals(Environment.getExternalStorageDirectory().toString()))){
+	     Log.i(TAG, "cancel format on a internal sdcard volume,try mount external sdcard");
+	     try {
+	         mountService.mountVolume( Environment.getExternalStorage2Directory().toString());
+	     } catch (RemoteException e) {
+	         Log.w(TAG, "Failed talking with mount service when mount extsd2", e);
+	     }
+	 }	
         stopSelf();
     }
 
@@ -139,8 +155,46 @@ public class ExternalStorageFormatter extends Service
         }
         stopSelf();
     }
+void tryUnmountExternalStorage2()
+    {
+        final String extStoragePath = mStorageVolume == null ?
+                Environment.getExternalStorageDirectory().toString() :
+                mStorageVolume.getPath();
+        mTryMountExtStorage2=false;
+        if((!mExternalStoragebeSD)&&(extStoragePath.equals(Environment.getExternalStorageDirectory().toString())))
+        {
+    	    Log.i(TAG, "unmount external storage2 first!");
+            String status = Environment.getExternalStorage2State();
+            if (Environment.MEDIA_MOUNTED.equals(status)
+                || Environment.MEDIA_MOUNTED_READ_ONLY.equals(status)) {
+                
+      		updateProgressDialog(R.string.progress_unmounting);
+                IMountService mountService = getMountService();
+        	String ext2StoragePath = Environment.getExternalStorage2Directory().toString();
+                try {
+        		mountService.unmountVolume(ext2StoragePath, true,false); 
+                } catch (RemoteException e) {
+                      Log.w(TAG, "Failed talking with mount service", e);
+                }
+                mTryMountExtStorage2=true;
+             }
+         }
+     }
 
-    void updateProgressState() {
+    void updateProgressState(String path,String newState) {
+    	if(mTryMountExtStorage2)
+        {
+            if(path==null)//wait for Storage2 status notify
+               return;
+            if(path.equals(Environment.getExternalStorage2Directory().toString()))
+            {
+               if((!Environment.MEDIA_UNMOUNTED.equals(newState) ) && 
+                       (!Environment.MEDIA_REMOVED.equals(newState) ))
+               {
+                       return;//bypass all the state change of Storage2 until it unmonted 
+               }
+           }
+       }	
         String status = mStorageVolume == null ?
                 Environment.getExternalStorageState() :
                 mStorageManager.getVolumeState(mStorageVolume.getPath());
@@ -172,6 +226,8 @@ public class ExternalStorageFormatter extends Service
                         boolean success = false;
                         try {
                             mountService.formatVolume(extStoragePath);
+                            String ext2StoragePath = Environment.getExternalStorage2Directory().toString();
+			    mountService.formatVolume(ext2StoragePath);
                             success = true;
                         } catch (Exception e) {
                             Toast.makeText(ExternalStorageFormatter.this,
@@ -192,6 +248,11 @@ public class ExternalStorageFormatter extends Service
                         } else {
                             try {
                                 mountService.mountVolume(extStoragePath);
+                                if(mTryMountExtStorage2==true)
+                                {
+                                		final String extStoragePath2= Environment.getExternalStorage2Directory().toString();
+                                		mountService.mountVolume(extStoragePath2);
+                                }
                             } catch (RemoteException e) {
                                 Log.w(TAG, "Failed talking with mount service", e);
                             }

@@ -92,6 +92,7 @@ public final class SQLiteConnectionPool implements Closeable {
     private final ArrayList<SQLiteConnection> mAvailableNonPrimaryConnections =
             new ArrayList<SQLiteConnection>();
     private SQLiteConnection mAvailablePrimaryConnection;
+    public int db;
 
     // Describes what should happen to an acquired connection when it is returned to the pool.
     enum AcquiredConnectionStatus {
@@ -184,7 +185,7 @@ public final class SQLiteConnectionPool implements Closeable {
         // This might throw if the database is corrupt.
         mAvailablePrimaryConnection = openConnectionLocked(mConfiguration,
                 true /*primaryConnection*/); // might throw
-
+	 db = mAvailablePrimaryConnection.db;
         // Mark the pool as being open for business.
         mIsOpen = true;
         mCloseGuard.open("close");

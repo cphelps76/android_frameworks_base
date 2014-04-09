@@ -196,6 +196,12 @@ public class Camera {
     private static final int CAMERA_FACE_DETECTION_SW = 1;
 
     /**
+     * when usb camera plug in or out, need camera service recount camera number
+     * @hide
+     */
+    public native static void usbCameraAttach(boolean isAttach);
+    
+    /**
      * Returns the number of physical cameras available on this device.
      */
     public native static int getNumberOfCameras();
@@ -204,6 +210,10 @@ public class Camera {
      * Returns the information about a particular camera.
      * If {@link #getNumberOfCameras()} returns N, the valid id is 0 to N-1.
      */
+    /**
+     * @hide
+    */
+    public native static boolean findApk();
     public static void getCameraInfo(int cameraId, CameraInfo cameraInfo) {
         _getCameraInfo(cameraId, cameraInfo);
         IBinder b = ServiceManager.getService(Context.AUDIO_SERVICE);
@@ -306,6 +316,11 @@ public class Camera {
      * @see android.app.admin.DevicePolicyManager#getCameraDisabled(android.content.ComponentName)
      */
     public static Camera open(int cameraId) {
+         if(cameraId >= getNumberOfCameras()) {
+             if(findApk()) {
+                 return new Camera(cameraId-1);
+             }
+         }
         return new Camera(cameraId);
     }
 
@@ -316,6 +331,8 @@ public class Camera {
      * @see #open(int)
      */
     public static Camera open() {
+        if(findApk())
+            return new Camera(0);
         int numberOfCameras = getNumberOfCameras();
         CameraInfo cameraInfo = new CameraInfo();
         for (int i = 0; i < numberOfCameras; i++) {

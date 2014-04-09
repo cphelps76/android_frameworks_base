@@ -472,7 +472,7 @@ public class VideoEditorImpl implements VideoEditor {
                        ExportProgressListener listener)
                        throws IOException {
         int defaultAudiocodec = MediaArtistNativeHelper.AudioFormat.AAC;
-        int defaultVideocodec = MediaArtistNativeHelper.VideoFormat.H264;
+        int defaultVideocodec = MediaArtistNativeHelper.VideoFormat.MPEG4;
 
         export(filename, height, bitrate, defaultAudiocodec,
                 defaultVideocodec, listener);

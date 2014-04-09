@@ -186,6 +186,10 @@ public class InputManagerService extends IInputManager.Stub
     private static native void nativeReloadDeviceAliases(int ptr);
     private static native String nativeDump(int ptr);
     private static native void nativeMonitor(int ptr);
+    private static native void nativeSetTvOutStatus(int ptr, boolean on);
+    private static native int nativeSetMouseCursorType(int ptr, int type);
+    private static native int nativeGetMouseCursorType(int ptr);
+    private static native void nativeSetMouseStatus(int ptr, boolean enabled);
 
     // Input event injection constants defined in InputDispatcher.h.
     private static final int INPUT_EVENT_INJECTION_SUCCEEDED = 0;
@@ -1248,6 +1252,23 @@ public class InputManagerService extends IInputManager.Stub
     public void monitor() {
         synchronized (mInputFilterLock) { }
         nativeMonitor(mPtr);
+    }
+
+    // Set TV Out Status
+    public void setTvOutStatus(boolean on){
+        nativeSetTvOutStatus(mPtr, on);
+    }
+
+    public int setMouseCursorType(int type){
+        return nativeSetMouseCursorType(mPtr, type);
+    }
+
+    public int getMouseCursorType(){
+        return nativeGetMouseCursorType(mPtr);
+    }
+
+    public void setMouseStatus(boolean enabled){
+        nativeSetMouseStatus(mPtr, enabled);
     }
 
     // Native callback.

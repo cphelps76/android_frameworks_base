@@ -662,7 +662,8 @@ public class ValueAnimator extends Animator {
 
         private void scheduleAnimation() {
             if (!mAnimationScheduled) {
-                mChoreographer.postCallback(Choreographer.CALLBACK_ANIMATION, this, null);
+                //mChoreographer.postCallback(Choreographer.CALLBACK_ANIMATION, this, null);
+                mChoreographer.postCallbackDelayed(Choreographer.CALLBACK_ANIMATION, this, null, android.os.SystemProperties.getInt("rw.systemui.interval", 30));
                 mAnimationScheduled = true;
             }
         }

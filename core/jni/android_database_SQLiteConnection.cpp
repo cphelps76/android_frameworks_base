@@ -190,6 +190,18 @@ static void nativeClose(JNIEnv* env, jclass clazz, jint connectionPtr) {
     }
 }
 
+static jint nativeGetDB(JNIEnv* env, jclass clazz, jint connectionPtr) {
+    SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+    if (connection) {
+	 ALOGV("nativeGetDB %p", connection->db);
+        return reinterpret_cast<jint>(connection->db);
+    }
+
+    return 0;
+}
+
+
 // Called each time a custom function is evaluated.
 static void sqliteCustomFunctionCallback(sqlite3_context *context,
         int argc, sqlite3_value **argv) {
@@ -843,6 +855,8 @@ static JNINativeMethod sMethods[] =
             (void*)nativeCancel },
     { "nativeResetCancel", "(IZ)V",
             (void*)nativeResetCancel },
+    { "nativeGetDB", "(I)I",
+            (void*)nativeGetDB },
 };
 
 #define FIND_CLASS(var, className) \

@@ -69,7 +69,6 @@ import com.android.server.search.SearchManagerService;
 import com.android.server.usb.UsbService;
 import com.android.server.wifi.WifiService;
 import com.android.server.wm.WindowManagerService;
-
 import dalvik.system.VMRuntime;
 import dalvik.system.Zygote;
 
@@ -155,6 +154,7 @@ class ServerThread {
         CommonTimeManagementService commonTimeMgmtService = null;
         InputManagerService inputManager = null;
         TelephonyRegistry telephonyRegistry = null;
+        OverlayViewService overlayview = null;
         ConsumerIrService consumerIr = null;
 
         // Create a handler thread just for the window manager to enjoy.
@@ -299,6 +299,17 @@ class ServerThread {
             alarm = new AlarmManagerService(context);
             ServiceManager.addService(Context.ALARM_SERVICE, alarm);
 
+            Slog.i(TAG, "OverlayView Service");
+            overlayview = new OverlayViewService(context);
+            ServiceManager.addService(Context.OVERLAYVIEW_SERVICE, overlayview);
+
+            Slog.i(TAG, "System Write Manager");
+            SystemWriteService systemWrite = new SystemWriteService(context);
+            ServiceManager.addService(Context.SYSTEM_WRITE_SERVICE, systemWrite);
+
+            Slog.i(TAG, "System Key Services");
+            SystemKeyServices keyServices =  new SystemKeyServices(context);
+            keyServices.registerSystemKeyReceiver();
             Slog.i(TAG, "Init Watchdog");
             Watchdog.getInstance().init(context, battery, power, alarm,
                     ActivityManagerService.self());
@@ -1167,6 +1178,10 @@ public class SystemServer {
         Environment.setUserRequired(true);
 
         System.loadLibrary("android_servers");
+
+    	if(SystemProperties.getBoolean("ro.app.optimization",false)){
+    		System.loadLibrary("optimization");
+    	}
 
         Slog.i(TAG, "Entered the Android system server!");
 

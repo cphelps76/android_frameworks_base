@@ -21,6 +21,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.res.Resources;
 import android.view.View;
+import android.os.SystemProperties;
 
 import com.android.systemui.R;
 
@@ -50,6 +51,10 @@ public final class PhoneStatusBarTransitions extends BarTransitions {
         mClock = mView.findViewById(R.id.clock);
         applyModeBackground(-1, getMode(), false /*animate*/);
         applyMode(getMode(), false /*animate*/);
+
+        if(SystemProperties.getBoolean("hw.nobattery", false)){
+            mBattery.setVisibility(View.GONE);
+        }
     }
 
     public ObjectAnimator animateTransitionTo(View v, float toAlpha) {

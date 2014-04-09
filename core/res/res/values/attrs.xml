@@ -1566,7 +1566,27 @@
         <enum name="KEYCODE_ASSIST" value="219" />
         <enum name="KEYCODE_BRIGHTNESS_DOWN" value="220" />
         <enum name="KEYCODE_BRIGHTNESS_UP" value="221" />
-        <enum name="KEYCODE_MEDIA_AUDIO_TRACK" value="222" />
+		<enum name="KEYCODE_MEDIA_AUDIO_TRACK" value="222" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_GLOBALSETUP" value="223" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_SOURCE_LIST" value="224" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_3DMODE" value="225" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_DISPAYMODE" value="226" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_VIEWMODE" value="227" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_VOICEMODE" value="228" />
+        <enum name="KEYCODE_TV_SHORTCUTKEY_TVINFO" value="229" />
+        <enum name="KEYCODE_EARLY_POWER" value="230" />
+        <enum name="KEYCODE_TV_SLEEP" value="231" />
+        <enum name="KEYCODE_TV_SOUND_CHANNEL" value="232" />
+        <enum name="KEYCODE_TV_REPEAT" value="233" />
+        <enum name="KEYCODE_TV_SUBTITLE" value="234"/>
+        <enum name="KEYCODE_TV_SWITCH" value="235" />
+        <enum name="KEYCODE_TV_WASU" value="236" />
+        <enum name="KEYCODE_TV_VTION" value="237" />
+        <enum name="KEYCODE_TV_BROWSER" value="238" />
+        <enum name="KEYCODE_ALTERNATE" value="239" />
+        <enum name="KEYCODE_FAV" value="240" />
+        <enum name="KEYCODE_LIST" value="241" />
+        <enum name="KEYCODE_MEDIA_AUDIO_CONTORL" value="242" />
     </attr>
 
     <!-- ***************************************************************** -->

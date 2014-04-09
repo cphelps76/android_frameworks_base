@@ -18,6 +18,7 @@ package android.test;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 
 import java.lang.reflect.Method;
 
@@ -159,6 +160,15 @@ public abstract class ActivityInstrumentationTestCase2<T extends Activity>
 
     @Override
     protected void tearDown() throws Exception {
+        try {
+            if (getName().equals("testAspectRatio")){
+                //Log.d("ActivityInstrumentationTestCase2", "sleeping...");
+                Thread.sleep(800);
+            }
+        } catch (InterruptedException e) {
+            Log.d("ActivityInstrumentationTestCase2", "exception");
+        }
+
         // Finish the Activity off (unless was never launched anyway)
         Activity a = super.getActivity();
         if (a != null) {

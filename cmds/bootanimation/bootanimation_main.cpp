@@ -32,6 +32,10 @@
 
 #include "BootAnimation.h"
 
+#include "unistd.h"
+
+bool gUseBootVideo = false; 
+
 using namespace android;
 
 // ---------------------------------------------------------------------------
@@ -53,6 +57,24 @@ int main(int argc, char** argv)
 
         // create the boot animation object
         sp<BootAnimation> boot = new BootAnimation();
+
+        //add video boot
+        memset(value,0,sizeof(value));
+        property_get("service.bootvideo", value, "0");
+        gUseBootVideo = (atoi(value) == 1 ? true : false);
+        if(gUseBootVideo){
+        	 //
+        	           // boot->setBootVolume();
+           property_set("service.bootvideo", "2");
+
+        } 
+
+        //judge whether is shutdown bootanimation
+        if(argc>1){
+					if(strcmp(argv[1],"-shutdown")==0){
+							boot->isShutdown(true);
+						}        
+        }
 
         IPCThreadState::self()->joinThreadPool();
 

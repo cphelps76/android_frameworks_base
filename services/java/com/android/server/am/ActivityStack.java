@@ -75,6 +75,8 @@ import android.os.UserHandle;
 import android.util.EventLog;
 import android.util.Slog;
 import android.view.Display;
+import android.view.WindowManagerImpl;
+import android.view.WindowManagerPolicy;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -82,6 +84,8 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import android.os.SystemProperties;
+
 
 /**
  * State and management of a single stack of activities.
@@ -239,6 +243,12 @@ final class ActivityStack {
     static final int STOP_TIMEOUT_MSG = ActivityManagerService.FIRST_ACTIVITY_STACK_MSG + 4;
     static final int DESTROY_ACTIVITIES_MSG = ActivityManagerService.FIRST_ACTIVITY_STACK_MSG + 5;
     static final int TRANSLUCENT_TIMEOUT_MSG = ActivityManagerService.FIRST_ACTIVITY_STACK_MSG + 6;
+    
+    /*
+    *Add for sendbroadcast to systemUI hide setRotbutton
+    */
+    private static final String setRotShow = "android.intent.action.RECORD_ROTATION_SHOW";
+    private static final String setRotStr = "rot_setting";
 
     static class ScheduleDestroyArgs {
         final ProcessRecord mOwner;
@@ -948,6 +958,8 @@ final class ActivityStack {
         }
     }
 
+    private native int nativeOptimization(ActivityRecord next, String[] runPkgName);
+    public native int nativeOptimization(ActivityRecord next, String url, String[] runPkgName);
     /**
      * Once we know that we have asked an application to put an activity in
      * the resumed state (either by launching it or explicitly telling it),
@@ -979,6 +991,57 @@ final class ActivityStack {
             }
         } else {
             next.cpuTimeAtResume = 0; // Couldn't get the cpu time of process
+        }
+
+    	if(SystemProperties.getBoolean("ro.app.optimization",false)){
+			if (!(next.packageName.equals("com.android.cts.stub") 
+				&& (next.realActivity.getClassName().startsWith("android.app.cts") 
+				|| next.realActivity.getClassName().startsWith("android.view.animation.cts"))))
+
+			{
+				String[] runPkgName = getRunPkgName();	
+	    		int ret = nativeOptimization(next, runPkgName);
+	            if(ret >= 0){
+	                mService.killAllBackgroundProcesses();
+	                //killBackgroundProcess();
+	            }
+			}
+    	}
+    }
+
+    private String[] getRunPkgName() {
+        ActivityManager mActivityMgr = (ActivityManager)mContext.getSystemService(Activity.ACTIVITY_SERVICE);
+        List list= mActivityMgr.getRunningTasks(1024);
+        int N = list != null ? list.size() : -1;
+        String[] runPkgName = new String[N];
+        if(N != -1) {
+            for (int i=0; i<N; i++) {
+                ActivityManager.RunningTaskInfo info = (ActivityManager.RunningTaskInfo)list.get(i);
+                runPkgName[i]=info.baseActivity.getPackageName();
+                //Log.i(TAG,"runPkgName["+i+"]:"+runPkgName[i]);
+            }
+        }
+
+        return runPkgName;
+    }
+
+    private void killBackgroundProcess(){
+        ActivityManager am = (ActivityManager)mContext.getSystemService(Activity.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> list=am.getRunningAppProcesses(); 
+        if(list!=null) {   
+            for(int i=0;i<list.size();i++) {          
+                ActivityManager.RunningAppProcessInfo apinfo=list.get(i); 
+                //System.out.println("pid"+apinfo.pid);  
+                //System.out.println("processName"+apinfo.processName);  
+                //System.out.println("importance"+apinfo.importance);    
+                String[] pkgList=apinfo.pkgList;                 
+                if(apinfo.importance>ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE) {             
+                    for(int j=0;j<pkgList.length;j++) {                  
+                        if (DEBUG_VISBILITY) Slog.v(TAG, "killBackgroundProcesses:"+pkgList[j]);
+                        am.killBackgroundProcesses(pkgList[j]);  
+                    }        
+                }     
+            }
         }
     }
 
@@ -1533,6 +1596,19 @@ final class ActivityStack {
             updateLRUListLocked(next);
             mService.updateOomAdjLocked();
 
+    	    if(SystemProperties.getBoolean("ro.app.optimization",false)){
+				if (!(next.packageName.equals("com.android.cts.stub") 
+					&& (next.realActivity.getClassName().startsWith("android.app.cts") 
+					|| next.realActivity.getClassName().startsWith("android.view.animation.cts"))))
+				{
+				 	String[] runPkgName = getRunPkgName();
+	    		    int ret = nativeOptimization(next, runPkgName);
+	                if(ret >= 0){
+	    	            mService.killAllBackgroundProcesses();
+	    	            //killBackgroundProcess();
+	    	        }
+    	        }
+    	    }
             // Have the window manager re-evaluate the orientation of
             // the screen based on the new activity order.
             boolean notUpdated = true;
@@ -1629,7 +1705,8 @@ final class ActivityStack {
             try {
                 next.visible = true;
                 completeResumeLocked(next);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 // If any exception gets thrown, toss away this
                 // activity and try the next one.
                 Slog.w(TAG, "Exception thrown during resume of " + next, e);
@@ -1662,6 +1739,16 @@ final class ActivityStack {
 
         if (DEBUG_STACK) mStackSupervisor.validateTopActivitiesLocked();
         return true;
+    }
+
+    private final void hideRotBtnBroadcast(){
+        Context cxt = mService.mContext;
+        if (null != cxt){
+            //Slog.d("rot","sendbroadcast sysContext");
+            Intent rotIntent = new Intent(setRotShow);
+            rotIntent.putExtra(setRotStr, -1);
+            cxt.sendBroadcast(rotIntent);
+        }
     }
 
     private void insertTaskAtTop(TaskRecord task) {
@@ -3442,15 +3529,17 @@ final class ActivityStack {
 
                 // Add 'r' into the current task.
                 numActivities++;
-                if (r.app != null && r.app.thread != null) {
+                if (r != null && r.app != null && r.app.thread != null) {
                     numRunning++;
                 }
 
                 if (localLOGV) Slog.v(
-                    TAG, r.intent.getComponent().flattenToShortString()
+                    TAG, (r != null ? r.intent.getComponent().flattenToShortString() : "")
                     + ": task=" + r.task);
             }
 
+            if (r == null || top == null)
+                return null;
             RunningTaskInfo ci = new RunningTaskInfo();
             ci.id = task.taskId;
             ci.baseActivity = r.intent.getComponent();

@@ -18,6 +18,10 @@ LOCAL_SRC_FILES:= \
     com_android_server_location_GpsLocationProvider.cpp \
     com_android_server_location_FlpHardwareProvider.cpp \
     com_android_server_connectivity_Vpn.cpp \
+    com_android_server_OverlayViewService.cpp \
+    overlayview/audio_utils_ctl.cpp \
+    overlayview/mAlsa.cpp \
+    overlayview/audiodsp_ctl.cpp \
     onload.cpp
 
 LOCAL_C_INCLUDES += \
@@ -49,6 +53,7 @@ LOCAL_SHARED_LIBRARIES := \
     libgui \
     libusbhost \
     libsuspend \
+    libmedia \
     libEGL \
     libGLESv2
 

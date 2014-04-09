@@ -33,8 +33,19 @@ framework_res_source_path := APPS/framework-res_intermediates/src
 # ============================================================
 include $(CLEAR_VARS)
 
+ifdef DOLBY_DAP
+# Java files from the following directories will be included into the
+# framework_ext java library. This is done to workaround the limit on the
+# number of classes/dex in a java library.
+FRAMEWORKS_EXT_SUBDIRS := \
+        dolby/java/android/dolby
+FRAMEWORKS_EXT_SRCS := $(call find-other-java-files,$(FRAMEWORKS_EXT_SUBDIRS))
+# FRAMEWORKS_BASE_SUBDIRS comes from build/core/pathmap.mk
+LOCAL_SRC_FILES := $(filter-out $(FRAMEWORKS_EXT_SRCS),$(call find-other-java-files,$(FRAMEWORKS_BASE_SUBDIRS)))
+else  # DOLBY_DAP
 # FRAMEWORKS_BASE_SUBDIRS comes from build/core/pathmap.mk
 LOCAL_SRC_FILES := $(call find-other-java-files,$(FRAMEWORKS_BASE_SUBDIRS))
+endif # LINE_ADDED_BY_DOLBY
 
 # EventLogTags files.
 LOCAL_SRC_FILES += \
@@ -59,6 +70,7 @@ LOCAL_SRC_FILES += \
 	core/java/android/accounts/IAccountManagerResponse.aidl \
 	core/java/android/accounts/IAccountAuthenticator.aidl \
 	core/java/android/accounts/IAccountAuthenticatorResponse.aidl \
+	core/java/android/app/ISystemWriteService.aidl \
 	core/java/android/app/IActivityController.aidl \
 	core/java/android/app/IActivityPendingResult.aidl \
 	core/java/android/app/IAlarmManager.aidl \
@@ -272,6 +284,11 @@ LOCAL_SRC_FILES += \
 	packages/services/PacProcessor/com/android/net/IProxyService.aidl \
 	packages/services/Proxy/com/android/net/IProxyCallback.aidl \
 	packages/services/Proxy/com/android/net/IProxyPortListener.aidl \
+	ethernet/java/android/net/ethernet/IEthernetManager.aidl \
+	pppoe/java/android/net/pppoe/IPppoeManager.aidl \
+        core/java/android/app/IOverlayView.aidl \
+  	../../packages/amlogic/SubTitle/src/com/amlogic/SubTitleService/ISubTitleService.aidl
+
 
 # FRAMEWORKS_BASE_JAVA_SRC_DIRS comes from build/core/pathmap.mk
 LOCAL_AIDL_INCLUDES += $(FRAMEWORKS_BASE_JAVA_SRC_DIRS)
@@ -335,6 +352,10 @@ framework2_module := $(LOCAL_INSTALLED_MODULE)
 # ============================================================
 $(framework_module): | $(dir $(framework_module))framework-res.apk
 $(framework_module): | $(dir $(framework_module))framework2.jar
+
+ifdef DOLBY_DAP
+framework_built += $(call java-lib-deps,framework_ext)
+endif #DOLBY_DAP
 
 framework_built := $(call java-lib-deps,framework framework2)
 
@@ -402,6 +423,11 @@ aidl_files := \
 	frameworks/base/wifi/java/android/net/wifi/BatchedScanSettings.aidl \
 	frameworks/base/wifi/java/android/net/wifi/BatchedScanResult.aidl \
 
+ifdef DOLBY_DAP
+aidl_files += \
+	frameworks/base/dolby/java/android/dolby/IDs.aidl \
+	frameworks/base/dolby/java/android/dolby/IDsServiceCallbacks.aidl
+endif #DOLBY_DAP
 gen := $(TARGET_OUT_COMMON_INTERMEDIATES)/framework.aidl
 $(gen): PRIVATE_SRC_FILES := $(aidl_files)
 ALL_SDK_FILES += $(gen)
@@ -503,6 +529,10 @@ framework_docs_LOCAL_JAVA_LIBRARIES := \
 	$(framework_docs_LOCAL_API_CHECK_JAVA_LIBRARIES) \
 	$(FRAMEWORKS_SUPPORT_JAVA_LIBRARIES)
 
+ifdef DOLBY_DAP
+framework_docs_LOCAL_JAVA_LIBRARIES += \
+			framework_ext
+endif #DOLBY_DAP
 framework_docs_LOCAL_MODULE_CLASS := JAVA_LIBRARIES
 framework_docs_LOCAL_DROIDDOC_HTML_DIR := docs/html
 # The since flag (-since N.xml API_LEVEL) is used to add API Level information
@@ -884,7 +914,13 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:=$(framework_docs_LOCAL_SRC_FILES)
 LOCAL_INTERMEDIATE_SOURCES:=$(framework_docs_LOCAL_INTERMEDIATE_SOURCES)
+
+ifdef DOLBY_DAP
+LOCAL_JAVA_LIBRARIES += framework_ext
+endif #DOLBY_DAP
+
 LOCAL_JAVA_LIBRARIES:=$(framework_docs_LOCAL_JAVA_LIBRARIES)
+
 LOCAL_MODULE_CLASS:=$(framework_docs_LOCAL_MODULE_CLASS)
 LOCAL_DROIDDOC_SOURCE_PATH:=$(framework_docs_LOCAL_DROIDDOC_SOURCE_PATH)
 LOCAL_DROIDDOC_HTML_DIR:=$(framework_docs_LOCAL_DROIDDOC_HTML_DIR)
@@ -935,6 +971,31 @@ LOCAL_DX_FLAGS := --core-library
 include $(BUILD_JAVA_LIBRARY)
 
 
+ifdef DOLBY_DAP
+# ============================================================
+# Build framework_ext.jar - split from framework.jar
+# ============================================================
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(FRAMEWORKS_EXT_SRCS)
+
+LOCAL_SRC_FILES += \
+	dolby/java/android/dolby/IDs.aidl \
+	dolby/java/android/dolby/IDsServiceCallbacks.aidl
+
+LOCAL_NO_STANDARD_LIBRARIES := true
+LOCAL_JAVA_LIBRARIES := bouncycastle core core-junit ext framework
+
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE := framework_ext
+LOCAL_MODULE_CLASS := JAVA_LIBRARIES
+
+LOCAL_NO_EMMA_INSTRUMENT := true
+LOCAL_NO_EMMA_COMPILE := true
+
+LOCAL_DX_FLAGS := --core-library
+
+include $(BUILD_JAVA_LIBRARY)
+endif #DOLBY_DAP
 # Include subdirectory makefiles
 # ============================================================
 

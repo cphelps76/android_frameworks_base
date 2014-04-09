@@ -37,6 +37,8 @@
 
 #include "com_android_server_power_PowerManagerService.h"
 
+#include <fcntl.h>
+
 namespace android {
 
 // ----------------------------------------------------------------------------
@@ -60,6 +62,86 @@ static nsecs_t gLastEventTime[USER_ACTIVITY_EVENT_LAST + 1];
 
 // Throttling interval for user activity calls.
 static const nsecs_t MIN_TIME_BETWEEN_USERACTIVITIES = 500 * 1000000L; // 500ms
+
+static void writeSysFs(const char *path, const char *val)
+{
+    int fd;
+   
+    if((fd = open(path, O_RDWR)) < 0) {
+        ALOGE("writeSysFs, open %s fail.", path);
+        goto exit;
+    }
+
+    ALOGI("write %s, val:%s\n", path, val);
+    
+    write(fd, val, strlen(val));
+ 
+exit:
+    close(fd);
+}
+
+static void readSysFs(const char *path, char *buf, int count)
+{
+    int fd, r;
+
+    if( NULL == buf )
+    {
+        ALOGE("buf is NULL");
+        return;
+    }
+    
+    if((fd = open(path, O_RDONLY)) < 0) {
+        ALOGE("readSysFs, open %s fail.", path);
+        goto exit;
+    }
+
+    r = read(fd, buf, count);
+    if (r < 0) 
+	{
+        ALOGE("read error: %s, %s\n", path, strerror(errno));
+    }
+
+    ALOGI("read %s, val:%s\n", path, buf);
+ 
+exit:
+    close(fd);
+}
+ 
+// tellen add 2012/08/27 for first close cpu1 when shutdown or reboot
+static bool closeCPU1()
+{
+#if 0
+    const char *CPU1_ONLINE = "/sys/devices/system/cpu/cpu1/online"; 
+    const char *CPU_ONLINE = "/sys/devices/system/cpu/online"; 
+
+    bool ret = true;
+    char online[10] = {0};
+    
+    readSysFs(CPU_ONLINE, (char*)online, 10);
+    if( ( '0' == online[0]) && ( 10 == online[1]) )
+    {
+        ALOGI("CPU1 has been closed");
+    }
+    else
+    {
+        memset(online, 0, 10);
+        writeSysFs(CPU1_ONLINE, "0");
+        readSysFs(CPU_ONLINE, online, 10);
+        if( ( '0' == online[0]) && ( 10 == online[1]) )
+        {
+            ALOGI("close CPU1 done");
+        }
+        else
+        {
+            ALOGE("close CPU1 fail");
+            ret = false;
+        }
+    }
+    return ret;
+#else
+    return true;
+#endif
+}
 
 // ----------------------------------------------------------------------------
 

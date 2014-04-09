@@ -3686,7 +3686,8 @@ class MediaArtistNativeHelper {
             default:
                 throw new IllegalArgumentException("Argument Bitrate incorrect");
         }
-        mPreviewEditSettings.videoFrameRate = VideoFrameRate.FR_30_FPS;
+        //mPreviewEditSettings.videoFrameRate = VideoFrameRate.FR_30_FPS;
+        mPreviewEditSettings.videoFrameRate = VideoFrameRate.FR_15_FPS;
         mPreviewEditSettings.outputFile = mOutputFilename = filePath;
 
         int aspectRatio = mVideoEditor.getAspectRatio();

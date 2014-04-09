@@ -80,6 +80,45 @@
                 systemui:glowBackground="@drawable/ic_sysbar_highlight"
                 android:contentDescription="@string/accessibility_recent"
                 />
+	    	<com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/screenshot"
+                android:layout_width="128dp" android:paddingLeft="25dp" android:paddingRight="25dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_screenshot"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+		 		android:contentDescription="@string/accessibility_recent"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/download"
+                android:layout_width="128dp" android:paddingLeft="25dp" android:paddingRight="25dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/download"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                />        
+	    <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/sub"
+                android:layout_width="128dp" android:paddingLeft="25dp" android:paddingRight="25dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/sub_normal"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+		 		systemui:keyCode="25"
+                />
+	    	<com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/add"
+                android:layout_width="128dp" android:paddingLeft="25dp" android:paddingRight="25dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/add_normal"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+		 		systemui:keyCode="24"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/rotation_setting"
+                android:layout_width="128dp" android:paddingLeft="25dp" android:paddingRight="25dp"
+                android:layout_height="match_parent"                
+                android:layout_weight="0"
+                android:visibility="gone"               
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                android:contentDescription="@string/accessibility_recent"
+                />
             <Space 
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -111,7 +150,9 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 />
-            <ImageView
+		<ImageView
+                android:id="@+id/dot0"
+                android:visibility="gone"
                 android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="40dp"
@@ -119,14 +160,58 @@
                 android:scaleType="center"
                 android:layout_weight="0"
                 />
-            <ImageView
+		<ImageView
+                android:id="@+id/dot1"
+                android:visibility="gone"
+                android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="40dp"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+			<ImageView
+                android:id="@+id/dot2"
+                android:visibility="gone"
                 android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_sysbar_lights_out_dot_large"
                 android:scaleType="center"
                 android:layout_weight="0"
                 />
-            <ImageView
+			<ImageView
+                android:id="@+id/dot3"
+                android:visibility="gone"
+                android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+			<ImageView
+                android:id="@+id/dot4"
+                android:visibility="gone"
+                android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+			<ImageView
+                android:id="@+id/dot5"
+                android:visibility="gone"
+                android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+			<ImageView
+                android:id="@+id/dot6"
+                android:visibility="gone"
                 android:layout_width="128dp" android:paddingStart="25dp" android:paddingEnd="25dp"
                 android:layout_marginEnd="40dp"
                 android:layout_height="match_parent"
@@ -222,7 +307,46 @@
                 systemui:glowBackground="@drawable/ic_sysbar_highlight"
                 android:contentDescription="@string/accessibility_recent"
                 />
-            <Space 
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/screenshot"
+                android:layout_width="100dp" android:paddingStart="15dp" android:paddingEnd="15dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_screenshot"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                android:contentDescription="@string/accessibility_recent"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/download"
+                android:layout_width="100dp" android:paddingStart="15dp" android:paddingEnd="15dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/download"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                /> 
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/sub"
+                android:layout_width="100dp" android:paddingStart="15dp" android:paddingEnd="15dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/sub_normal"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                systemui:keyCode="25"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/add"
+                android:layout_width="100dp" android:paddingStart="15dp" android:paddingEnd="15dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/add_normal"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                systemui:keyCode="24"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/rotation_setting"
+                    android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    android:layout_weight="0"
+                    systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                    android:contentDescription="@string/accessibility_recent"
+                    />
+            <Space
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -254,6 +378,8 @@
                 android:layout_weight="1"
                 />
             <ImageView
+                android:id="@+id/dot0"
+                android:visibility="gone"
                 android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="40dp"
@@ -262,6 +388,8 @@
                 android:layout_weight="0"
                 />
             <ImageView
+                android:id="@+id/dot1"
+                android:visibility="gone"
                 android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_sysbar_lights_out_dot_large"
@@ -269,6 +397,51 @@
                 android:layout_weight="0"
                 />
             <ImageView
+                android:id="@+id/dot2"
+                android:visibility="gone"
+                android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+
+			<ImageView
+                android:id="@+id/dot3"
+                android:visibility="gone"
+                android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+
+			<ImageView
+                android:id="@+id/dot4"
+                android:visibility="gone"
+                android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+
+			<ImageView
+                android:id="@+id/dot5"
+                android:visibility="gone"
+                android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+			<ImageView
+                android:id="@+id/dot6"
+                android:visibility="gone"
                 android:layout_width="162dp" android:paddingStart="42dp" android:paddingEnd="42dp"
                 android:layout_marginEnd="40dp"
                 android:layout_height="match_parent"

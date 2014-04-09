@@ -132,6 +132,8 @@ public class SurfaceControl {
      */
     public static final int OPAQUE = 0x00000400;
 
+    public static final int VIDEOHOLE = 0x00002000;
+    
     /**
      * Surface creation flag: Application requires a hardware-protected path to an
      * external display sink. If a hardware-protected path is not available,

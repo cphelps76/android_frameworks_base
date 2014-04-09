@@ -30,6 +30,7 @@ import android.util.Slog;
 import android.media.AudioManager;
 import android.util.Log;
 import android.view.InputDevice;
+import android.view.WindowManagerPolicy;
 
 import com.android.internal.R;
 import com.android.server.input.InputManagerService;
@@ -81,6 +82,7 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
     private int mSwitchValues;
 
     private final WiredAccessoryObserver mObserver;
+    private final HdmiObserver mHdmiObserver;
     private final InputManagerService mInputManager;
 
     private final boolean mUseDevInputEventForAudioJack;
@@ -96,6 +98,7 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
                 context.getResources().getBoolean(R.bool.config_useDevInputEventForAudioJack);
 
         mObserver = new WiredAccessoryObserver();
+        mHdmiObserver = new HdmiObserver(context);
 
         context.registerReceiver(new BroadcastReceiver() {
                     @Override
@@ -120,6 +123,7 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
         }
 
         mObserver.init();
+        mHdmiObserver.init();
     }
 
     @Override
@@ -354,17 +358,17 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
             //
             // If the kernel does not have an "hdmi_audio" switch, just fall back on the older
             // "hdmi" switch instead.
-            uei = new UEventInfo(NAME_HDMI_AUDIO, BIT_HDMI_AUDIO, 0);
-            if (uei.checkSwitchExists()) {
-                retVal.add(uei);
-            } else {
-                uei = new UEventInfo(NAME_HDMI, BIT_HDMI_AUDIO, 0);
-                if (uei.checkSwitchExists()) {
-                    retVal.add(uei);
-                } else {
-                    Slog.w(TAG, "This kernel does not have HDMI audio support");
-                }
-            }
+//            uei = new UEventInfo(NAME_HDMI_AUDIO, BIT_HDMI_AUDIO, 0);
+//            if (uei.checkSwitchExists()) {
+//                retVal.add(uei);
+//            } else {
+//                uei = new UEventInfo(NAME_HDMI, BIT_HDMI_AUDIO, 0);
+//                if (uei.checkSwitchExists()) {
+//                    retVal.add(uei);
+//                } else {
+//                    Slog.w(TAG, "This kernel does not have HDMI audio support");
+//                }
+//            }
 
             return retVal;
         }
@@ -429,5 +433,49 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
                 return ((headsetState & preserveMask) | setBits);
             }
         }
+    }
+    
+    private class HdmiObserver {
+        private final Context mContext;
+        private boolean mHdmiPlugged = false;
+        
+        private BroadcastReceiver mHdmiPluggedReceiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {        	
+                boolean plugged
+                    = intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, false); 
+                
+                if (mHdmiPlugged != plugged) {
+                    mHdmiPlugged = plugged;     
+                    updateHdmiState(mHdmiPlugged ? 1 : 0);
+                }                
+            }
+        };         
+        
+        public HdmiObserver(Context context) {
+            mContext = context;
+        }
+
+        void init() {
+            synchronized (mLock) {
+                IntentFilter filter = new IntentFilter();
+                filter.addAction(WindowManagerPolicy.ACTION_HDMI_PLUGGED);
+                Intent intent = mContext.registerReceiver(mHdmiPluggedReceiver, filter);
+                if (intent != null) {
+                    // Retrieve current sticky event broadcast.
+                    mHdmiPlugged = intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, false);
+                    if (mHdmiPlugged) updateHdmiState(mHdmiPlugged ? 1 : 0);
+                }            
+            }
+        }
+       
+        private void updateHdmiState(int state) {
+        	//if (LOG) Slog.v(TAG, "updateHdmiState, state = " + state);
+        	synchronized (mLock) {  
+        	    int newState = ((mHeadsetState & (~BIT_HDMI_AUDIO)) |
+        	            ((state == 1) ? BIT_HDMI_AUDIO : 0));
+        	    updateLocked(NAME_HDMI, newState);
+        	}
+        }        
+                
     }
 }

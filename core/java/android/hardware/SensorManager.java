@@ -23,6 +23,7 @@ import android.util.SparseArray;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import android.os.SystemProperties;
 
 /**
  * <p>
@@ -353,7 +354,6 @@ public abstract class SensorManager {
     public static final int AXIS_MINUS_Y = AXIS_Y | 0x80;
     /** see {@link #remapCoordinateSystem} */
     public static final int AXIS_MINUS_Z = AXIS_Z | 0x80;
-
 
     /**
      * {@hide}

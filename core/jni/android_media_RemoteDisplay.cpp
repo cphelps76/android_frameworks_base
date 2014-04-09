@@ -69,7 +69,7 @@ public:
         if (surfaceObj == NULL) {
             ALOGE("Could not create Surface from surface texture %p provided by media server.",
                   bufferProducer.get());
-            return;
+            //return;
         }
 
         env->CallVoidMethod(mRemoteDisplayObjGlobal,
@@ -116,6 +116,9 @@ public:
 
     ~NativeRemoteDisplay() {
         mDisplay->dispose();
+    }
+    sp<IRemoteDisplay> getDisplay(){
+        return mDisplay;
     }
 
     void pause() {
@@ -173,6 +176,11 @@ static void nativeDispose(JNIEnv* env, jobject remoteDisplayObj, jint ptr) {
     delete wrapper;
 }
 
+static void nativeSetRotation(JNIEnv* env, jobject remoteDisplayObj, jint ptr, jint degree) {
+    NativeRemoteDisplay* wrapper = reinterpret_cast<NativeRemoteDisplay*>(ptr);
+    wrapper->getDisplay()->setRotation(degree);
+    //ALOGE("nativeSetDegree %d", degree);
+}
 // ----------------------------------------------------------------------------
 
 static JNINativeMethod gMethods[] = {
@@ -184,6 +192,8 @@ static JNINativeMethod gMethods[] = {
             (void*)nativePause },
     {"nativeResume", "(I)V",
             (void*)nativeResume },
+    {"nativeSetRotation", "(II)V",
+            (void*)nativeSetRotation },
 };
 
 int register_android_media_RemoteDisplay(JNIEnv* env)

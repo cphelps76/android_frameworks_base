@@ -430,7 +430,7 @@ private:
     static const uint32_t EPOLL_ID_WAKE = 0x80000002;
 
     // Epoll FD list size hint.
-    static const int EPOLL_SIZE_HINT = 8;
+    static const int EPOLL_SIZE_HINT = 8*2;
 
     // Maximum number of signalled FDs to handle at a time.
     static const int EPOLL_MAX_EVENTS = 16;

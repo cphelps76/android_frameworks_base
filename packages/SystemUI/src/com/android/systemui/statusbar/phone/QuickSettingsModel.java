@@ -80,6 +80,8 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         String signalContentDescription;
         int dataTypeIconId;
         String dataContentDescription;
+        boolean originEnable;
+        String originDescription;
     }
     static class WifiState extends ActivityState {
         String signalContentDescription;
@@ -338,6 +340,9 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     }
 
     void updateResources() {
+        //refreshWifiSignalTitle();
+        //refreshRSSITitle();
+        //refreshAirPlaneTitle();
         refreshSettingsTile();
         refreshBatteryTile();
         refreshBluetoothTile();
@@ -517,6 +522,8 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         if (deviceHasMobileData()) {
             // TODO: If view is in awaiting state, disable
             Resources r = mContext.getResources();
+            mRSSIState.originEnable = enabled;
+            mRSSIState.originDescription = enabledDesc;
             mRSSIState.signalIconId = enabled && (mobileSignalIconId > 0)
                     ? mobileSignalIconId
                     : R.drawable.ic_qs_signal_no_signal;

@@ -506,4 +506,50 @@ public class AlarmManager
         } catch (RemoteException ex) {
         }
     }
+
+
+    /**
+     * set alarm alignment enable .
+     * 
+     *
+     * @param align if true make the alarm alignment
+     * @hide
+     */
+    public void setAlignEnable(boolean  align) {
+        try {
+            mService.setAlignEnable(align);
+        } catch (RemoteException ex) {
+        }
+    }
+
+
+    /**
+     * Add app to whitelist .
+     * 
+     *
+     * @param packageName the package name of the app whick need added to whitelist
+     * @hide
+     */
+    public void addToWhitelist(String  packageName) {
+        try {
+            mService.addToWhitelist(packageName);
+        } catch (RemoteException ex) {
+        }
+    }
+
+
+    /**
+     * Remove app from whitelist.
+     * 
+     *
+     * @param packageName the package name of the app whick need removed from whitelist
+     * @hide
+     */
+    public void removeFromWhitelist(String packageName) {
+        try {
+            mService.removeFromWhitelist(packageName);
+        } catch (RemoteException ex) {
+        }
+    }
+
 }

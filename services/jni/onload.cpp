@@ -35,6 +35,7 @@ int register_android_server_SystemServer(JNIEnv* env);
 int register_android_server_location_GpsLocationProvider(JNIEnv* env);
 int register_android_server_location_FlpHardwareProvider(JNIEnv* env);
 int register_android_server_connectivity_Vpn(JNIEnv* env);
+int register_android_server_OverlayViewService(JNIEnv* env);
 int register_android_server_AssetAtlasService(JNIEnv* env);
 };
 
@@ -65,9 +66,9 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
     register_android_server_location_GpsLocationProvider(env);
     register_android_server_location_FlpHardwareProvider(env);
     register_android_server_connectivity_Vpn(env);
+    register_android_server_OverlayViewService(env);
     register_android_server_AssetAtlasService(env);
     register_android_server_ConsumerIrService(env);
-
 
     return JNI_VERSION_1_4;
 }

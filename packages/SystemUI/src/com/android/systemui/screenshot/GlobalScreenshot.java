@@ -43,6 +43,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Process;
+import android.os.SystemProperties;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -437,7 +438,13 @@ class GlobalScreenshot {
         // only in the natural orientation of the device :!)
         mDisplay.getRealMetrics(mDisplayMetrics);
         float[] dims = {mDisplayMetrics.widthPixels, mDisplayMetrics.heightPixels};
-        float degrees = getDegreesForRotation(mDisplay.getRotation());
+        //float degrees = getDegreesForRotation(mDisplay.getRotation());
+        int value = mDisplay.getRotation();
+        String hwRotation = SystemProperties.get("ro.sf.hwrotation", "0");
+        if(hwRotation.equals("180") ){
+            value  = (value + 2)%4;
+        }
+        float degrees = getDegreesForRotation(value);
         boolean requiresRotation = (degrees > 0);
         if (requiresRotation) {
             // Get the dimensions of the device in its native orientation

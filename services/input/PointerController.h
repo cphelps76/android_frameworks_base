@@ -17,6 +17,7 @@
 #ifndef _UI_POINTER_CONTROLLER_H
 #define _UI_POINTER_CONTROLLER_H
 
+#include "OSD2CursorController.h"
 #include "SpriteController.h"
 
 #include <ui/DisplayInfo.h>
@@ -152,6 +153,13 @@ public:
         INACTIVITY_TIMEOUT_SHORT = 1,
     };
 
+    // must be kept in sync with the values in WindowManager
+    enum MouseCursorType {
+        MOUSE_CURSOR_NONE = 0,
+        MOUSE_CURSOR_SURFACE = 1,
+        MOUSE_CURSOR_OSD2 = 2
+    };
+
     PointerController(const sp<PointerControllerPolicyInterface>& policy,
             const sp<Looper>& looper, const sp<SpriteController>& spriteController);
 
@@ -173,6 +181,10 @@ public:
     void setDisplayViewport(int32_t width, int32_t height, int32_t orientation);
     void setPointerIcon(const SpriteIcon& icon);
     void setInactivityTimeout(InactivityTimeout inactivityTimeout);
+
+    void setTvOutStatus(bool on);
+    int setMouseCursorType(int type);
+    int getMouseCursorType();
 
 private:
     static const size_t MAX_RECYCLED_SPRITES = 12;
@@ -208,6 +220,7 @@ private:
     sp<Looper> mLooper;
     sp<SpriteController> mSpriteController;
     sp<WeakMessageHandler> mHandler;
+    sp<OSD2CursorController> mOSD2CursorController;
 
     PointerResources mResources;
 
@@ -223,6 +236,7 @@ private:
 
         Presentation presentation;
         bool presentationChanged;
+        uint8_t pointerType;
 
         int32_t pointerFadeDirection;
         float pointerX;

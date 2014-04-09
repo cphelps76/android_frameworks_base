@@ -222,6 +222,7 @@ public class WifiStateMachine extends StateMachine {
 
     // Wakelock held during wifi start/stop and driver load/unload
     private PowerManager.WakeLock mWakeLock;
+    private PowerManager.WakeLock mShutdownLock;
 
     private Context mContext;
 
@@ -775,6 +776,7 @@ public class WifiStateMachine extends StateMachine {
 
         PowerManager powerManager = (PowerManager)mContext.getSystemService(Context.POWER_SERVICE);
         mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getName());
+        mShutdownLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WifiShutdownLock");
 
         mSuspendWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WifiSuspend");
         mSuspendWakeLock.setReferenceCounted(false);
@@ -1230,6 +1232,18 @@ public class WifiStateMachine extends StateMachine {
     private void startScanNative(int type) {
         mWifiNative.scan(type);
         mScanResultIsPending = true;
+    }
+
+    public void acquireShutdownLock() {
+        if (DBG) log("acquireShutdownLock");
+        if (!mShutdownLock.isHeld())
+            mShutdownLock.acquire();
+    }
+	
+    public void releaseShutdownLock() {
+        if (DBG) log("releaseShutdownLock");
+        if (mShutdownLock.isHeld())
+            mShutdownLock.release();
     }
 
     /**
@@ -2640,6 +2654,7 @@ public class WifiStateMachine extends StateMachine {
     class InitialState extends State {
         @Override
         public void enter() {
+            mWifiNative.killSupplicant(mP2pSupported);
             mWifiNative.unloadDriver();
 
             if (mWifiP2pChannel == null) {
@@ -3167,6 +3182,7 @@ public class WifiStateMachine extends StateMachine {
                     mWakeLock.acquire();
                     mWifiNative.stopDriver();
                     mWakeLock.release();
+                    releaseShutdownLock();
                     if (mP2pSupported) {
                         transitionTo(mWaitForP2pDisableState);
                     } else {
@@ -3220,9 +3236,12 @@ public class WifiStateMachine extends StateMachine {
         }
         @Override
         public void exit() {
+            if (DBG) log(getName() + " exit\n");
             mIsRunning = false;
             updateBatteryWorkSource(null);
             mScanResults = new ArrayList<ScanResult>();
+            if (mP2pSupported)
+                mWifiP2pChannel.sendMessage(WifiStateMachine.CMD_DISABLE_P2P_REQ);
 
             stopBatchedScan();
 
@@ -3879,7 +3898,7 @@ public class WifiStateMachine extends StateMachine {
         public void exit() {
             /* Request a CS wakelock during transition to mobile */
             checkAndSetConnectivityInstance();
-            mCm.requestNetworkTransitionWakelock(getName());
+            //mCm.requestNetworkTransitionWakelock(getName());
         }
     }
 

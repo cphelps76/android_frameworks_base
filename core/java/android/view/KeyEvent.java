@@ -633,7 +633,161 @@ public class KeyEvent extends InputEvent implements Parcelable {
      * Switches the audio tracks. */
     public static final int KEYCODE_MEDIA_AUDIO_TRACK = 222;
 
-    private static final int LAST_KEYCODE           = KEYCODE_MEDIA_AUDIO_TRACK;
+    public static final int KEYCODE_ALTERNATE = 226;
+
+    public static final int KEYCODE_VOICE = 227;
+
+    public static final int KEYCODE_SHARE = 228;
+
+    public static final int KEYCODE_ENTER_EPG = 229;
+
+    public static final int KEYCODE_IMAGE_MODE = 230;
+
+    public static final int KEYCODE_SOUND_MODE = 231;
+
+    public static final int KEYCODE_DISPLAY_MODE = 232;
+
+    public static final int KEYCODE_MEDIA_SONG_SYSTEM = 234;
+
+    public static final int KEYCODE_MEDIA_RELATIONSHIP = 235;
+
+    public static final int KEYCODE_MEDIA_BOOKING = 236;
+
+    public static final int KEYCODE_MEDIA_FAVORITES = 237;
+
+    public static final int KEYCODE_MEDIA_AUDIO_CONTROL = 238;
+
+    public static final int KEYCODE_MEDIA_FUNCTION = 239;
+
+    public static final int KEYCODE_MEDIA_ORIGINAL_SOUNDTRACK = 240;
+
+    public static final int KEYCODE_MEDIA_SELECTED_SONGS = 241;
+
+    public static final int KEYCODE_MEDIA_PRIORITY = 242;
+
+    public static final int KEYCODE_MEDIA_DELETE = 243;
+
+    public static final int KEYCODE_MEDIA_SCORE_DISPLAY = 244;
+
+    public static final int KEYCODE_SENSE_ALL = 247;
+
+    public static final int KEYCODE_SENSE_MENU = 248;
+
+    public static final int KEYCODE_SENSE_CENTER = 249;
+
+    public static final int KEYCODE_SENSE_BACK = 250;
+
+    public static final int KEYCODE_SENSE_VOLUME_UP = 251;
+
+    public static final int KEYCODE_SENSE_VOLUME_DOWN = 252;
+
+    public static final int KEYCODE_SENSE_CHANNEL_UP = 253;
+
+    public static final int KEYCODE_SENSE_CHANNEL_DOWN = 254;
+
+    public static final int KEYCODE_SENSE_LEAVE = 255;
+
+    public static final int KEYCODE_CHILD_LOCK = 256;
+
+    public static final int KEYCODE_FACTORY_FACTORY_MODE = 700;
+
+    public static final int KEYCODE_FACTORY_RESET = 701;
+
+    public static final int KEYCODE_FACTORY_SOURCE_ADD = 702;
+
+    public static final int KEYCODE_FACTORY_SOURCE_REDUCE = 703;
+
+    public static final int KEYCODE_FACTORY_OUTSET = 704;
+
+    public static final int KEYCODE_FACTORY_BUS_OFF = 705;
+
+    public static final int KEYCODE_FACTORY_AGING_MODE = 706;
+
+    public static final int KEYCODE_FACTORY_AUTO_ADC = 707;
+
+    public static final int KEYCODE_FACTORY_AV1 = 708;
+
+    public static final int KEYCODE_FACTORY_RF_AGC = 709;
+
+    public static final int KEYCODE_FACTORY_AV2 = 710;
+
+    public static final int KEYCODE_FACTORY_AV3 = 711;
+
+    public static final int KEYCODE_FACTORY_S1 = 712;
+
+    public static final int KEYCODE_FACTORY_YUV1 = 713;
+
+    public static final int KEYCODE_FACTORY_YUV2 = 714;
+
+    public static final int KEYCODE_FACTORY_VGA = 715;
+
+    public static final int KEYCODE_FACTORY_HDMI1 = 716;
+
+    public static final int KEYCODE_FACTORY_HDMI2 = 717;
+
+    public static final int KEYCODE_FACTORY_HDMI3 = 718;
+
+    public static final int KEYCODE_FACTORY_KALA_OK = 719;
+
+    public static final int KEYCODE_FACTORY_UPLAYER = 720;
+
+    public static final int KEYCODE_FACTORY_LAN = 721;
+
+    public static final int KEYCODE_FACTORY_DREAM_PANEL = 722;
+
+    public static final int KEYCODE_FACTORY_WHITE_BALANCE = 723;
+
+    public static final int KEYCODE_FACTORY_ALONE_LISTEN = 724;
+
+    public static final int KEYCODE_FACTORY_CA_CARD = 725;
+
+    public static final int KEYCODE_FACTORY_BARCODE = 726;
+
+    public static final int KEYCODE_FACTORY_SEARCH_UP = 727;
+
+    public static final int KEYCODE_FACTORY_SEARCH_DOWN = 728;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_GLOBALSETUP = 2001;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_SOURCE_LIST = 2002;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_3DMODE = 2003;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_DISPAYMODE = 2004;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_VIEWMODE = 2005;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_VOICEMODE = 2006;
+
+    public static final int KEYCODE_TV_SHORTCUTKEY_TVINFO = 2007;
+
+    public static final int KEYCODE_EARLY_POWER = 2008;
+
+    public static final int KEYCODE_TV_SLEEP = 2009;
+
+    public static final int KEYCODE_TV_SOUND_CHANNEL = 2010;
+
+    public static final int KEYCODE_TV_REPEAT = 2011;
+
+    public static final int KEYCODE_TV_SUBTITLE = 2012;
+
+    public static final int KEYCODE_TV_SWITCH = 2013;
+
+    public static final int KEYCODE_TV_WASU = 2014;
+
+    public static final int KEYCODE_TV_VTION = 2015;
+
+    public static final int KEYCODE_TV_BROWSER = 2016;
+
+    public static final int KEYCODE_TV_ALTERNATE = 2017;
+
+    public static final int KEYCODE_FAV = 2018;
+
+    public static final int KEYCODE_LIST = 2019;
+    
+    public static final int KEYCODE_MEDIA_AUDIO_CONTORL = 2020;
+
+    private static final int LAST_KEYCODE = KEYCODE_MEDIA_AUDIO_CONTORL;
 
     // NOTE: If you add a new keycode here you must also add it to:
     //  isSystem()
@@ -877,7 +1031,83 @@ public class KeyEvent extends InputEvent implements Parcelable {
         names.append(KEYCODE_ASSIST, "KEYCODE_ASSIST");
         names.append(KEYCODE_BRIGHTNESS_DOWN, "KEYCODE_BRIGHTNESS_DOWN");
         names.append(KEYCODE_BRIGHTNESS_UP, "KEYCODE_BRIGHTNESS_UP");
-        names.append(KEYCODE_MEDIA_AUDIO_TRACK, "KEYCODE_MEDIA_AUDIO_TRACK");
+        names.append(KEYCODE_ALTERNATE, "KEYCODE_ALTERNATE");
+        names.append(KEYCODE_VOICE, "KEYCODE_VOICE");
+        names.append(KEYCODE_SHARE, "KEYCODE_SHARE");
+        names.append(KEYCODE_ENTER_EPG, "KEYCODE_ENTER_EPG");
+        names.append(KEYCODE_IMAGE_MODE, "KEYCODE_IMAGE_MODE");
+        names.append(KEYCODE_SOUND_MODE, "KEYCODE_SOUND_MODE");
+        names.append(KEYCODE_DISPLAY_MODE, "KEYCODE_DISPLAY_MODE");
+        names.append(KEYCODE_MEDIA_SONG_SYSTEM, "KEYCODE_MEDIA_SONG_SYSTEM");
+        names.append(KEYCODE_MEDIA_RELATIONSHIP, "KEYCODE_MEDIA_RELATIONSHIP");
+        names.append(KEYCODE_MEDIA_BOOKING, "KEYCODE_MEDIA_BOOKING");
+        names.append(KEYCODE_MEDIA_FAVORITES, "KEYCODE_MEDIA_FAVORITES");
+        names.append(KEYCODE_MEDIA_AUDIO_CONTROL, "KEYCODE_MEDIA_AUDIO_CONTROL");
+        names.append(KEYCODE_MEDIA_FUNCTION, "KEYCODE_MEDIA_FUNCTION");
+        names.append(KEYCODE_MEDIA_ORIGINAL_SOUNDTRACK, "KEYCODE_MEDIA_ORIGINAL_SOUNDTRACK");
+        names.append(KEYCODE_MEDIA_SELECTED_SONGS, "KEYCODE_MEDIA_SELECTED_SONGS");
+        names.append(KEYCODE_MEDIA_PRIORITY, "KEYCODE_MEDIA_PRIORITY");
+        names.append(KEYCODE_MEDIA_DELETE, "KEYCODE_MEDIA_DELETE");
+        names.append(KEYCODE_MEDIA_SCORE_DISPLAY, "KEYCODE_MEDIA_SCORE_DISPLAY");
+        names.append(KEYCODE_SENSE_ALL, "KEYCODE_SENSE_ALL");
+        names.append(KEYCODE_SENSE_MENU, "KEYCODE_SENSE_MENU");
+        names.append(KEYCODE_SENSE_CENTER, "KEYCODE_SENSE_CENTER");
+        names.append(KEYCODE_SENSE_BACK, "KEYCODE_SENSE_BACK");
+        names.append(KEYCODE_SENSE_VOLUME_UP, "KEYCODE_SENSE_VOLUME_UP");
+        names.append(KEYCODE_SENSE_VOLUME_DOWN, "KEYCODE_SENSE_VOLUME_DOWN");
+        names.append(KEYCODE_SENSE_CHANNEL_UP, "KEYCODE_SENSE_CHANNEL_UP");
+        names.append(KEYCODE_SENSE_CHANNEL_DOWN, "KEYCODE_SENSE_CHANNEL_DOWN");
+        names.append(KEYCODE_SENSE_LEAVE, "KEYCODE_SENSE_LEAVE");
+        names.append(KEYCODE_CHILD_LOCK, "KEYCODE_CHILD_LOCK");
+        names.append(KEYCODE_FACTORY_FACTORY_MODE, "KEYCODE_FACTORY_FACTORY_MODE");
+        names.append(KEYCODE_FACTORY_RESET, "KEYCODE_FACTORY_RESET");
+        names.append(KEYCODE_FACTORY_SOURCE_ADD, "KEYCODE_FACTORY_SOURCE_ADD");
+        names.append(KEYCODE_FACTORY_SOURCE_REDUCE, "KEYCODE_FACTORY_SOURCE_REDUCE");
+        names.append(KEYCODE_FACTORY_OUTSET, "KEYCODE_FACTORY_OUTSET");
+        names.append(KEYCODE_FACTORY_BUS_OFF, "KEYCODE_FACTORY_BUS_OFF");
+        names.append(KEYCODE_FACTORY_AGING_MODE, "KEYCODE_FACTORY_AGING_MODE");
+        names.append(KEYCODE_FACTORY_AUTO_ADC, "KEYCODE_FACTORY_AUTO_ADC");
+        names.append(KEYCODE_FACTORY_AV1, "KEYCODE_FACTORY_AV1");
+        names.append(KEYCODE_FACTORY_RF_AGC, "KEYCODE_FACTORY_RF_AGC");
+        names.append(KEYCODE_FACTORY_AV2, "KEYCODE_FACTORY_AV2");
+        names.append(KEYCODE_FACTORY_AV3, "KEYCODE_FACTORY_AV3");
+        names.append(KEYCODE_FACTORY_S1, "KEYCODE_FACTORY_S1");
+        names.append(KEYCODE_FACTORY_YUV1, "KEYCODE_FACTORY_YUV1");
+        names.append(KEYCODE_FACTORY_YUV2, "KEYCODE_FACTORY_YUV2");
+        names.append(KEYCODE_FACTORY_VGA, "KEYCODE_FACTORY_VGA");
+        names.append(KEYCODE_FACTORY_HDMI1, "KEYCODE_FACTORY_HDMI1");
+        names.append(KEYCODE_FACTORY_HDMI2, "KEYCODE_FACTORY_HDMI2");
+        names.append(KEYCODE_FACTORY_HDMI3, "KEYCODE_FACTORY_HDMI3");
+        names.append(KEYCODE_FACTORY_KALA_OK, "KEYCODE_FACTORY_KALA_OK");
+        names.append(KEYCODE_FACTORY_UPLAYER, "KEYCODE_FACTORY_UPLAYER");
+        names.append(KEYCODE_FACTORY_LAN, "KEYCODE_FACTORY_LAN");
+        names.append(KEYCODE_FACTORY_DREAM_PANEL, "KEYCODE_FACTORY_DREAM_PANEL");
+        names.append(KEYCODE_FACTORY_WHITE_BALANCE, "KEYCODE_FACTORY_WHITE_BALANCE");
+        names.append(KEYCODE_FACTORY_ALONE_LISTEN, "KEYCODE_FACTORY_ALONE_LISTEN");
+        names.append(KEYCODE_FACTORY_CA_CARD, "KEYCODE_FACTORY_CA_CARD");
+        names.append(KEYCODE_FACTORY_BARCODE, "KEYCODE_FACTORY_BARCODE");
+        names.append(KEYCODE_FACTORY_SEARCH_UP, "KEYCODE_FACTORY_SEARCH_UP");
+        names.append(KEYCODE_FACTORY_SEARCH_DOWN, "KEYCODE_FACTORY_SEARCH_DOWN");
+        names.append(KEYCODE_TV_SHORTCUTKEY_GLOBALSETUP, "KEYCODE_TV_SHORTCUTKEY_GLOBALSETUP");
+        names.append(KEYCODE_TV_SHORTCUTKEY_SOURCE_LIST, "KEYCODE_TV_SHORTCUTKEY_SOURCE_LIST");
+        names.append(KEYCODE_TV_SHORTCUTKEY_3DMODE, "KEYCODE_TV_SHORTCUTKEY_3DMODE");
+        names.append(KEYCODE_TV_SHORTCUTKEY_DISPAYMODE, "KEYCODE_TV_SHORTCUTKEY_DISPAYMODE");
+        names.append(KEYCODE_TV_SHORTCUTKEY_VIEWMODE, "KEYCODE_TV_SHORTCUTKEY_VIEWMODE");
+        names.append(KEYCODE_TV_SHORTCUTKEY_VOICEMODE, "KEYCODE_TV_SHORTCUTKEY_VOICEMODE");
+        names.append(KEYCODE_TV_SHORTCUTKEY_TVINFO, "KEYCODE_TV_SHORTCUTKEY_TVINFO");
+        names.append(KEYCODE_TV_SLEEP,"KEYCODE_TV_SLEEP");
+        names.append(KEYCODE_EARLY_POWER, "KEYCODE_EARLY_POWER");
+        names.append(KEYCODE_TV_SOUND_CHANNEL, "KEYCODE_TV_SOUND_CHANNEL");
+        names.append(KEYCODE_TV_REPEAT, "KEYCODE_TV_REPEAT");
+        names.append(KEYCODE_TV_SUBTITLE, "KEYCODE_TV_SUBTITLE");
+        names.append(KEYCODE_TV_SWITCH, "KEYCODE_TV_SWITCH");
+        names.append(KEYCODE_TV_WASU, "KEYCODE_TV_WASU");
+        names.append(KEYCODE_TV_VTION, "KEYCODE_TV_VTION");
+        names.append(KEYCODE_TV_BROWSER, "KEYCODE_TV_BROWSER");
+        names.append(KEYCODE_TV_ALTERNATE, "KEYCODE_TV_ALTERNATE");
+        names.append(KEYCODE_FAV, "KEYCODE_FAV");
+        names.append(KEYCODE_LIST, "KEYCODE_LIST");
+        names.append(KEYCODE_MEDIA_AUDIO_CONTORL, "KEYCODE_MEDIA_AUDIO_CONTORL");
     };
 
     // Symbolic names of all metakeys in bit order from least significant to most significant.

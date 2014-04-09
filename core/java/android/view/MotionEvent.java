@@ -1976,6 +1976,10 @@ public final class MotionEvent extends InputEvent implements Parcelable {
      * @see #AXIS_X
      */
     public final float getX(int pointerIndex) {
+        if(pointerIndex >= getPointerCount()){//index out of count
+			return 10000f;
+    	}
+        
         return nativeGetAxisValue(mNativePtr, AXIS_X, pointerIndex, HISTORY_CURRENT);
     }
 
@@ -1991,6 +1995,10 @@ public final class MotionEvent extends InputEvent implements Parcelable {
      * @see #AXIS_Y
      */
     public final float getY(int pointerIndex) {
+        if(pointerIndex >= getPointerCount()){//index out of count
+			return 10000f;
+    	}
+    
         return nativeGetAxisValue(mNativePtr, AXIS_Y, pointerIndex, HISTORY_CURRENT);
     }
 

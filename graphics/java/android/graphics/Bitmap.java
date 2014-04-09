@@ -523,6 +523,10 @@ public final class Bitmap implements Parcelable {
             throw new RuntimeException("unsupported Buffer subclass");
         }
 
+        if (elements == 0) {
+            src.rewind();
+            elements = src.remaining();
+        }
         long bufferBytes = (long) elements << shift;
         long bitmapBytes = getByteCount();
 

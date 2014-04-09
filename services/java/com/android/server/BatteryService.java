@@ -48,6 +48,7 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import android.os.SystemProperties;
 
 
 /**
@@ -157,6 +158,8 @@ public final class BatteryService extends Binder {
             mInvalidChargerObserver.startObserving(
                     "DEVPATH=/devices/virtual/switch/invalid_charger");
         }
+        
+        mChipTempObserver.startObserving("SUBSYSTEM=chip_temp");
 
         mBatteryPropertiesListener = new BatteryListener();
 
@@ -683,6 +686,26 @@ public final class BatteryService extends Binder {
                 if (mInvalidCharger != invalidCharger) {
                     mInvalidCharger = invalidCharger;
                 }
+            }
+        }
+    };
+    
+    private final UEventObserver mChipTempObserver = new UEventObserver() {
+        @Override
+        public void onUEvent(UEventObserver.UEvent event) {
+            synchronized (mLock) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (ActivityManagerNative.isSystemReady()) {
+                            Intent intent = new Intent(Intent.ACTION_REQUEST_SHUTDOWN);
+                            intent.putExtra(Intent.EXTRA_KEY_CONFIRM, true);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            SystemProperties.set("sys.chiptemp.enable", "true");
+                            mContext.startActivityAsUser(intent, UserHandle.CURRENT);
+                        }
+                    }
+                });
             }
         }
     };

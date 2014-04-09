@@ -44,9 +44,10 @@ import android.os.storage.IMountService;
 import android.os.storage.IMountShutdownObserver;
 
 import com.android.internal.telephony.ITelephony;
-
+import java.io.File;
 import android.util.Log;
 import android.view.WindowManager;
+import android.content.DialogInterface.OnDismissListener;
 
 public final class ShutdownThread extends Thread {
     // constants
@@ -116,11 +117,15 @@ public final class ShutdownThread extends Thread {
 
         final int longPressBehavior = context.getResources().getInteger(
                         com.android.internal.R.integer.config_longPressOnPowerBehavior);
-        final int resourceId = mRebootSafeMode
+        /*final*/ int resourceId = mRebootSafeMode
                 ? com.android.internal.R.string.reboot_safemode_confirm
                 : (longPressBehavior == 2
                         ? com.android.internal.R.string.shutdown_confirm_question
                         : com.android.internal.R.string.shutdown_confirm);
+
+        if(android.os.SystemProperties.getBoolean("sys.chiptemp.enable", false))
+            resourceId = com.android.internal.R.string.shutdown_confirm_question_chiptemp_hot;
+        
 
         Log.d(TAG, "Notifying thread to start shutdown longPressBehavior=" + longPressBehavior);
 
@@ -145,6 +150,12 @@ public final class ShutdownThread extends Thread {
             sConfirmDialog.setOnDismissListener(closer);
             sConfirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
             sConfirmDialog.show();
+
+            sConfirmDialog.setOnDismissListener(new OnDismissListener(){
+    			public void onDismiss(DialogInterface dialog) {
+                    SystemProperties.set("sys.chiptemp.enable", "false");
+    			}
+    		});
         } else {
             beginShutdownSequence(context);
         }
@@ -209,7 +220,12 @@ public final class ShutdownThread extends Thread {
             }
             sIsStarted = true;
         }
-
+				boolean showShutdownAnim = new File("/system/media/shutdownanimation.zip").exists();
+    if (showShutdownAnim) {
+        Log.d(TAG, "shutdownanim");
+         android.os.SystemProperties.set("service.bootanim.exit", "0");
+        android.os.SystemProperties.set("ctl.start", "shutdownanim");
+    } else {
         // throw up an indeterminate system dialog to indicate radio is
         // shutting down.
         ProgressDialog pd = new ProgressDialog(context);
@@ -220,6 +236,7 @@ public final class ShutdownThread extends Thread {
         pd.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
 
         pd.show();
+			}		
 
         sInstance.mContext = context;
         sInstance.mPowerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
@@ -274,6 +291,12 @@ public final class ShutdownThread extends Thread {
                 actionDone();
             }
         };
+        if(new File("/system/media/shutdownanimation.zip").exists()){
+        try{
+					  Thread.sleep(5000);					       
+					}catch(InterruptedException ex){
+				}	
+			}	
 
         /*
          * Write a system property in case the system_server reboots before we
@@ -420,6 +443,9 @@ public final class ShutdownThread extends Thread {
                         Log.w(TAG, "Turning off radio...");
                         phone.setRadio(false);
                     }
+
+					//workround for when phone unavailable, the phone state is not off
+					radioOff = true;
                 } catch (RemoteException ex) {
                     Log.e(TAG, "RemoteException during radio shutdown", ex);
                     radioOff = true;

@@ -51,6 +51,8 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Vector;
 
+import android.graphics.PixelFormat;
+
 /**
  * Displays a video file.  The VideoView class
  * can load images from various sources (such as resources or content
@@ -69,7 +71,7 @@ import java.util.Vector;
  * change from its previously returned value when the VideoView is restored.
  */
 public class VideoView extends SurfaceView
-        implements MediaPlayerControl, SubtitleController.Anchor {
+        implements MediaPlayerControl, SubtitleController.Anchor, View.OnLayoutChangeListener {
     private String TAG = "VideoView";
     // settable by the client
     private Uri         mUri;
@@ -213,10 +215,12 @@ public class VideoView extends SurfaceView
     }
 
     private void initVideoView() {
+        getHolder().setFormat(PixelFormat.VIDEO_HOLE);
         mVideoWidth = 0;
         mVideoHeight = 0;
         getHolder().addCallback(mSHCallback);
         getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        addOnLayoutChangeListener(this);
         setFocusable(true);
         setFocusableInTouchMode(true);
         requestFocus();
@@ -291,7 +295,7 @@ public class VideoView extends SurfaceView
             mTargetState  = STATE_IDLE;
         }
     }
-
+	
     private void openVideo() {
         if (mUri == null || mSurfaceHolder == null) {
             // not ready for playback just yet, will try again later
@@ -629,6 +633,31 @@ public class VideoView extends SurfaceView
             if (cleartargetstate) {
                 mTargetState  = STATE_IDLE;
             }
+        }
+    }
+
+    @Override
+    public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                int oldLeft, int oldTop, int oldRight, int oldBottom){
+        int Rotation=0;
+        Log.i(TAG,"Layout changed,left="+left+" top="+top+" right="+right+" bottom="+bottom);
+        Log.i(TAG,"Layout changed,oldLeft="+oldLeft+" oldTop="+oldTop+" oldRight="+oldRight+" oldBottom="+oldBottom);
+        if (mMediaPlayer != null) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(".left="+left);
+            builder.append(".top="+top);
+            builder.append(".right="+right);
+            builder.append(".bottom="+bottom);
+
+            builder.append(".oldLeft="+oldLeft);
+            builder.append(".oldTop="+oldTop);
+            builder.append(".oldRight="+oldRight);
+            builder.append(".oldBottom="+oldBottom);
+
+            builder.append(".Rotation="+Rotation);
+
+            Log.i(TAG,builder.toString());
+            mMediaPlayer.setParameter(MediaPlayer.KEY_PARAMETER_AML_VIDEO_POSITION_INFO,builder.toString());
         }
     }
 

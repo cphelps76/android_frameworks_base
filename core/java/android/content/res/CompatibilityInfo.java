@@ -18,14 +18,18 @@ package android.content.res;
 
 import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.Region;
+import android.hardware.display.DisplayManagerGlobal;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
+import android.view.Display;
 import android.view.WindowManager;
+import android.view.WindowManagerImpl;
 import android.view.WindowManager.LayoutParams;
 
 /**
@@ -512,6 +516,15 @@ public class CompatibilityInfo implements Parcelable {
             outDm.heightPixels = newHeight;
         }
 
+        //tellen add 2012/12/07 for apk compatibility
+		Display display = DisplayManagerGlobal.getInstance().getRealDisplay(Display.DEFAULT_DISPLAY);
+        Point p = new Point();
+        display.getRealSize(p);
+		//1024x768 resolution screen need reduce scale ratio in order to support special apks
+		if( ((1024 == p.x) && (768 == p.y)) || ((1024 == p.y) && (768 == p.x)) ){
+			return 2.0f;
+		}
+		
         return scale;
     }
 

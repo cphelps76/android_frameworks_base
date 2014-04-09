@@ -132,6 +132,7 @@ import android.view.WindowManagerPolicy.PointerEventListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Transformation;
+import android.app.SystemWriteManager;
 
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -196,6 +197,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
     static final boolean PROFILE_ORIENTATION = false;
     static final boolean localLOGV = DEBUG;
+    public SystemWriteManager sw = null;
 
     /** How much to multiply the policy's type layer, to reserve room
      * for multiple windows of the same type and Z-ordering adjustment
@@ -302,6 +304,23 @@ public class WindowManagerService extends IWindowManager.Stub
             if (DevicePolicyManager.ACTION_DEVICE_POLICY_MANAGER_STATE_CHANGED.equals(action)) {
                 mKeyguardDisableHandler.sendEmptyMessage(
                     KeyguardDisableHandler.KEYGUARD_POLICY_CHANGED);
+
+            } else if (WindowManagerPolicy.ACTION_HDMI_PLUGGED.equals(action)) {
+                 mTVOutOn = intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, false);
+                 Slog.i("WindowManagerService ", "TvOut Intent receiver, tvout status="+ mTVOutOn);
+                 if (SystemProperties.getBoolean("ro.vout.dualdisplay", false)
+                    || SystemProperties.getBoolean("ro.vout.dualdisplay2", false)
+                    || SystemProperties.getBoolean("ro.vout.dualdisplay3", false)
+                    ||SystemProperties.getBoolean("ro.vout.dualdisplay4", false)) {
+                    if (Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.HDMI_DUAL_DISP, 1) == 1) {    
+                        mInputManager.setTvOutStatus(false);
+                    } else {
+                        mInputManager.setTvOutStatus(mTVOutOn); 
+                    }
+                 } else {                    
+                    mInputManager.setTvOutStatus(mTVOutOn);
+                 }
             }
         }
     };
@@ -434,7 +453,7 @@ public class WindowManagerService extends IWindowManager.Stub
     /** All DisplayContents in the world, kept here */
     SparseArray<DisplayContent> mDisplayContents = new SparseArray<DisplayContent>(2);
 
-    int mRotation = 0;
+    int mRotation = SystemProperties.getInt("ro.display.defaultorientation", 0);
     int mForcedAppOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
     boolean mAltOrientation = false;
     ArrayList<IRotationWatcher> mRotationWatchers
@@ -535,6 +554,8 @@ public class WindowManagerService extends IWindowManager.Stub
     AppWindowToken mFocusedApp = null;
 
     PowerManagerService mPowerManager;
+	
+    private boolean mTVOutOn = false;
 
     float mWindowAnimationScale = 1.0f;
     float mTransitionAnimationScale = 1.0f;
@@ -552,6 +573,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
     DragState mDragState = null;
 
+    int mIsHardKeyBoardEnableDef;
     // For frozen screen animations.
     int mExitAnimId, mEnterAnimId;
 
@@ -727,6 +749,7 @@ public class WindowManagerService extends IWindowManager.Stub
             DisplayManagerService displayManager, InputManagerService inputManager,
             boolean haveInputMethods, boolean showBootMsgs, boolean onlyCore) {
         mContext = context;
+        sw = (SystemWriteManager)mContext.getSystemService("system_write");
         mHaveInputMethods = haveInputMethods;
         mAllowBootMessages = showBootMsgs;
         mOnlyCore = onlyCore;
@@ -781,7 +804,13 @@ public class WindowManagerService extends IWindowManager.Stub
         // Track changes to DevicePolicyManager state so we can enable/disable keyguard.
         IntentFilter filter = new IntentFilter();
         filter.addAction(DevicePolicyManager.ACTION_DEVICE_POLICY_MANAGER_STATE_CHANGED);
-        mContext.registerReceiver(mBroadcastReceiver, filter);
+        filter.addAction(WindowManagerPolicy.ACTION_HDMI_PLUGGED);
+        Intent intent = mContext.registerReceiver(mBroadcastReceiver, filter);    
+        if (intent != null) {
+            // Retrieve current sticky tvout event broadcast.
+            mTVOutOn 
+            	= intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, false);
+        }	
 
         mHoldingScreenWakeLock = pmc.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK
                 | PowerManager.ON_AFTER_RELEASE, TAG);
@@ -802,6 +831,9 @@ public class WindowManagerService extends IWindowManager.Stub
         } finally {
             SurfaceControl.closeTransaction();
         }
+
+		mIsHardKeyBoardEnableDef = Settings.Global.getInt(context.getContentResolver(), 
+			Settings.Global.HARD_KEYBOARD_DEFAULT_ENABLE,1);
     }
 
     public InputMonitor getInputMonitor() {
@@ -2808,6 +2840,35 @@ public class WindowManagerService extends IWindowManager.Stub
             win.mEnforceSizeCompat =
                     (win.mAttrs.privateFlags & PRIVATE_FLAG_COMPATIBLE_WINDOW) != 0;
 
+            // Hack: setting Surface to OPAQUE for PixelFormat.VIDEO_HOLE
+            if (((attrChanges & WindowManager.LayoutParams.FORMAT_CHANGED) != 0) &&
+                (attrs != null)) {
+                if (attrs.format == PixelFormat.VIDEO_HOLE) {
+                    // attibute changed to PixelFormat.VIDEO_HOLE 
+                    if (winAnimator.mSurfaceControl != null) {
+                        SurfaceControl.openTransaction();
+                        try {
+                            winAnimator.mSurfaceControl.setFlags(SurfaceControl.OPAQUE, SurfaceControl.OPAQUE);
+                        } finally {
+                            SurfaceControl.closeTransaction();
+                        }
+                    }
+                    attrChanges &= ~WindowManager.LayoutParams.FORMAT_CHANGED;
+                    attrs.format = PixelFormat.RGBA_8888;
+                }else if (attrs.format == PixelFormat.VIDEO_HOLE_REAL){
+                	if (winAnimator.mSurfaceControl != null) {
+						SurfaceControl.openTransaction();
+						try {
+							winAnimator.mSurfaceControl.setFlags(SurfaceControl.VIDEOHOLE, SurfaceControl.VIDEOHOLE);
+						} finally {
+						    SurfaceControl.closeTransaction();
+						}
+					}
+					attrChanges &= ~WindowManager.LayoutParams.FORMAT_CHANGED;
+					attrs.format = PixelFormat.RGBA_8888;
+				}
+            }
+
             if ((attrChanges & WindowManager.LayoutParams.ALPHA_CHANGED) != 0) {
                 winAnimator.mAlpha = attrs.alpha;
             }
@@ -2971,6 +3032,12 @@ public class WindowManagerService extends IWindowManager.Stub
 
                 outSurface.release();
                 if (DEBUG_VISIBILITY) Slog.i(TAG, "Releasing surface in: " + win);
+            }
+
+            // Restore PixelFormat.VIDEO_HOLE to PixelFormat.RGBA_8888
+            // after Surface.OPAQUE is set or a new Surface is created.
+            if (win.mAttrs.format == PixelFormat.VIDEO_HOLE) {
+                win.mAttrs.format = PixelFormat.RGBA_8888;
             }
 
             if (focusMayChange) {
@@ -5375,7 +5442,33 @@ public class WindowManagerService extends IWindowManager.Stub
             } catch (RemoteException ex) {
                 Slog.e(TAG, "Boot completed: SurfaceFlinger is dead!");
             }
+            if(sw.getPropertyBoolean("ro.platform.has.realoutputmode", false)){
+                sw.writeSysfs("/sys/class/ppmgr/ppscaler","0");
+                int[] curPosition = { 0, 0, 1920, 1080, 24, 0, 1919, 1079,};
+                String old_mode = SystemProperties.get("ubootenv.var.outputmode","1080p");
+                curPosition = getPosition(old_mode);
 
+                sw.writeSysfs("/sys/class/graphics/fb0/blank","1");
+                //sw.writeSysfs("/sys/class/graphics/fb0/freescale_mode","0");
+                sw.writeSysfs("/sys/class/graphics/fb0/free_scale","0");
+                sw.writeSysfs("/sys/class/graphics/fb0/freescale_mode","1");
+                if(old_mode.equals("480i") || old_mode.equals("576i") || old_mode.equals("480cvbs") || old_mode.equals("576cvbs"))
+			sw.writeSysfs("/sys/class/graphics/fb0/free_scale_axis","0 0 1279 721");
+		else
+			sw.writeSysfs("/sys/class/graphics/fb0/free_scale_axis","0 0 "+curPosition[6]+" "+curPosition[7]);
+                sw.writeSysfs("/sys/class/graphics/fb0/window_axis", curPosition[0]+" "+curPosition[1]+" "+(curPosition[0]+curPosition[2]-1)+" "+(curPosition[1]+curPosition[3]-1));
+                sw.writeSysfs("/sys/class/display/axis",curPosition[0]+" "+curPosition[1]+" "+(curPosition[6]+1)+" "+(curPosition[7]+1)+" "+curPosition[0]+" "+curPosition[1]+" 18 18");
+                 
+                if(curPosition[5] != 0) {
+                    sw.writeSysfs("/sys/class/graphics/fb0/free_scale","0x10001");
+                    sw.writeSysfs("/sys/class/graphics/fb1/free_scale","1");
+                } else {
+                    sw.writeSysfs("/sys/class/graphics/fb0/free_scale","0");
+                    sw.writeSysfs("/sys/class/graphics/fb1/free_scale","0");
+                }
+                
+                Slog.e(TAG, "framework:ro.platform.has.realoutputmode");
+            }
             // Enable input dispatch.
             mInputMonitor.setEventDispatchingLw(mEventDispatchingEnabled);
         }
@@ -5683,6 +5776,10 @@ public class WindowManagerService extends IWindowManager.Stub
                 // The screen shot will contain the entire screen.
                 dw = (int)(dw*scale);
                 dh = (int)(dh*scale);
+                String hwRotation = SystemProperties.get("ro.sf.hwrotation", "0");
+                if (hwRotation.equals("270") || hwRotation.equals("90")){
+                    rot = (rot + 3)%4;//always show landscape picture
+                }
                 if (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) {
                     int tmp = dw;
                     dw = dh;
@@ -6577,6 +6674,10 @@ public class WindowManagerService extends IWindowManager.Stub
         sl = reduceConfigLayout(sl, Surface.ROTATION_270, density, unrotDh, unrotDw);
         outConfig.smallestScreenWidthDp = (int)(displayInfo.smallestNominalAppWidth / density);
         outConfig.screenLayout = sl;
+        if((outConfig.smallestScreenWidthDp < 720)&&(SystemProperties.getBoolean("ro.platform.has.mbxuimode",false))){
+            outConfig.smallestScreenWidthDp = 720;
+            outConfig.screenLayout = 0x10000023;
+        }
     }
 
     private int reduceCompatConfigWidthSize(int curSize, int rotation, DisplayMetrics dm,
@@ -6725,7 +6826,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
                     if (device.getKeyboardType() == InputDevice.KEYBOARD_TYPE_ALPHABETIC) {
                         config.keyboard = Configuration.KEYBOARD_QWERTY;
-                        keyboardPresence |= presenceFlag;
+                        keyboardPresence |= presenceFlag; 
                     }
                 }
             }
@@ -6735,6 +6836,8 @@ public class WindowManagerService extends IWindowManager.Stub
             if (hardKeyboardAvailable != mHardKeyboardAvailable) {
                 mHardKeyboardAvailable = hardKeyboardAvailable;
                 mHardKeyboardEnabled = hardKeyboardAvailable;
+				if(mIsHardKeyBoardEnableDef == 0)
+				    mHardKeyboardEnabled = false;
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
                 mH.sendEmptyMessage(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
             }
@@ -6769,6 +6872,8 @@ public class WindowManagerService extends IWindowManager.Stub
             if (mHardKeyboardEnabled != enabled) {
                 mHardKeyboardEnabled = enabled;
                 mH.sendEmptyMessage(H.SEND_NEW_CONFIGURATION);
+				int mEnable = mHardKeyboardEnabled ? 1: 0;
+				Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.HARD_KEYBOARD_DEFAULT_ENABLE, mEnable);
             }
         }
     }
@@ -6980,6 +7085,12 @@ public class WindowManagerService extends IWindowManager.Stub
         synchronized(mWindowMap) {
             mIsTouchDevice = mContext.getPackageManager().hasSystemFeature(
                     PackageManager.FEATURE_TOUCHSCREEN);
+
+            mPolicy.setInitialDisplaySize(getDefaultDisplayContentLocked().getDisplay(),
+                    getDefaultDisplayContentLocked().mInitialDisplayWidth,
+                    getDefaultDisplayContentLocked().mInitialDisplayHeight,
+                    getDefaultDisplayContentLocked().mInitialDisplayDensity);
+            
             configureDisplayPolicyLocked(getDefaultDisplayContentLocked());
         }
 
@@ -7661,46 +7772,69 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     private void readForcedDisplaySizeAndDensityLocked(final DisplayContent displayContent) {
-        String sizeStr = Settings.Global.getString(mContext.getContentResolver(),
-                Settings.Global.DISPLAY_SIZE_FORCED);
-        if (sizeStr == null || sizeStr.length() == 0) {
-            sizeStr = SystemProperties.get(SIZE_OVERRIDE, null);
-        }
-        if (sizeStr != null && sizeStr.length() > 0) {
-            final int pos = sizeStr.indexOf(',');
-            if (pos > 0 && sizeStr.lastIndexOf(',') == pos) {
-                int width, height;
-                try {
-                    width = Integer.parseInt(sizeStr.substring(0, pos));
-                    height = Integer.parseInt(sizeStr.substring(pos+1));
-                    synchronized(displayContent.mDisplaySizeLock) {
-                        if (displayContent.mBaseDisplayWidth != width
+        if(SystemProperties.getBoolean("ro.platform.has.realoutputmode",false)){
+            int[] curPosition = { 0, 0, 1920, 1080, 240, 0, 1919, 1079, };
+            String old_mode = SystemProperties.get("ubootenv.var.outputmode","1080p");
+            curPosition = getPosition(old_mode);
+            int density = curPosition[4];
+            int width, height;
+            width = curPosition[6]+1;
+            height = curPosition[7]+1;
+            
+            Slog.d(TAG, "set display size and density according to outputmode: "+width+"x"+height+", "+density);
+            synchronized(displayContent.mDisplaySizeLock) {
+                if (displayContent.mBaseDisplayDensity != density) {
+                    displayContent.mBaseDisplayDensity = density;
+                }
+                if (displayContent.mBaseDisplayWidth != width
                                 || displayContent.mBaseDisplayHeight != height) {
-                            Slog.i(TAG, "FORCED DISPLAY SIZE: " + width + "x" + height);
-                            displayContent.mBaseDisplayWidth = width;
-                            displayContent.mBaseDisplayHeight = height;
+                    displayContent.mBaseDisplayWidth = width;
+                    displayContent.mBaseDisplayHeight = height;
+                }
+            }
+
+        }else {
+            String sizeStr = Settings.Global.getString(mContext.getContentResolver(),
+                    Settings.Global.DISPLAY_SIZE_FORCED);
+            if (sizeStr == null || sizeStr.length() == 0) {
+                sizeStr = SystemProperties.get(SIZE_OVERRIDE, null);
+            }
+            if (sizeStr != null && sizeStr.length() > 0) {
+                final int pos = sizeStr.indexOf(',');
+                if (pos > 0 && sizeStr.lastIndexOf(',') == pos) {
+                    int width, height;
+                    try {
+                        width = Integer.parseInt(sizeStr.substring(0, pos));
+                        height = Integer.parseInt(sizeStr.substring(pos+1));
+                        synchronized(displayContent.mDisplaySizeLock) {
+                            if (displayContent.mBaseDisplayWidth != width
+                                    || displayContent.mBaseDisplayHeight != height) {
+                                Slog.i(TAG, "FORCED DISPLAY SIZE: " + width + "x" + height);
+                                displayContent.mBaseDisplayWidth = width;
+                                displayContent.mBaseDisplayHeight = height;
+                            }
+                        }
+                    } catch (NumberFormatException ex) {
+                    }
+                }
+            }
+            String densityStr = Settings.Global.getString(mContext.getContentResolver(),
+                    Settings.Global.DISPLAY_DENSITY_FORCED);
+            if (densityStr == null || densityStr.length() == 0) {
+                densityStr = SystemProperties.get(DENSITY_OVERRIDE, null);
+            }
+            if (densityStr != null && densityStr.length() > 0) {
+                int density;
+                try {
+                    density = Integer.parseInt(densityStr);
+                    synchronized(displayContent.mDisplaySizeLock) {
+                        if (displayContent.mBaseDisplayDensity != density) {
+                            Slog.i(TAG, "FORCED DISPLAY DENSITY: " + density);
+                            displayContent.mBaseDisplayDensity = density;
                         }
                     }
                 } catch (NumberFormatException ex) {
                 }
-            }
-        }
-        String densityStr = Settings.Global.getString(mContext.getContentResolver(),
-                Settings.Global.DISPLAY_DENSITY_FORCED);
-        if (densityStr == null || densityStr.length() == 0) {
-            densityStr = SystemProperties.get(DENSITY_OVERRIDE, null);
-        }
-        if (densityStr != null && densityStr.length() > 0) {
-            int density;
-            try {
-                density = Integer.parseInt(densityStr);
-                synchronized(displayContent.mDisplaySizeLock) {
-                    if (displayContent.mBaseDisplayDensity != density) {
-                        Slog.i(TAG, "FORCED DISPLAY DENSITY: " + density);
-                        displayContent.mBaseDisplayDensity = density;
-                    }
-                }
-            } catch (NumberFormatException ex) {
             }
         }
     }
@@ -7732,6 +7866,15 @@ public class WindowManagerService extends IWindowManager.Stub
             synchronized(mWindowMap) {
                 final DisplayContent displayContent = getDisplayContentLocked(displayId);
                 if (displayContent != null) {
+                    if(SystemProperties.getBoolean("ro.platform.has.realoutputmode",false)){
+                        String old_mode = SystemProperties.get("ubootenv.var.outputmode","1080p");
+                        int[] curPosition = { 0, 0, 1920, 1080, 240, 0, 1919, 1079, };
+                        curPosition = getPosition(old_mode);
+                        setForcedDisplaySizeLocked(displayContent,curPosition[6]+1,curPosition[7]+1);
+                        Settings.Global.putString(mContext.getContentResolver(),
+                            Settings.Global.DISPLAY_SIZE_FORCED, "");
+                        return;
+                    }
                     setForcedDisplaySizeLocked(displayContent, displayContent.mInitialDisplayWidth,
                             displayContent.mInitialDisplayHeight);
                     Settings.Global.putString(mContext.getContentResolver(),
@@ -10857,6 +11000,148 @@ public class WindowManagerService extends IWindowManager.Stub
             displayContent.updateDisplayInfo();
         }
     }
+
+    private int[] getPosition(String mode) {
+		int[] curPosition = { 0, 0, 1920, 1080, 240, 0, 1920, 1080, };
+        String[] mOutputModeList = {"480i","480p","576i","576p","720p","1080i","1080p","720p50hz","1080i50hz","1080p50hz" , "480cvbs","576cvbs","4k2k24hz","4k2k25hz", "4k2k30hz", "4k2ksmpte"};
+        
+		int index = 6; // 1080p
+		for (int i = 0; i < mOutputModeList.length; i++) {
+			if (mode.equalsIgnoreCase(mOutputModeList[i]))
+				index = i;
+		}
+		switch (index) {
+		case 0: // 480i
+		case 10: // 480cvbs
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.480ioutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.480ioutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.480ioutputwidth", 720);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.480ioutputheight", 480);
+			curPosition[4] = 160;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1279;
+			curPosition[7] = 719;
+			break;
+		case 1: // 480p
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.480poutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.480poutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.480poutputwidth", 720);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.480poutputheight", 480);
+			curPosition[4] = 160;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1279;
+			curPosition[7] = 719;
+			break;
+		case 2: // 576i
+		case 11: // 576cvbs
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.576ioutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.576ioutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.576ioutputwidth", 720);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.576ioutputheight", 576);
+			curPosition[4] = 160;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1279;
+			curPosition[7] = 719;
+			break;
+		case 3: // 576p
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.576poutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.576poutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.576poutputwidth", 720);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.576poutputheight", 576);
+			curPosition[4] = 160;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1279;
+			curPosition[7] = 719;
+			break;
+		case 4: // 720p
+		case 7: // 720p50hz
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.720poutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.720poutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.720poutputwidth", 1280);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.720poutputheight", 720);
+			curPosition[4] = 160;
+			if (curPosition[0] == 0 && curPosition[1] == 0)
+			    curPosition[5] = 0;    // not need scale
+			else 
+			    curPosition[5] = 1;    //need scale
+			curPosition[6] = 1279;
+			curPosition[7] = 719;
+			break;
+
+		case 5: // 1080i
+		case 8: // 1080i50hz
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.1080ioutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.1080ioutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.1080ioutputwidth", 1920);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.1080ioutputheight", 1080);
+			curPosition[4] = 240;
+			if (curPosition[0] == 0 && curPosition[1] == 0)
+			    curPosition[5] = 0;    // not need scale
+			else 
+			    curPosition[5] = 1;    //need scale
+			curPosition[6] = 1919;
+			curPosition[7] = 1079;
+			break;
+
+		case 12: // 4k2k24hz
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.4k2k24hz_x", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.4k2k24hz_y", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.4k2k24hz_width", 3840);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.4k2k24hz_height", 2160);
+			curPosition[4] = 240;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1919;
+			curPosition[7] = 1079;
+			break;
+    	case 13: // 4k2k25hz
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.4k2k25hz_x", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.4k2k25hz_y", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.4k2k25hz_width", 3840);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.4k2k25hz_height", 2160);
+			curPosition[4] = 240;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1919;
+			curPosition[7] = 1079;
+			break;
+    	case 14: // 4k2k30hz
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.4k2k30hz_x", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.4k2k30hz_y", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.4k2k30hz_width", 3840);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.4k2k30hz_height", 2160);
+			curPosition[4] = 240;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1919;
+			curPosition[7] = 1079;
+			break;
+        case 15: // 4k2ksmpte
+            curPosition[0] = SystemProperties.getInt("ubootenv.var.4k2ksmpte_x", 0);
+            curPosition[1] = SystemProperties.getInt("ubootenv.var.4k2ksmpte_y", 0);
+            curPosition[2] = SystemProperties.getInt("ubootenv.var.4k2ksmpte_width", 4096);
+            curPosition[3] = SystemProperties.getInt("ubootenv.var.4k2ksmpte_height", 2160);
+            curPosition[4] = 240;
+			curPosition[5] = 1;    // need scale
+			curPosition[6] = 1919;
+			curPosition[7] = 1079;
+            break;
+            
+		case 6: // 1080p
+		case 9: // 1080p50hz
+		default: // 1080p
+			curPosition[0] = SystemProperties.getInt("ubootenv.var.1080poutputx", 0);
+			curPosition[1] = SystemProperties.getInt("ubootenv.var.1080poutputy", 0);
+			curPosition[2] = SystemProperties.getInt("ubootenv.var.1080poutputwidth", 1920);
+			curPosition[3] = SystemProperties.getInt("ubootenv.var.1080poutputheight", 1080);
+			curPosition[4] = 240;
+			if (curPosition[0] == 0 && curPosition[1] == 0)
+			    curPosition[5] = 0;    // not need scale
+			else 
+			    curPosition[5] = 1;    //need scale
+			curPosition[6] = 1919;
+			curPosition[7] = 1079;
+			break;
+		}
+		return curPosition;
+	}
 
     @Override
     public Object getWindowManagerLock() {

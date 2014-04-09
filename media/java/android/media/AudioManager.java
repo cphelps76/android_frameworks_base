@@ -38,6 +38,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.VolumePanel;
+import android.os.SystemProperties;
 
 import java.util.HashMap;
 
@@ -1743,6 +1744,8 @@ public class AudioManager {
         }
 
         if (!querySoundEffectsEnabled()) {
+            return;
+        } else if (SystemProperties.getBoolean("ds1.audio.multichannel.support", false)){
             return;
         }
 

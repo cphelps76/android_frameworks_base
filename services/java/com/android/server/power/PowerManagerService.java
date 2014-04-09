@@ -62,9 +62,15 @@ import android.util.Slog;
 import android.util.TimeUtils;
 import android.view.WindowManagerPolicy;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+
+import android.os.SystemProperties;
 
 import libcore.util.Objects;
 
@@ -78,6 +84,8 @@ public final class PowerManagerService extends IPowerManager.Stub
 
     private static final boolean DEBUG = false;
     private static final boolean DEBUG_SPEW = DEBUG && true;
+
+    private static final String SCREENSAVER_PROP = "sys.screensaver.enable";
 
     // Message: Sent when a user activity timeout occurs to update the power state.
     private static final int MSG_USER_ACTIVITY_TIMEOUT = 1;
@@ -523,8 +531,11 @@ public final class PowerManagerService extends IPowerManager.Stub
                 com.android.internal.R.bool.config_dreamsSupported);
         mDreamsEnabledByDefaultConfig = resources.getBoolean(
                 com.android.internal.R.bool.config_dreamsEnabledByDefault);
-        mDreamsActivatedOnSleepByDefaultConfig = resources.getBoolean(
-                com.android.internal.R.bool.config_dreamsActivatedOnSleepByDefault);
+        if (SystemProperties.getBoolean(SCREENSAVER_PROP, false))
+            mDreamsActivatedOnSleepByDefaultConfig = true;
+        else
+            mDreamsActivatedOnSleepByDefaultConfig = resources.getBoolean(
+                    com.android.internal.R.bool.config_dreamsActivatedOnSleepByDefault);
         mDreamsActivatedOnDockByDefaultConfig = resources.getBoolean(
                 com.android.internal.R.bool.config_dreamsActivatedOnDockByDefault);
     }
@@ -1022,7 +1033,9 @@ public final class PowerManagerService extends IPowerManager.Stub
 
     // Called from native code.
     private void goToSleepFromNative(long eventTime, int reason) {
-        goToSleepInternal(eventTime, reason);
+        if(mDisplayReady){
+            goToSleepInternal(eventTime, reason);
+        }  
     }
 
     private void goToSleepInternal(long eventTime, int reason) {
@@ -1136,6 +1149,11 @@ public final class PowerManagerService extends IPowerManager.Stub
             return;
         }
 
+	if(!SystemProperties.getBoolean("ro.platform.has.mbxuimode", false)) {
+            if (isHdmiPlugged()) {
+                return;
+            }
+	}
         // Phase 0: Basic state updates.
         updateIsPoweredLocked(mDirty);
         updateStayOnLocked(mDirty);
@@ -1422,6 +1440,13 @@ public final class PowerManagerService extends IPowerManager.Stub
     }
 
     private int getScreenOffTimeoutLocked() {
+
+        if (!SystemProperties.getBoolean(SCREENSAVER_PROP, false)) {
+            boolean mMBXTimeoutEnable = SystemProperties.getBoolean("mbx.timeout.enable",true);
+            if(!mMBXTimeoutEnable)
+                return Integer.MAX_VALUE;
+        }
+
         int timeout = mScreenOffTimeoutSetting;
         if (isMaximumScreenOffTimeoutFromDeviceAdminEnforcedLocked()) {
             timeout = Math.min(timeout, mMaximumScreenOffTimeoutFromDeviceAdmin);
@@ -2158,6 +2183,17 @@ public final class PowerManagerService extends IPowerManager.Stub
         }
     }
 
+    public void setBrightnessSavePower(int value)
+    {
+        final long ident = Binder.clearCallingIdentity();
+        try {
+            int currSettingsVal = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SCREEN_BRIGHTNESS,120,UserHandle.USER_CURRENT);
+            mDisplayPowerController.setBrightnessSavePower(value , currSettingsVal);
+        } finally {
+            Binder.restoreCallingIdentity(ident);
+        }
+    }
     /**
      * Used by the settings application and brightness control widgets to
      * temporarily override the current screen brightness setting so that the
@@ -2424,6 +2460,34 @@ public final class PowerManagerService extends IPowerManager.Stub
             // the user has actually had a chance to interact with the device.
             startWatchingForBootAnimationFinished();
         }
+    }
+
+    private boolean isHdmiPlugged() {
+        String filename = "/sys/class/display/mode";
+        String panel_str = "panel";
+        boolean plugged = false;
+        
+        if (SystemProperties.getBoolean("ro.vout.dualdisplay4", false)) {
+            filename = "/sys/class/display2/mode";
+            panel_str = "null";
+        }
+        
+        if (new File(filename).exists()) {
+            String str = null;
+            try {
+                BufferedReader reader = new BufferedReader(new FileReader(filename), 32);
+                try {
+                    str = reader.readLine();  
+                } finally {
+                    reader.close();
+                } 
+                plugged = (str != null) && !str.equals(panel_str);    
+            } catch (IOException e) { 
+                Slog.e(TAG, "IO Exception when read: " + filename, e);
+                return false;
+            }
+        }
+        return plugged;        
     }
 
     private final class DreamReceiver extends BroadcastReceiver {

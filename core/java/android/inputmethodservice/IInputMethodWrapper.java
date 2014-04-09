@@ -277,14 +277,19 @@ class IInputMethodWrapper extends IInputMethod.Stub
     @Override
     public void setSessionEnabled(IInputMethodSession session, boolean enabled) {
         try {
-            InputMethodSession ls = ((IInputMethodSessionWrapper)
-                    session).getInternalInputMethodSession();
-            if (ls == null) {
-                Log.w(TAG, "Session is already finished: " + session);
+            if (session != null){
+                InputMethodSession ls = ((IInputMethodSessionWrapper)
+                        session).getInternalInputMethodSession();
+                if (ls == null) {
+                    Log.w(TAG, "Session is already finished: " + session);
+                    return;
+                }
+                mCaller.executeOrSendMessage(mCaller.obtainMessageIO(
+                        DO_SET_SESSION_ENABLED, enabled ? 1 : 0, ls));
+            } else {
+                Log.w(TAG, "Session is null");
                 return;
             }
-            mCaller.executeOrSendMessage(mCaller.obtainMessageIO(
-                    DO_SET_SESSION_ENABLED, enabled ? 1 : 0, ls));
         } catch (ClassCastException e) {
             Log.w(TAG, "Incoming session not of correct type: " + session, e);
         }

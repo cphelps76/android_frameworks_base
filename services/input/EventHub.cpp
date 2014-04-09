@@ -1254,7 +1254,14 @@ status_t EventHub::openDeviceLocked(const char *devicePath) {
 
     // Enable wake-lock behavior on kernels that support it.
     // TODO: Only need this for devices that can really wake the system.
-    bool usingSuspendBlockIoctl = !ioctl(fd, EVIOCSSUSPENDBLOCK, 1);
+    bool usingSuspendBlockIoctl;
+    char value[PROPERTY_VALUE_MAX];
+    property_get("ro.platform.has.mbxuimode", value, "false");
+    if(strcmp(value, "true") == 0) {
+        usingSuspendBlockIoctl = !ioctl(fd, EVIOCSSUSPENDBLOCK, 0);
+    } else {
+        usingSuspendBlockIoctl = !ioctl(fd, EVIOCSSUSPENDBLOCK, 1);
+    }
 
     // Tell the kernel that we want to use the monotonic clock for reporting timestamps
     // associated with input events.  This is important because the input system

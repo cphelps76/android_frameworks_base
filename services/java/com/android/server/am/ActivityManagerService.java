@@ -171,9 +171,12 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.WindowManagerPolicy;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -181,6 +184,7 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -332,6 +336,8 @@ public final class ActivityManagerService extends ActivityManagerNative
     public IntentFirewall mIntentFirewall;
 
     private final boolean mHeadless;
+
+	private final String ACTION_REALVIDEO_OFF = "android.intent.action.REALVIDEO_OFF";
 
     // Whether we should show our dialogs (ANR, crash, etc) or just perform their
     // default actuion automatically.  Important for devices without direct input
@@ -2868,7 +2874,25 @@ public final class ActivityManagerService extends ActivityManagerNative
             return false;
         }
         Intent intent = getHomeIntent();
-        ActivityInfo aInfo =
+
+	    try {
+    	    //check if mount data fail
+    	    Boolean bMountFail = SystemProperties.getBoolean("ro.init.mountdatafail", false);
+    	    //Log.i( TAG, "bMountFail:" + bMountFail );
+
+            ComponentName name = new ComponentName("com.amlogic.promptuser", "com.amlogic.promptuser.BootActivity");
+    	    //PackageManager pm = mContext.getPackageManager();
+    	    //pm.setComponentEnabledSetting(name, bMountFail ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+            final IPackageManager pm = AppGlobals.getPackageManager();
+            pm.setComponentEnabledSetting(name, 
+                bMountFail ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 
+                PackageManager.DONT_KILL_APP, userId);
+        } catch (Exception e) {
+    	    Log.w( TAG, "setComponentEnabledSetting with com.amlogic.promptuser boot activity fail" );
+    	    e.printStackTrace();
+    	}
+
+	    ActivityInfo aInfo =
             resolveActivityInfo(intent, STOCK_PM_FLAGS, userId);
         if (aInfo != null) {
             intent.setComponent(new ComponentName(
@@ -2880,8 +2904,22 @@ public final class ActivityManagerService extends ActivityManagerNative
             ProcessRecord app = getProcessRecordLocked(aInfo.processName,
                     aInfo.applicationInfo.uid, true);
             if (app == null || app.instrumentationClass == null) {
-                intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
-                mStackSupervisor.startHomeActivity(intent, aInfo);
+                if(SystemProperties.getBoolean("ro.tv.source_rember", false)){
+                    if(SystemProperties.getBoolean("persist.tv.first_start", true)){
+                        intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        mStackSupervisor.startActivityLocked(null, intent, null, aInfo,
+                            null, null, 0, 0, 0, null, 0, null, false, null);
+                    }
+                    else{
+                        Intent intent_start_tvsetup = new Intent("com.tv.TvSetup.TvSetupService") ;
+                        startService( null , intent_start_tvsetup , null ,0);
+                        Log.d(TAG, "don't start Luncher for persist.tv.source_android=false");
+                    }
+                }
+                else{
+                    intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    mStackSupervisor.startHomeActivity(intent, aInfo); 
+                }          
             }
         }
 
@@ -3595,7 +3633,53 @@ public final class ActivityManagerService extends ActivityManagerNative
             Binder.restoreCallingIdentity(origId);
         }
     }
-
+        
+    /// patch for videoplayer crashed
+    private static final String OSD_BLANK_PATH = "/sys/class/graphics/fb0/blank";
+    private static final String OSD_BLOCK_MODE_PATH = "/sys/class/graphics/fb0/block_mode";
+    
+    private static int writeSysfs(String path, String val) {
+        if (!new File(path).exists()) {
+            Log.e(TAG, "File not found: " + path);
+            return 1; 
+        }
+        
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(path), 64);
+            try {
+                writer.write(val);
+            } finally {
+                writer.close();
+            }    		
+            return 0;
+        		
+        } catch (IOException e) { 
+            Log.e(TAG, "IO Exception when write: " + path, e);
+            return 1;
+        }                 
+    }
+        
+    private void onVideoPlayerCrashed(ProcessRecord app) {
+        Intent intent = new Intent("android.intent.action.APP_CRASH");
+        intent.putExtra("componentName", app.processName);
+        if (!mProcessesReady) {
+            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY
+                    | Intent.FLAG_RECEIVER_FOREGROUND);
+        }
+        mContext.sendBroadcast(intent);
+        Log.d(TAG,"send app_CRASH broadcast, packageName:" + app.processName);
+        /*
+        if (app.processName.equals("com.farcore.videoplayer")) {
+            Slog.w(TAG, "VideoPlayer Crashed!!!");
+            mContext.sendBroadcast(new Intent("com.farcore.videoplayer.PLAYER_CRASHED"));
+            SystemProperties.set("sys.statusbar.forcehide","false");
+            SystemProperties.set("vplayer.hideStatusBar.enable","false");
+            writeSysfs(OSD_BLANK_PATH, "0");
+            writeSysfs(OSD_BLOCK_MODE_PATH, "0");  
+        }*/
+    }
+    /// patch for videoplayer crashed    
+    
     /**
      * Main function for removing an existing process from the activity manager
      * as a result of that process going away.  Clears out all connections
@@ -3611,6 +3695,8 @@ public final class ActivityManagerService extends ActivityManagerNative
         if (mProfileProc == app) {
             clearProfilerLocked();
         }
+
+        onVideoPlayerCrashed(app);
 
         // Remove this application's activities from active lists.
         boolean hasVisibleActivities = mStackSupervisor.handleAppDiedLocked(app);
@@ -13478,9 +13564,14 @@ public final class ActivityManagerService extends ActivityManagerNative
                         int i;
                         for (i=0; i<N; i++) {
                             if (intent.filterEquals(list.get(i))) {
-                                throw new IllegalArgumentException(
-                                        "Sticky broadcast " + intent + " for user "
-                                        + userId + " conflicts with existing global broadcast");
+                                if (WindowManagerPolicy.ACTION_HDMI_PLUGGED.equals(intent.getAction())) {
+                                    list.set(i, new Intent(intent));
+                                    break;                                    
+                                } else {
+                                    throw new IllegalArgumentException(
+                                            "Sticky broadcast " + intent + " for user "
+                                            + userId + " conflicts with existing global broadcast");
+                                }
                             }
                         }
                     }

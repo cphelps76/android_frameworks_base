@@ -143,7 +143,7 @@ static bool isValidMotionAction(int32_t action, size_t pointerCount) {
 static bool validateMotionEvent(int32_t action, size_t pointerCount,
         const PointerProperties* pointerProperties) {
     if (! isValidMotionAction(action, pointerCount)) {
-        ALOGE("Motion event has invalid action code 0x%x", action);
+        //ALOGE("Motion event has invalid action code 0x%x", action);
         return false;
     }
     if (pointerCount < 1 || pointerCount > MAX_POINTERS) {
@@ -243,6 +243,22 @@ void InputDispatcher::dispatchOnce() {
     nsecs_t currentTime = now();
     int timeoutMillis = toMillisecondTimeoutDelay(currentTime, nextWakeupTime);
     mLooper->pollOnce(timeoutMillis);
+}
+
+static void mali_preheat()
+{
+    static int sysfd = open("/sys/class/mpgpu/mpgpucmd", O_RDWR, 0644);
+    static const char*val = "preheat";
+    static const int bytes = strlen(val);
+
+    if (sysfd >= 0) {
+        int len = write(sysfd, val, bytes);
+        if(len != bytes)
+            ALOGE("Writ preheat fail");
+        //keep it open
+        //close(fd);
+      //  ALOGD("MALI PREHEAT");
+    }
 }
 
 void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
@@ -345,6 +361,7 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     }
 
     case EventEntry::TYPE_KEY: {
+        mali_preheat();
         KeyEntry* typedEntry = static_cast<KeyEntry*>(mPendingEvent);
         if (isAppSwitchDue) {
             if (isAppSwitchKeyEventLocked(typedEntry)) {
@@ -366,6 +383,7 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     }
 
     case EventEntry::TYPE_MOTION: {
+        mali_preheat();
         MotionEntry* typedEntry = static_cast<MotionEntry*>(mPendingEvent);
         if (dropReason == DROP_REASON_NOT_DROPPED && isAppSwitchDue) {
             dropReason = DROP_REASON_APP_SWITCH;

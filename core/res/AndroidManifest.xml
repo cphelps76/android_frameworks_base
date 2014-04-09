@@ -2682,6 +2682,13 @@
             </intent-filter>
         </receiver>
 
+	<receiver android:name="com.android.server.SystemRestoreReceiver"
+            android:priority="100">
+	    <intent-filter>
+		<action android:name="android.intent.action.SYSTEM_RESTORE" />
+	    </intent-filter>
+	</receiver>
+
         <service android:name="com.android.internal.os.storage.ExternalStorageFormatter"
             android:permission="android.permission.MASTER_CLEAR"
             android:exported="true" />

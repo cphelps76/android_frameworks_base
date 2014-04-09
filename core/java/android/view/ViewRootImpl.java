@@ -1332,8 +1332,10 @@ public final class ViewRootImpl implements ViewParent,
 
         if (params != null) {
             if ((host.mPrivateFlags & View.PFLAG_REQUEST_TRANSPARENT_REGIONS) != 0) {
+                if(params.format != PixelFormat.VIDEO_HOLE_REAL) {
                 if (!PixelFormat.formatHasAlpha(params.format)) {
                     params.format = PixelFormat.TRANSLUCENT;
+                }
                 }
             }
             mAttachInfo.mOverscanRequested = (params.flags
@@ -6395,6 +6397,7 @@ public final class ViewRootImpl implements ViewParent,
         public Rect getSurfaceFrame() {
             return null;
         }
+
     };
 
     static RunQueue getRunQueue() {

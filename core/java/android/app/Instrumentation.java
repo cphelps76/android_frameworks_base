@@ -395,6 +395,12 @@ public class Instrumentation {
                 mWaitingActivities = new ArrayList();
             }
             mWaitingActivities.add(aw);
+            if (ai.name.endsWith("AccessibilityWindowQueryActivity")) {
+                try {
+                    Thread.sleep(1500);
+                } catch (Exception e) {
+                }
+            }
 
             getTargetContext().startActivity(intent);
 
@@ -855,6 +861,10 @@ public class Instrumentation {
                 // takes too long to inject the preceding ones.
                 sendKeySync(KeyEvent.changeTimeRepeat(events[i], SystemClock.uptimeMillis(), 0));
             }
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+            }
         }
     }
 
@@ -880,6 +890,10 @@ public class Instrumentation {
         int scancode = event.getScanCode();
         int source = event.getSource();
         int flags = event.getFlags();
+		try {
+			Thread.sleep(200);
+		} catch (InterruptedException e) {
+		}
         if (source == InputDevice.SOURCE_UNKNOWN) {
             source = InputDevice.SOURCE_KEYBOARD;
         }

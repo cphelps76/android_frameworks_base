@@ -1240,4 +1240,11 @@ public class ActionBarImpl extends ActionBar {
             setDisplayHomeAsUpEnabled(enable);
         }
     }
+    /**
+     * @hide
+     */
+    @Override
+    public View getActionView() {
+        return mActionView.getActionBarSpinner() ;
+    }
 }

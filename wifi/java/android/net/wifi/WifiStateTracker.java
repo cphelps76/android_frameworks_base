@@ -28,6 +28,7 @@ import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
 import android.net.SamplingDataTracker;
 import android.net.WifiLinkQualityInfo;
+import android.net.ConnectivityManager;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Messenger;
@@ -264,9 +265,10 @@ public class WifiStateTracker extends BaseNetworkStateTracker {
         public void onReceive(Context context, Intent intent) {
 
             if (intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-                mNetworkInfo = (NetworkInfo) intent.getParcelableExtra(
-                        WifiManager.EXTRA_NETWORK_INFO);
-
+                if (mNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                    mNetworkInfo = (NetworkInfo) intent.getParcelableExtra(
+                            WifiManager.EXTRA_NETWORK_INFO);
+                }
                 mLinkProperties = intent.getParcelableExtra(
                         WifiManager.EXTRA_LINK_PROPERTIES);
                 if (mLinkProperties == null) {

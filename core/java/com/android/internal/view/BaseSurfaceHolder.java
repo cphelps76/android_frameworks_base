@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -230,4 +231,6 @@ public abstract class BaseSurfaceHolder implements SurfaceHolder {
         mSurfaceFrame.right = width;
         mSurfaceFrame.bottom = height;
     }
+
 };
+

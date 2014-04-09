@@ -41,6 +41,8 @@ import android.util.Log;
 import android.util.Slog;
 import android.util.SparseBooleanArray;
 import android.util.Xml;
+import android.os.Parcelable;
+import android.hardware.usb.UsbConstants;
 
 import com.android.internal.content.PackageMonitor;
 import com.android.internal.util.FastXmlSerializer;
@@ -60,8 +62,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
+import java.lang.Thread;
 
 import libcore.io.IoUtils;
+
+
 
 class UsbSettingsManager {
     private static final String TAG = "UsbSettingsManager";
@@ -70,7 +76,11 @@ class UsbSettingsManager {
     /** Legacy settings file, before multi-user */
     private static final File sSingleUserSettingsFile = new File(
             "/data/system/usb_device_manager.xml");
-
+			
+	// For usb_audio card and device number
+	private static final String USB_AUDIO_SOURCE_PATH =
+        "/proc/asound/usb_audio_info";
+		
     private final UserHandle mUser;
     private final AtomicFile mSettingsFile;
 
@@ -607,7 +617,7 @@ class UsbSettingsManager {
         Intent intent = new Intent(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         intent.putExtra(UsbManager.EXTRA_DEVICE, device);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
+        boolean usbAudio = false;
         ArrayList<ResolveInfo> matches;
         String defaultPackage;
         synchronized (mLock) {
@@ -618,20 +628,79 @@ class UsbSettingsManager {
         }
 
         // Send broadcast to running activity with registered intent
-        mUserContext.sendBroadcast(intent);
+        mUserContext.sendBroadcastAsUser(intent, UserHandle.ALL);
 
         // Start activity with registered intent
         resolveActivity(intent, matches, defaultPackage, device, null);
+		
+		
+		UsbInterface[] interfaces = new UsbInterface[device.getInterfaceCount()];
+		for (int intf=0; intf < device.getInterfaceCount(); intf++){
+			interfaces[intf] = device.getInterface(intf);
+			Slog.i(TAG, "interfaces:"+intf+"num:"+interfaces[intf].getInterfaceClass());
+			if (interfaces[intf].getInterfaceClass() == 1)
+				usbAudio = true;
+		}
+        
+		if(usbAudio){	
+			Intent intentUsbAudio = new Intent(Intent.ACTION_USB_AUDIO_DEVICE_PLUG);//
+			intentUsbAudio.addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+           	intentUsbAudio.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
+			File fileUsbAudio = new File(USB_AUDIO_SOURCE_PATH);
+			try {
+				int i = 0, waitSec = 5;
+				while (true){
+					try {
+					  //Slog.e(TAG, "********Try file UsbAudio*********"+ i);
+					  Thread.currentThread().sleep(1000);
+					}catch(InterruptedException e){Slog.e(TAG, "audio source file does not exist", e);}
+					if(fileUsbAudio.exists()) break;					
+					if(i >= waitSec){
+						Slog.e(TAG, "ERROR!!, Can't get usbStream file after "+waitSec+"s!!");
+						break;
+					}
+					i++;
+				}				
+				Scanner scanner = new Scanner(fileUsbAudio);
+                int usbid = scanner.nextInt(16);
+              //  Slog.d(TAG, "**usbid**" + usbid);
+                int card = scanner.nextInt();
+                int deviceNum = scanner.nextInt();
+				Slog.d(TAG, "usbid= " + usbid + " card= " + card + "::device=" + deviceNum);
+				intentUsbAudio.putExtra("state", 1);
+                intentUsbAudio.putExtra("usbid", usbid);
+				intentUsbAudio.putExtra("card", card);
+                intentUsbAudio.putExtra("device", deviceNum);
+				mContext.sendStickyBroadcast(intentUsbAudio);//
+				scanner.close();
+            } catch (FileNotFoundException e) {
+                Slog.e(TAG, "ERROR, could not open usb audio info file", e);
+            }
+		}
+		
     }
 
     public void deviceDetached(UsbDevice device) {
         // clear temporary permissions for the device
         mDevicePermissionMap.remove(device.getDeviceName());
-
+        boolean usbAudio = false;
         Intent intent = new Intent(UsbManager.ACTION_USB_DEVICE_DETACHED);
         intent.putExtra(UsbManager.EXTRA_DEVICE, device);
         if (DEBUG) Slog.d(TAG, "usbDeviceRemoved, sending " + intent);
         mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
+        UsbInterface[] interfaces = new UsbInterface[device.getInterfaceCount()];
+        for (int intf=0; intf < device.getInterfaceCount(); intf++){
+            interfaces[intf] = device.getInterface(intf);
+            Slog.i(TAG, "interfaces:"+intf+"num:"+interfaces[intf].getInterfaceClass());
+            if (interfaces[intf].getInterfaceClass() == 1)
+            usbAudio = true;
+        }
+
+        if(usbAudio){
+            Intent intentUsbAudio = new Intent(Intent.ACTION_USB_AUDIO_DEVICE_PLUG);
+            intentUsbAudio.putExtra("state", 0);
+            mContext.sendBroadcastAsUser(intentUsbAudio, UserHandle.ALL);
+        }
     }
 
     public void accessoryAttached(UsbAccessory accessory) {

@@ -17,6 +17,13 @@
 -->
 <resources>
 
+    <!-- navigation  -->
+    <dimen name="navigation_key_land_width">125dp</dimen>
+    <dimen name="navigation_key_port_width">90dp</dimen>
+    <dimen name="navigation_key_land_width_space">3dp</dimen>
+    <dimen name="navigation_key_port_width_space">0dp</dimen>
+
+
     <!-- ======================================== -->
     <!-- The following resources were recently moved from sw600dp; there may
          be situations where they don't sync up perfectly with PhoneStatusBar. -->

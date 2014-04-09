@@ -137,6 +137,9 @@ struct InputReaderConfiguration {
         // The device name alias supplied by the may have changed for some devices.
         CHANGE_DEVICE_ALIAS = 1 << 5,
 
+        // The cursor input enable status changed.
+        CHANGE_CURSOR_INPUT_STATUS = 1 << 6,
+
         // All devices must be reopened.
         CHANGE_MUST_REOPEN = 1 << 31,
     };
@@ -224,6 +227,8 @@ struct InputReaderConfiguration {
     // True to show the location of touches on the touch screen as spots.
     bool showTouches;
 
+    // True to enable dispatching events from cursor input devices.
+    bool cursorEnabled;
     InputReaderConfiguration() :
             virtualKeyQuietTime(0),
             pointerVelocityControlParameters(1.0f, 500.0f, 3000.0f, 3.0f),
@@ -240,7 +245,8 @@ struct InputReaderConfiguration {
             pointerGestureSwipeMaxWidthRatio(0.25f),
             pointerGestureMovementSpeedRatio(0.8f),
             pointerGestureZoomSpeedRatio(0.3f),
-            showTouches(false) { }
+            showTouches(false),
+            cursorEnabled(true) { }
 
     bool getDisplayInfo(bool external, DisplayViewport* outViewport) const;
     void setDisplayInfo(bool external, const DisplayViewport& viewport);
@@ -303,6 +309,8 @@ public:
     /* Called by the heatbeat to ensures that the reader has not deadlocked. */
     virtual void monitor() = 0;
 
+    /* Set TV Out Status */
+    virtual void setTvOutStatus(bool enabled) = 0;
     /* Runs a single iteration of the processing loop.
      * Nominally reads and processes one incoming message from the EventHub.
      *
@@ -406,6 +414,7 @@ public:
     virtual void vibrate(int32_t deviceId, const nsecs_t* pattern, size_t patternSize,
             ssize_t repeat, int32_t token);
     virtual void cancelVibrate(int32_t deviceId, int32_t token);
+	virtual void setTvOutStatus(bool enabled);
 
 protected:
     // These members are protected so they can be instrumented by test cases.
@@ -547,6 +556,8 @@ public:
     void bumpGeneration();
 
     void notifyReset(nsecs_t when);
+
+    void setTvOutStatus(bool enabled);
 
     inline const PropertyMap& getConfiguration() { return mConfiguration; }
     inline EventHubInterface* getEventHub() { return mContext->getEventHub(); }
@@ -945,6 +956,8 @@ public:
 
     virtual void fadePointer();
 
+    virtual void setTvOutStatus(bool enabled);
+
 protected:
     InputDevice* mDevice;
     InputReaderContext* mContext;
@@ -1109,6 +1122,7 @@ private:
     CursorMotionAccumulator mCursorMotionAccumulator;
     CursorScrollAccumulator mCursorScrollAccumulator;
 
+    bool mEnabled;
     int32_t mSource;
     float mXScale;
     float mYScale;
@@ -1156,6 +1170,7 @@ public:
             const int32_t* keyCodes, uint8_t* outFlags);
 
     virtual void fadePointer();
+    void setTvOutStatus(bool enabled);
     virtual void timeoutExpired(nsecs_t when);
 
 protected:
@@ -1181,6 +1196,12 @@ protected:
 
     // Input sources and device mode.
     uint32_t mSource;
+
+    // Tv out status
+    bool mTvOutStatus;
+
+    // Padmouse status
+    bool mPadmouseStatus;
 
     enum DeviceMode {
         DEVICE_MODE_DISABLED, // input is disabled
@@ -1359,6 +1380,8 @@ private:
     // requested orientation, so it will depend on whether the device is orientation aware.
     int32_t mSurfaceWidth;
     int32_t mSurfaceHeight;
+	int32_t mHWRotation;
+
     int32_t mSurfaceLeft;
     int32_t mSurfaceTop;
     int32_t mSurfaceOrientation;

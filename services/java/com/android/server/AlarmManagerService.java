@@ -24,10 +24,16 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.database.SQLException;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -47,15 +53,22 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.TimeZone;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import android.util.Log;
+import android.app.ActivityManager;
 
 import static android.app.AlarmManager.RTC_WAKEUP;
 import static android.app.AlarmManager.RTC;
@@ -86,6 +99,13 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private static final boolean DEBUG_VALIDATE = localLOGV || false;
     private static final int ALARM_EVENT = 1;
     private static final String TIMEZONE_PROPERTY = "persist.sys.timezone";
+    private static boolean mAlign = false;
+    private final DatabaseHelper mOpenHelper;
+    private static final String TABLE = "whitelist";
+    private static final String APP_NAME = "AppName";
+    private static final String[] WHITE_LIST = {"android","com.android.alarmclock","com.android.deskclock","com.android.calculator2","com.android.cts.stub","com.android.cts.provider","com.android.providers.calendar"};
+    private final ArrayList<AppBlacklistItem> mAppBlacklist = new ArrayList<AppBlacklistItem>();
+    private final ArrayList<String> mAppWhitelist = new ArrayList<String>();
     
     private static final Intent mBackgroundIntent
             = new Intent().addFlags(Intent.FLAG_FROM_BACKGROUND);
@@ -112,7 +132,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private final ResultReceiver mResultReceiver = new ResultReceiver();
     private final PendingIntent mTimeTickSender;
     private final PendingIntent mDateChangeSender;
-
+    
     class WakeupEvent {
         public long when;
         public int uid;
@@ -486,6 +506,15 @@ class AlarmManagerService extends IAlarmManager.Stub {
         intent.addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
         mDateChangeSender = PendingIntent.getBroadcastAsUser(context, 0, intent,
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT, UserHandle.ALL);
+
+		 //create database for apk whitelist
+        mOpenHelper = new DatabaseHelper(mContext);
+        
+
+        String alignEnable = SystemProperties.get("ro.alarm.align", "false");
+        if(alignEnable.equals("true")){
+            mAlign = true;
+        }
         
         // now that we have initied the driver schedule the alarm
         mClockReceiver= new ClockReceiver();
@@ -498,6 +527,64 @@ class AlarmManagerService extends IAlarmManager.Stub {
         } else {
             Slog.w(TAG, "Failed to open alarm driver. Falling back to a handler.");
         }
+
+       try{
+           BufferedReader br = new BufferedReader(new InputStreamReader(
+                new FileInputStream("/system/etc/alarm_blacklist.txt")));
+
+            String line ="";
+            AppBlacklistItem backitem= null;
+            while ((line = br.readLine()) != null){
+                if (localLOGV)  Log.d(TAG, "black alarm" +line);
+                String nametype[] = line.split(":");
+                backitem = new AppBlacklistItem(nametype[0], nametype[1]);
+                mAppBlacklist.add(backitem);
+            }
+
+            br.close();
+        }catch(java.io.FileNotFoundException ex){
+        }catch(java.io.IOException ex){
+        }
+
+
+       try{
+           BufferedReader br = new BufferedReader(new InputStreamReader(
+                new FileInputStream("/system/etc/alarm_whitelist.txt")));
+
+            String line ="";
+            while ((line = br.readLine()) != null){
+                if (localLOGV)  Log.d(TAG, "white alarm" +line);
+                mAppWhitelist.add(line);
+            }
+
+            br.close();
+        }catch(java.io.FileNotFoundException ex){
+        }catch(java.io.IOException ex){
+        }
+
+        initWhiteListDB();
+
+    }
+
+    private void initWhiteListDB(){
+        //import base white list
+        for (int i=0; i < WHITE_LIST.length; i++){
+            if(!queryFromDb(WHITE_LIST[i]))
+                insertToDb(WHITE_LIST[i]);
+        }  
+        //import extra white list
+        Iterator<String> it = mAppWhitelist.iterator();
+        while (it.hasNext()) {
+            String whiteItem = it.next();
+            Slog.d(TAG, whiteItem + " in whitelist." );
+            if(!queryFromDb(whiteItem))
+                insertToDb(whiteItem);
+        }
+
+    }
+
+    private boolean inWhiteList(String packageName){
+        return queryFromDb(packageName);
     }
     
     protected void finalize() throws Throwable {
@@ -570,6 +657,18 @@ class AlarmManagerService extends IAlarmManager.Stub {
         }
     }
 
+    public void setAlignEnable(boolean align){
+        mAlign = align;
+    }
+
+    public void addToWhitelist(String packageName){
+        insertToDb(packageName);
+    }
+
+    public void removeFromWhitelist(String packageName){
+        removefromDb(packageName);
+    }
+    
     private void setImplLocked(int type, long when, long whenElapsed, long windowLength,
             long maxWhen, long interval, PendingIntent operation, boolean isStandalone,
             boolean doValidate, WorkSource workSource) {
@@ -1077,7 +1176,127 @@ class AlarmManagerService extends IAlarmManager.Stub {
             return 0;
         }
     }
+
+    private static class AppBlacklistItem{
+        public int type;
+        public String name;
+
+        public static final int REPlACE = 0;     //replace with non-wakeup alarm
+        public static final int REMOVE = 1;     //remove this alarm
+
+        public AppBlacklistItem(){
+            type = REMOVE;
+            name = null;
+        }
+
+        public AppBlacklistItem(String inName, String inType){
+            name = inName;
+            if("remove".equals(inType))
+                type = REMOVE;
+            else
+                type = REPlACE;
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder(128);
+            sb.append("AppBlacklistItem{");
+            sb.append(Integer.toHexString(System.identityHashCode(this)));
+            sb.append(" type ");
+            sb.append(type);
+            sb.append(" ");
+            sb.append(name);
+            sb.append('}');
+            return sb.toString();
+        }
+
+        public void dump(PrintWriter pw) {
+            pw.print(" type=");
+            if(REPlACE == type)
+                pw.print(" REPLACE");
+            else
+                pw.print(" REMOVE");
+            pw.print(" name="); pw.println(name);
+        }
+    }
     
+
+    private void insertToDb(String appName) {
+        ContentValues cv = new ContentValues();
+        cv.put(APP_NAME, appName);
+
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.insert(TABLE, null, cv);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    private void removefromDb(String packageName) {
+
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete(TABLE, APP_NAME+"=?", new String[] { packageName });
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    private boolean queryFromDb(String packageName) {
+        Cursor cursor;
+        boolean result = false;
+        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
+
+        if ((cursor = db.query(TABLE, null,APP_NAME+"=?", new String[] { packageName }, null, null, null)) != null) {
+            if (cursor.moveToFirst()) {
+                result = true;
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
+
+
+    private class DatabaseHelper extends SQLiteOpenHelper {
+        private static final String DATABASE_NAME = "whitelist.db";
+
+        private static final int DATABASE_VERSION = 1;
+
+        public DatabaseHelper(Context context) {
+            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+            //setWriteAheadLoggingEnabled(true);
+        }
+
+        private void createTable(SQLiteDatabase db) {
+        try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE + " (" +
+                        "_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        APP_NAME + " TEXT UNIQUE" +
+                        ");");
+            }catch(SQLException e) {
+                Slog.e(TAG, "create table failed");
+            }
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            createTable(db);
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int currentVersion) {
+            // Nothing yet
+        }
+    }
+
+
     private static class Alarm {
         public int type;
         public int count;

@@ -57,6 +57,7 @@ import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
 import android.util.DisplayMetrics;
@@ -71,6 +72,7 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewPropertyAnimator;
 import android.view.ViewStub;
+import android.view.Surface;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
@@ -253,6 +255,15 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 
     int[] mAbsPos = new int[2];
     Runnable mPostCollapseCleanup = null;
+
+    private Animator mLightsOutAnimation;
+    private Animator mLightsOnAnimation;
+
+    private static final String setRotVal = "android.intent.action.RECORD_ROTATION_SETTINGS";
+    private static final String setRotShow = "android.intent.action.RECORD_ROTATION_SHOW";
+    private static final String setRotStr = "rot_setting";
+    private static int irot=0;
+    private Drawable[] rotsrc=new Drawable[4];
 
     // for disabling the status bar
     int mDisabled = 0;
@@ -532,6 +543,10 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         // Other icons
         mLocationController = new LocationController(mContext); // will post a notification
         mBatteryController = new BatteryController(mContext);
+        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))){
+            //mBatteryController.addIconView((ImageView)mStatusBarView.findViewById(R.id.battery));
+        }
+
         mNetworkController = new NetworkController(mContext);
         mBluetoothController = new BluetoothController(mContext);
         mRotationLockController = new RotationLockController(mContext);
@@ -642,12 +657,17 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         filter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(setRotShow);
         filter.addAction(ACTION_DEMO);
         context.registerReceiver(mBroadcastReceiver, filter);
 
         // listen for USER_SETUP_COMPLETE setting (per-user)
         resetUserSetupObserver();
 
+        rotsrc[0]=res.getDrawable(R.drawable.ic_sysbar_rotate0);
+        rotsrc[1]=res.getDrawable(R.drawable.ic_sysbar_rotate90);
+        rotsrc[2]=res.getDrawable(R.drawable.ic_sysbar_rotate180); 
+        rotsrc[3]=res.getDrawable(R.drawable.ic_sysbar_rotate270); 
         return mStatusBarView;
     }
 
@@ -747,7 +767,22 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
             toggleRecentApps();
         }
     };
-
+    private View.OnClickListener mRotSettingClickListener = new View.OnClickListener() {
+        public void onClick(View v) {
+            ImageView rotBtn = mNavigationBarView.getRotationSettingButton();
+            if(irot >= 0){
+                irot = (irot+1)%4;
+                rotBtn.setBackgroundDrawable(rotsrc[irot]);
+                sendRotBroadcast();
+            }
+        }
+    };
+    private void sendRotBroadcast(){
+        Intent intent=new Intent(setRotVal);
+        intent.putExtra(setRotStr, irot);
+        mContext.sendBroadcast(intent);
+        Log.d("rot","sendbroadcast  PhoneStatusBar");
+    }
     private int mShowSearchHoldoff = 0;
     private Runnable mShowSearchPanel = new Runnable() {
         public void run() {
@@ -791,6 +826,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 
         mNavigationBarView.getRecentsButton().setOnClickListener(mRecentsClickListener);
         mNavigationBarView.getRecentsButton().setOnTouchListener(mRecentsPreloadOnTouchListener);
+        mNavigationBarView.getRotationSettingButton().setOnClickListener(mRotSettingClickListener);
         mNavigationBarView.getHomeButton().setOnTouchListener(mHomeSearchActionListener);
         mNavigationBarView.getSearchLight().setOnTouchListener(mHomeSearchActionListener);
         updateSearchPanel();
@@ -2470,6 +2506,21 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
                 // work around problem where mDisplay.getRotation() is not stable while screen is off (bug 7086018)
                 repositionNavigationBar();
                 notifyNavigationBarScreenOn(true);
+            }
+            else if (setRotShow.equals(action)){
+                ImageView rotBtn = mNavigationBarView.getRotationSettingButton();
+                int rot = intent.getIntExtra(setRotStr,-1);
+                if (rotBtn!=null&&rot>=-1){
+                    if (rot==0&&rotBtn.isShown() == false){
+                        rotBtn.setBackgroundDrawable(rotsrc[0]);
+                        rotBtn.setVisibility(View.VISIBLE);
+                        irot = 0;
+                    }else if (rot == -1&&rotBtn.isShown()){
+                        rotBtn.setVisibility(View.GONE);
+                        irot = -1;
+                        sendRotBroadcast();
+                    }
+                }
             }
             else if (ACTION_DEMO.equals(action)) {
                 Bundle bundle = intent.getExtras();

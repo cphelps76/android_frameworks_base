@@ -154,6 +154,7 @@
     <string name="shutdown_confirm" product="tablet" msgid="3385745179555731470">"您的平板电脑会关闭。"</string>
     <string name="shutdown_confirm" product="default" msgid="649792175242821353">"您的手机将会关机。"</string>
     <string name="shutdown_confirm_question" msgid="2906544768881136183">"您要关机吗？"</string>
+    <string name="shutdown_confirm_question_chiptemp_hot">"CPU温度过高,您要关机吗？"</string>
     <string name="reboot_safemode_title" msgid="7054509914500140361">"重新启动并进入安全模式"</string>
     <string name="reboot_safemode_confirm" msgid="55293944502784668">"您要重新启动并进入安全模式吗？这样会停用您已安装的所有第三方应用。再次重新启动将恢复这些应用。"</string>
     <string name="recent_tasks_title" msgid="3691764623638127888">"近期任务"</string>
@@ -1280,27 +1281,55 @@
     <string name="candidates_style" msgid="4333913089637062257"><u>"候选"</u></string>
     <string name="ext_media_checking_notification_title" product="nosdcard" msgid="3449816005351468560">"正在准备 USB 存储设备"</string>
     <string name="ext_media_checking_notification_title" product="default" msgid="5457603418970994050">"正在准备 SD 卡"</string>
+    <string name="ext2_media_checking_notification_title" product="default" msgid="5457603418970994050">"正在准备外部 SD 卡"</string>    
+    <string name="int_media_checking_notification_title">"正在准备 NAND 存储设备"</string>
+    <string name="other_ext_media_checking_notification_title">"正在准备 USB 存储设备"</string>
     <string name="ext_media_checking_notification_message" msgid="8287319882926737053">"正在检查是否有错误。"</string>
+    <string name="ext2_media_checking_notification_message" msgid="8287319882926737053">"正在检查是否有错误。"</string>    
     <string name="ext_media_nofs_notification_title" product="nosdcard" msgid="7788040745686229307">"USB 存储设备中无文件"</string>
     <string name="ext_media_nofs_notification_title" product="default" msgid="780477838241212997">"空 SD 卡"</string>
-    <string name="ext_media_nofs_notification_message" product="nosdcard" msgid="7840121067427269500">"USB 存储设备中没有任何文件或使用了不支持的文件系统。"</string>
-    <string name="ext_media_nofs_notification_message" product="default" msgid="8641065641786923604">"SD 卡中没有任何文件或使用了不支持的文件系统。"</string>
+    <string name="ext2_media_nofs_notification_title" product="default" msgid="780477838241212997">"空外部 SD 卡"</string>    
+    <string name="other_ext_media_nofs_notification_title">"USB 存储设备中无文件"</string>
+    <string name="int_media_nofs_notification_title">"空 NAND 存储设备"</string>
+    <string name="ext_media_nofs_notification_message" product="nosdcard" msgid="8623130522556087311">"USB 存储设备中无文件或使用了不支持的文件系统。"</string>
+    <string name="ext_media_nofs_notification_message" product="default" msgid="3817704088027829380">"SD 卡无文件系统，或文件系统不受支持。"</string>
+    <string name="ext2_media_nofs_notification_message" product="default" msgid="3817704088027829380">"外部 SD 卡无文件系统，或文件系统不受支持。"</string>    
+    <string name="int_media_nofs_notification_message">"NAND 存储设备中无文件或使用了不支持的文件系统。"</string>
+    <string name="other_ext_media_nofs_notification_message">"USB 存储设备中无文件或使用了不支持的文件系统。"</string>
     <string name="ext_media_unmountable_notification_title" product="nosdcard" msgid="2090046769532713563">"USB 存储设备已损坏"</string>
     <string name="ext_media_unmountable_notification_title" product="default" msgid="6410723906019100189">"SD 卡受损"</string>
-    <string name="ext_media_unmountable_notification_message" product="nosdcard" msgid="1795917578395333280">"USB 存储设备已损坏，请尝试重新格式化。"</string>
-    <string name="ext_media_unmountable_notification_message" product="default" msgid="1753898567525568253">"SD 卡已损坏，请尝试重新格式化。"</string>
+    <string name="ext2_media_unmountable_notification_title" product="default" msgid="6410723906019100189">"外部 SD 卡受损"</string>    
+    <string name="int_media_unmountable_notification_title">"NAND 存储设备已损坏"</string>
+    <string name="other_ext_media_unmountable_notification_title">"USB 存储设备已损坏"</string>
+    <string name="ext_media_unmountable_notification_message" product="nosdcard" msgid="529021299294450667">"USB 存储设备已损坏，您可能需要对其重新格式化。"</string>
+    <string name="ext_media_unmountable_notification_message" product="default" msgid="6902531775948238989">"SD 卡已损坏。您可能必须将其重新格式化。"</string>
+    <string name="ext2_media_unmountable_notification_message" product="default" msgid="6902531775948238989">"外部 SD 卡已损坏。您可能必须将其重新格式化。"</string>    
+    <string name="int_media_unmountable_notification_message">"NAND 存储设备已损坏，您可能需要对其重新格式化。"</string>
+    <string name="other_ext_media_unmountable_notification_message">"USB 存储设备已损坏，您可能需要对其重新格式化。"</string>
     <string name="ext_media_badremoval_notification_title" product="nosdcard" msgid="1661683031330951073">"USB 存储设备已意外移除"</string>
     <string name="ext_media_badremoval_notification_title" product="default" msgid="6872152882604407837">"SD 卡未正常移除"</string>
+    <string name="ext2_media_badremoval_notification_title" product="default" msgid="6872152882604407837">"外部 SD 卡未正常移除"</string>    
+    <string name="other_ext_media_badremoval_notification_title">"USB 存储设备已意外移除"</string>
     <string name="ext_media_badremoval_notification_message" product="nosdcard" msgid="4329848819865594241">"请先卸载 USB 存储设备，再将其移除，以防数据丢失。"</string>
     <string name="ext_media_badremoval_notification_message" product="default" msgid="7260183293747448241">"请先卸载 SD 卡，再将其移除，以防数据丢失。"</string>
+    <string name="ext2_media_badremoval_notification_message" product="default" msgid="7260183293747448241">"请先卸载外部 SD 卡，再将其移除，以防数据丢失。"</string>    
+    <string name="other_ext_media_badremoval_notification_message">"请先卸载 USB 存储设备，再将其移除，以防数据丢失。"</string>
     <string name="ext_media_safe_unmount_notification_title" product="nosdcard" msgid="3967973893270360230">"USB 存储设备已安全移除"</string>
     <string name="ext_media_safe_unmount_notification_title" product="default" msgid="6729801130790616200">"SD 卡已安全移除"</string>
+    <string name="ext2_media_safe_unmount_notification_title" product="default" msgid="6729801130790616200">"外部 SD 卡已安全移除"</string>    
+    <string name="other_ext_media_safe_unmount_notification_title">"USB 存储设备已安全移除"</string>
     <string name="ext_media_safe_unmount_notification_message" product="nosdcard" msgid="6142195361606493530">"您可以安全地移除 USB 存储设备。"</string>
     <string name="ext_media_safe_unmount_notification_message" product="default" msgid="568841278138377604">"您现在可以安全移除 SD 卡。"</string>
+    <string name="ext2_media_safe_unmount_notification_message" product="default" msgid="568841278138377604">"您现在可以安全移除外部 SD 卡。"</string>    
+    <string name="other_ext_media_safe_unmount_notification_message">"您可以安全地移除 USB 存储设备。"</string>
     <string name="ext_media_nomedia_notification_title" product="nosdcard" msgid="4486377230140227651">"USB 存储设备已移除"</string>
     <string name="ext_media_nomedia_notification_title" product="default" msgid="8902518030404381318">"已移除 SD 卡"</string>
+    <string name="ext2_media_nomedia_notification_title" product="default" msgid="8902518030404381318">"已移除外部 SD 卡"</string>    
+    <string name="other_ext_media_nomedia_notification_title">"USB 存储设备已移除"</string>
     <string name="ext_media_nomedia_notification_message" product="nosdcard" msgid="6921126162580574143">"USB 存储设备已移除。请插入新媒体。"</string>
     <string name="ext_media_nomedia_notification_message" product="default" msgid="3870120652983659641">"SD 卡已移除。请插入新的 SD 卡。"</string>
+    <string name="ext2_media_nomedia_notification_message" product="default" msgid="3870120652983659641">"外部 SD 卡已移除。请插入新的 SD 卡。"</string>    
+    <string name="other_ext_media_nomedia_notification_message">"USB 存储设备已移除。请插入新媒体。"</string>
     <string name="activity_list_empty" msgid="1675388330786841066">"未找到匹配的活动。"</string>
     <string name="permlab_pkgUsageStats" msgid="8787352074326748892">"更新组件使用情况统计"</string>
     <string name="permdesc_pkgUsageStats" msgid="1106612424254277630">"允许应用修改收集到的组件使用情况统计信息。普通应用不应使用此权限。"</string>

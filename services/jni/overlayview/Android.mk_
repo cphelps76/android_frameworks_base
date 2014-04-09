@@ -1,0 +1,67 @@
+LOCAL_PATH:= $(call my-dir)
+
+# first lib, which will be built statically
+#
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := libaml_hdmi_in_hdmi_in_api
+LOCAL_SRC_FILES := aml_hdmi_in_hdmi_in_api.c \
+	mAlsa.cpp  audiodsp_ctl.cpp  \
+	audio_utils_ctl.cpp \
+	aml_hdmi_in_hdmi_in_test.c \
+	aml_hdmi_in_hdmi_in_widget.c \
+	aml_hdmi_in_hdmi_in_boot.c \
+	aml_hdmi_in_hdmi_in_fs_activity.c
+	
+#LOCAL_CERTIFICATE := platform
+
+LOCAL_CFLAGS := \
+	-fPIC -D_POSIX_SOURCE \
+	-DALSA_CONFIG_DIR=\"/system/usr/share/alsa\" \
+	-DALSA_PLUGIN_DIR=\"/system/usr/lib/alsa-lib\" \
+	-DALSA_DEVICE_DIRECTORY=\"/dev/snd/\"
+
+LOCAL_C_INCLUDES:= \
+	$(LOCAL_PATH)/include \
+	$(LOCAL_PATH)/android \
+	external/alsa-lib/include  \
+	$(JNI_H_INCLUDE)                                                \
+	$(call include-path-for, graphics corecg)                       \
+	$(TOP)/frameworks/base/include/media/stagefright/openmax \
+	$(TOP)/frameworks/base/media/libstagefright/include             \
+	$(TOP)/frameworks/base/media/libstagefright/rtsp                \
+        $(TOP)/external/tremolo/Tremolo \	
+
+LOCAL_PROGUARD_ENABLED := disabled
+
+LOCAL_MODULE_TAGS := optional
+
+LOCAL_PRELINK_MODULE := false
+
+LOCAL_SHARED_LIBRARIES := \
+	libcutils             			\
+	libutils              			\
+	libmedia					\
+
+LOCAL_SHARED_LIBRARIES +=liblog
+
+include $(BUILD_SHARED_LIBRARY)
+
+
+
+
+
+LOCAL_PATH := $(call my-dir)
+
+
+
+#LOCAL_SRC_FILES := mAlsa.cpp  audiodsp_ctl.cpp  audio_utils_ctl.cpp main.cpp
+				
+
+#LOCAL_MODULE    := hdmi_audio_test
+
+
+#include $(BUILD_EXECUTABLE)
+include $(call all-makefiles-under,$(LOCAL_PATH))
+
+

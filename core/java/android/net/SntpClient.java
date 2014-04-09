@@ -85,7 +85,10 @@ public class SntpClient
             buffer[0] = NTP_MODE_CLIENT | (NTP_VERSION << 3);
 
             // get current time and write it to the request packet
-            long requestTime = System.currentTimeMillis();
+            //long requestTime = System.currentTimeMillis();
+            long requestTime = 1332991872432L;
+            /*fix local time up 2036.02.07 6:28:16 cannot get right ntp time, this code only usefull before  2036.02.07 6:28:16, 
+            fixme, anyway, if it is still under using, I am happy, frank chen*/
             long requestTicks = SystemClock.elapsedRealtime();
             writeTimeStamp(buffer, TRANSMIT_TIME_OFFSET, requestTime);
 

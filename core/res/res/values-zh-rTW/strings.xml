@@ -154,6 +154,7 @@
     <string name="shutdown_confirm" product="tablet" msgid="3385745179555731470">"您的平板電腦將會關機。"</string>
     <string name="shutdown_confirm" product="default" msgid="649792175242821353">"手機即將關機。"</string>
     <string name="shutdown_confirm_question" msgid="2906544768881136183">"您要關機嗎？"</string>
+    <string name="shutdown_confirm_question_chiptemp_hot">"CPU溫度過高,您要關機嗎？"</string>
     <string name="reboot_safemode_title" msgid="7054509914500140361">"重新啟動進入安全模式"</string>
     <string name="reboot_safemode_confirm" msgid="55293944502784668">"您要重新啟動進入安全模式嗎？這會將您安裝的所有第三方應用程式全部停用。如要還原這些應用程式，只要再次重新啟動即可。"</string>
     <string name="recent_tasks_title" msgid="3691764623638127888">"最新的"</string>

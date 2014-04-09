@@ -30,6 +30,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.ParcelFileDescriptor;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -114,6 +115,8 @@ public class SurfaceView extends View {
     int mWindowType = WindowManager.LayoutParams.TYPE_APPLICATION_MEDIA;
 
     boolean mIsCreating = false;
+    boolean mOpaque = false;
+    boolean isVideoHole = false;
 
     final Handler mHandler = new Handler() {
         @Override
@@ -143,6 +146,8 @@ public class SurfaceView extends View {
     boolean mRequestedVisible = false;
     boolean mWindowVisibility = false;
     boolean mViewVisibility = false;
+    boolean mRequestedOpaque = false;
+	boolean mRequestedVideoHole = false;
     int mRequestedWidth = -1;
     int mRequestedHeight = -1;
     /* Set SurfaceView's format to 565 by default to maintain backward
@@ -284,6 +289,18 @@ public class SurfaceView extends View {
         int height = mRequestedHeight >= 0
                 ? resolveSizeAndState(mRequestedHeight, heightMeasureSpec, 0)
                 : getDefaultSize(0, heightMeasureSpec);
+
+		//tellen add 2012/12/07 for apk compatibility
+		if(SystemProperties.getBoolean("service.apk.resize", false)){
+			if(width < height){
+				width = 600;
+			}
+			else if(width > height){
+				height = 552;
+			}
+ 			//Log.i(TAG, "onMeasure resize apk width:" + width + ", height:" + height);
+		}
+		
         setMeasuredDimension(width, height);
     }
 
@@ -439,10 +456,12 @@ public class SurfaceView extends View {
         final boolean formatChanged = mFormat != mRequestedFormat;
         final boolean sizeChanged = mWidth != myWidth || mHeight != myHeight;
         final boolean visibleChanged = mVisible != mRequestedVisible;
+        final boolean opaqueChanged = mOpaque != mRequestedOpaque;
+		final boolean videoholeChanged = isVideoHole != mRequestedVideoHole ;
 
         if (force || creating || formatChanged || sizeChanged || visibleChanged
             || mLeft != mLocation[0] || mTop != mLocation[1]
-            || mUpdateWindowNeeded || mReportDrawNeeded || redrawNeeded) {
+            || mUpdateWindowNeeded || mReportDrawNeeded || redrawNeeded || opaqueChanged || videoholeChanged){
 
             if (DEBUG) Log.i(TAG, "Changes: creating=" + creating
                     + " format=" + formatChanged + " size=" + sizeChanged
@@ -457,6 +476,8 @@ public class SurfaceView extends View {
                 mWidth = myWidth;
                 mHeight = myHeight;
                 mFormat = mRequestedFormat;
+                mOpaque = mRequestedOpaque;
+				isVideoHole = mRequestedVideoHole;
 
                 // Scaling/Translate window's layout here because mLayout is not used elsewhere.
 
@@ -468,8 +489,10 @@ public class SurfaceView extends View {
                 if (mTranslator != null) {
                     mTranslator.translateLayoutParamsInAppWindowToScreen(mLayout);
                 }
+                
+                mLayout.format = mOpaque ? PixelFormat.VIDEO_HOLE : mRequestedFormat;
+				mLayout.format = isVideoHole ? PixelFormat.VIDEO_HOLE_REAL : mRequestedFormat;
 
-                mLayout.format = mRequestedFormat;
                 mLayout.flags |=WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                               | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                               | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
@@ -748,6 +771,17 @@ public class SurfaceView extends View {
             if (format == PixelFormat.OPAQUE)
                 format = PixelFormat.RGB_565;
 
+            mRequestedOpaque = (format == PixelFormat.VIDEO_HOLE);
+			mRequestedVideoHole = (format == PixelFormat.VIDEO_HOLE_REAL);
+
+            if (format == PixelFormat.VIDEO_HOLE) {
+                format = PixelFormat.RGBA_8888;
+            }
+
+			if (format == PixelFormat.VIDEO_HOLE_REAL) {
+				format = PixelFormat.RGBA_8888;
+			}
+
             mRequestedFormat = format;
             if (mWindow != null) {
                 updateWindow(false, false);
@@ -862,5 +896,10 @@ public class SurfaceView extends View {
         public Rect getSurfaceFrame() {
             return mSurfaceFrame;
         }
+
+        public void setFlags(int flags, int mask){
+            //mSurface.setFlags(flags, mask);
+        }
+        
     };
 }

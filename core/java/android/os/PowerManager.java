@@ -605,6 +605,17 @@ public final class PowerManager {
         }
     }
 
+   /**
+    * set brightness to save power
+    * {@hide}
+    */
+    public void setBrightnessSavePower(int value) {
+        try {
+            mService.setBrightnessSavePower(value);
+        } catch (RemoteException e) {
+        }
+    }
+
     /**
      * A wake lock is a mechanism to indicate that your application needs
      * to have the device stay on.

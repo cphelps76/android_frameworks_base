@@ -236,6 +236,27 @@ public class Environment {
         }
     }
 
+    private static StorageVolume getStorageVolume(String path) {
+    	StorageVolume storageVolume = null;
+        synchronized (sLock) {
+            try {
+                IMountService mountService = IMountService.Stub.asInterface(ServiceManager
+                        .getService("mount"));
+                Parcelable[] volumes = mountService.getVolumeList();
+                int length = volumes.length;
+                for (int i = 0; i < length; i++) {
+                    if (((StorageVolume)volumes[i]).getPath().equals(path)) {
+                        storageVolume = (StorageVolume)volumes[i];
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "couldn't talk to MountService", e);
+            }
+        }
+        return storageVolume;
+    }
+
     /**
      * Gets the Android root directory.
      */
@@ -314,7 +335,31 @@ public class Environment {
     private static final File SECURE_DATA_DIRECTORY
             = getDirectory("ANDROID_SECURE_DATA", "/data/secure");
 
-    private static final File DOWNLOAD_CACHE_DIRECTORY = getDirectory("DOWNLOAD_CACHE", "/cache");
+    /** @hide */
+    private static final File MEDIA_STORAGE_DIRECTORY
+            = getDirectory("MEDIA_STORAGE", "/data/media");
+
+    private static final File INTERNAL_STORAGE_DIRECTORY
+            = getDirectory("INTERNAL_STORAGE", "/storage/sdcard0");
+
+    private static final File EXTERNAL_STORAGE_DIRECTORY
+            = getDirectory("EXTERNAL_STORAGE", "/storage/sdcard0");
+
+    private static final File EXTERNAL_STORAGE2_DIRECTORY
+            = getDirectory("EXTERNAL_STORAGE2", "/storage/external_storage/sdcard1");
+
+    private static final File EXTERNAL_STORAGE_ANDROID_DATA_DIRECTORY = new File(new File(
+            getDirectory("EXTERNAL_STORAGE", "/storage/sdcard0"), "Android"), "data");
+
+    private static final File EXTERNAL_STORAGE_ANDROID_MEDIA_DIRECTORY = new File(new File(
+            getDirectory("EXTERNAL_STORAGE", "/storage/sdcard0"), "Android"), "media");
+
+    private static final File EXTERNAL_STORAGE_ANDROID_OBB_DIRECTORY = new File(new File(
+            getDirectory("EXTERNAL_STORAGE", "/storage/sdcard0"), "Android"), "obb");
+
+    private static final File DOWNLOAD_CACHE_DIRECTORY
+            = getDirectory("DOWNLOAD_CACHE", "/cache");
+
 
     /**
      * Return the user data directory.
@@ -405,6 +450,55 @@ public class Environment {
     public static File getEmulatedStorageObbSource() {
         // /mnt/shell/emulated/obb
         return new File(System.getenv(ENV_EMULATED_STORAGE_SOURCE), DIR_OBB);
+    }
+
+    /**
+     * Gets the Android external storage directory,point to /mnt/sdcard/external_sdcard.  This directory may not
+     * currently be accessible if it has been mounted by the user on their
+     * computer, has been removed from the device, or some other problem has
+     * happened.  You can determine its current state with
+     * {@link #getExternalStorage2State()}.
+     * 
+     * <p><em>Note: don't be confused by the word "external" here.  This
+     * directory can better be thought as media/shared storage.  It is a
+     * filesystem that can hold a relatively large amount of data and that
+     * is shared across all applications (does not enforce permissions).
+     * Traditionally this is an SD card, but it may also be implemented as
+     * built-in storage in a device that is distinct from the protected
+     * internal storage and can be mounted as a filesystem on a computer.</em></p>
+     *
+     * <p>In devices with multiple "external" storage directories (such as
+     * both secure app storage and mountable shared storage), this directory
+     * represents the "primary" external storage that the user will interact
+     * with.</p>
+     *
+     * <p>Applications should not directly use this top-level directory, in
+     * order to avoid polluting the user's root namespace.  Any files that are
+     * private to the application should be placed in a directory returned
+     * by {@link android.content.Context#getExternalFilesDir
+     * Context.getExternalFilesDir}, which the system will take care of deleting
+     * if the application is uninstalled.  Other shared files should be placed
+     * in one of the directories returned by
+     * {@link #getExternalStoragePublicDirectory}.
+     * 
+     * <p>Here is an example of typical code to monitor the state of
+     * external storage:</p>
+     * 
+     * {@sample development/samples/ApiDemos/src/com/example/android/apis/content/ExternalStorage.java
+     * monitor_storage}
+     *
+     * @see #getExternalStorage2State()
+     * @see #isExternalStorage2Removable()
+     */
+    public static File getExternalStorage2Directory() {
+        return EXTERNAL_STORAGE2_DIRECTORY;
+    }
+
+    /**
+     * Gets the Android internal storage directory.
+     */
+    public static File getInternalStorageDirectory() {
+        return INTERNAL_STORAGE_DIRECTORY;
     }
 
     /**
@@ -725,6 +819,64 @@ public class Environment {
     }
 
     /**
+     * Gets the label of the primary "external" storage device.
+     * 
+     * <p>See {@link #getExternalStorageDirectory()} for more information.
+     */
+    public static String getExternalStorageLabel() {
+        try {
+            IMountService mountService = IMountService.Stub.asInterface(ServiceManager
+                    .getService("mount"));
+            return mountService.getVolumeLabel(getExternalStorageDirectory()
+                    .toString());
+        } catch (Exception rex) {
+            return "";
+        }
+    }
+
+    /**
+     * Gets if the external Storage be a real sdcard or a internal nand volume.
+     * 
+     * <p>See {@link #isExternalStorageBeSdcard()} for more information.
+     */
+    public static boolean isExternalStorageBeSdcard() {
+           return "sdcard".equals(getExternalStorageLabel());
+    }
+
+
+    /**
+     * Gets the current state of the secondary "external" storage device.
+     * 
+     * <p>See {@link #getExternalStorage2Directory()} for more information.
+     */
+    public static String getExternalStorage2State() {
+        try {
+            IMountService mountService = IMountService.Stub.asInterface(ServiceManager
+                    .getService("mount"));
+            return mountService.getVolumeState(getExternalStorage2Directory()
+                    .toString());
+        } catch (Exception rex) {
+            return Environment.MEDIA_REMOVED;
+        }
+    }
+
+    /**
+     * Gets the current state of the internal storage device.
+     *
+     * <p>See {@link #getInternalStorageDirectory()} for more information.
+     */
+    public static String getInternalStorageState() {
+        try {
+            IMountService mountService = IMountService.Stub.asInterface(ServiceManager
+                    .getService("mount"));
+            return mountService.getVolumeState(getInternalStorageDirectory()
+                    .toString());
+        } catch (Exception rex) {
+            return Environment.MEDIA_REMOVED;
+        }
+    }
+
+    /**
      * Returns whether the primary "external" storage device is removable.
      * If true is returned, this device is for example an SD card that the
      * user can remove.  If false is returned, the storage is built into
@@ -733,8 +885,31 @@ public class Environment {
      * <p>See {@link #getExternalStorageDirectory()} for more information.
      */
     public static boolean isExternalStorageRemovable() {
-        final StorageVolume primary = getPrimaryVolume();
-        return (primary != null && primary.isRemovable());
+        //TODO verify
+        //final StorageVolume primary = getPrimaryVolume();
+        //return (primary != null && primary.isRemovable());
+
+        StorageVolume storageVolume = getStorageVolume(getExternalStorageDirectory().toString());
+        if (storageVolume != null) {
+            return storageVolume.isRemovable();
+        }
+        return false;
+    }
+
+       /**
+     * Returns whether the primary "external" storage device is removable.
+     * If true is returned, this device is for example an SD card that the
+     * user can remove.  If false is returned, the storage is built into
+     * the device and can not be physically removed.
+     *
+     * <p>See {@link #getExternalStorageDirectory()} for more information.
+     */
+    public static boolean isExternalStorage2Removable() {
+        StorageVolume storageVolume = getStorageVolume(getExternalStorage2Directory().toString());
+        if (storageVolume != null) {
+            return storageVolume.isRemovable();
+        }
+        return false;
     }
 
     /**

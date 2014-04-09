@@ -281,4 +281,5 @@ public interface SurfaceHolder {
      * @return Surface The surface.
      */
     public Surface getSurface();
+
 }

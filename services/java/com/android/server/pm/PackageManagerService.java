@@ -888,6 +888,8 @@ public class PackageManagerService extends IPackageManager.Stub {
                                 res.removedInfo.args.doPostDeleteLI(true);
                             }
                         }
+
+                        mInstallingPkg = false;
                         if (args.observer != null) {
                             try {
                                 args.observer.packageInstalled(res.name, res.returnCode);
@@ -6523,9 +6525,11 @@ public class PackageManagerService extends IPackageManager.Stub {
         mContext.enforceCallingOrSelfPermission(android.Manifest.permission.INSTALL_PACKAGES,
                 null);
 
+        mInstallingPkg = true;
         final int uid = Binder.getCallingUid();
         if (isUserRestricted(UserHandle.getUserId(uid), UserManager.DISALLOW_INSTALL_APPS)) {
             try {
+                mInstallingPkg = false;
                 observer.packageInstalled("", PackageManager.INSTALL_FAILED_USER_RESTRICTED);
             } catch (RemoteException re) {
             }
@@ -11575,5 +11579,10 @@ public class PackageManagerService extends IPackageManager.Stub {
         } finally {
             Binder.restoreCallingIdentity(token);
         }
+    }
+
+    boolean mInstallingPkg = false;
+    public boolean isInstallingPackage() {
+        return mInstallingPkg;
     }
 }

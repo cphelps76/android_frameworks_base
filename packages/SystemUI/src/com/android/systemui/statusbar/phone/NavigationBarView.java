@@ -32,6 +32,7 @@ import android.content.res.Resources;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.RemoteException;
@@ -54,8 +55,17 @@ import com.android.systemui.statusbar.DelegateViewHelper;
 import com.android.systemui.statusbar.policy.DeadZone;
 import com.android.systemui.statusbar.policy.KeyButtonView;
 
+import android.content.ServiceConnection;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.os.IBinder;
+import android.os.SystemProperties;
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import android.content.res.Configuration;
 
 public class NavigationBarView extends LinearLayout {
     final static boolean DEBUG = false;
@@ -86,9 +96,16 @@ public class NavigationBarView extends LinearLayout {
     private DeadZone mDeadZone;
     private final NavigationBarTransitions mBarTransitions;
 
+    private int mOrientation = Configuration.ORIENTATION_LANDSCAPE ;
+
+	
+
     // workaround for LayoutTransitions leaving the nav buttons in a weird state (bug 5549288)
     final static boolean WORKAROUND_INVALID_LAYOUT = true;
     final static int MSG_CHECK_INVALID_LAYOUT = 8686;
+
+    private boolean mSoftVolumeKey = Boolean.parseBoolean(SystemProperties.get("ro.statusbar.volume", "false"));
+    private boolean mSoftScreenShotKey = Boolean.parseBoolean(SystemProperties.get("ro.statusbar.screenshot", "false"));
 
     // used to disable the camera icon in navbar when disabled by DPM
     private boolean mCameraDisabledByDpm;
@@ -171,6 +188,8 @@ public class NavigationBarView extends LinearLayout {
             return KeyguardTouchDelegate.getInstance(getContext()).dispatch(event);
         }
     };
+
+    private boolean mSoftGotoDownloadKey = Boolean.parseBoolean(SystemProperties.get("ro.statusbar.gotodownload", "false"));
 
     private class H extends Handler {
         public void handleMessage(Message m) {
@@ -261,6 +280,10 @@ public class NavigationBarView extends LinearLayout {
 
     private H mHandler = new H();
 
+    public ImageView getRotationSettingButton() {
+        return (ImageView)mCurrentView.findViewById(R.id.rotation_setting);
+    }
+
     public View getCurrentView() {
         return mCurrentView;
     }
@@ -281,6 +304,18 @@ public class NavigationBarView extends LinearLayout {
         return mCurrentView.findViewById(R.id.home);
     }
 
+    public View getScreenShotButton() {
+        return mCurrentView.findViewById(R.id.screenshot);
+    }
+    public View getVolumeDownButton() {
+        return mCurrentView.findViewById(R.id.sub);
+    }
+    public View getVolumeUpButton() {
+        return mCurrentView.findViewById(R.id.add);
+    }
+    public View getDownloadButton() {
+        return mCurrentView.findViewById(R.id.download);
+    }
     // for when home is disabled, but search isn't
     public View getSearchLight() {
         return mCurrentView.findViewById(R.id.search_light);
@@ -305,6 +340,98 @@ public class NavigationBarView extends LinearLayout {
         getIcons(mContext.getResources());
 
         super.setLayoutDirection(layoutDirection);
+    }
+    private View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        public void onClick(View v) {
+            if(v == getScreenShotButton()) {
+                takeScreenshot();
+            }else if(v == getDownloadButton()){
+                gotoDownload();
+            }
+        }
+    };
+    private void gotoDownload() {
+        String path = "/storage/sdcard0/Download";
+        File file = new File(path);
+        boolean canStart = true;
+        if(!file.exists()){
+            canStart = file.mkdir();
+        }
+        if(canStart){
+            Intent intent = new Intent();
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setComponent(new ComponentName("com.fb.FileBrower", "com.fb.FileBrower.FileBrower"));
+            Bundle bundle = new Bundle();
+            bundle.putString("cur_path", path);
+            intent.putExtras(bundle);
+            mContext.startActivity(intent);       
+        }
+    }
+    final Object mScreenshotLock = new Object();
+    ServiceConnection mScreenshotConnection = null;
+    final Runnable mScreenshotTimeout = new Runnable() {
+        @Override public void run() {
+            synchronized (mScreenshotLock) {
+                if (mScreenshotConnection != null) {
+                    mContext.unbindService(mScreenshotConnection);
+                    mScreenshotConnection = null;
+                }
+            }
+        }
+    };
+    // Assume this is called from the Handler thread.
+    private void takeScreenshot() {
+        synchronized (mScreenshotLock) {
+            if (mScreenshotConnection != null) {
+                return;
+            }
+            ComponentName cn = new ComponentName("com.android.systemui",
+                    "com.android.systemui.screenshot.TakeScreenshotService");
+            Intent intent = new Intent();
+            intent.setComponent(cn);
+            ServiceConnection conn = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    synchronized (mScreenshotLock) {
+                        if (mScreenshotConnection != this) {
+                            return;
+                        }
+                        Messenger messenger = new Messenger(service);
+                        Message msg = Message.obtain(null, 1);
+                        final ServiceConnection myConn = this;
+                        Handler h = new Handler(mHandler.getLooper()) {
+                            @Override
+                            public void handleMessage(Message msg) {
+                                synchronized (mScreenshotLock) {
+                                    if (mScreenshotConnection == myConn) {
+                                        mContext.unbindService(mScreenshotConnection);
+                                        mScreenshotConnection = null;
+                                        mHandler.removeCallbacks(mScreenshotTimeout);
+                                    }
+                                }
+                            }
+                        };
+                        msg.replyTo = new Messenger(h);
+                        msg.arg1 = msg.arg2 = 0;
+						msg.arg1 = 1;
+                        /*if (mStatusBar != null && mStatusBar.isVisibleLw())
+                            msg.arg1 = 1;
+                        if (mNavigationBar != null && mNavigationBar.isVisibleLw())
+                            msg.arg2 = 1;*/
+                        try {
+                            messenger.send(msg);
+                        } catch (RemoteException e) {
+                        }
+                    }
+                }
+                @Override
+                public void onServiceDisconnected(ComponentName name) {}
+            };
+            if (mContext.bindService(intent, conn, Context.BIND_AUTO_CREATE)) {
+                mScreenshotConnection = conn;
+                mHandler.postDelayed(mScreenshotTimeout, 10000);
+            }
+        }
     }
 
     public void notifyScreenOn(boolean screenOn) {
@@ -378,6 +505,19 @@ public class NavigationBarView extends LinearLayout {
         getBackButton()   .setVisibility(disableBack       ? View.INVISIBLE : View.VISIBLE);
         getHomeButton()   .setVisibility(disableHome       ? View.INVISIBLE : View.VISIBLE);
         getRecentsButton().setVisibility(disableRecent     ? View.INVISIBLE : View.VISIBLE);
+
+        if(getScreenShotButton() != null){
+            getScreenShotButton()   .setVisibility(mSoftScreenShotKey?(disableHome       ? View.INVISIBLE : View.VISIBLE): View.GONE);
+        }
+        if(getVolumeDownButton() != null){
+            getVolumeDownButton()   .setVisibility(mSoftVolumeKey?(disableHome       ? View.INVISIBLE : View.VISIBLE): View.GONE);
+        }
+        if(getVolumeUpButton() != null){
+            getVolumeUpButton()   .setVisibility(mSoftVolumeKey?(disableHome       ? View.INVISIBLE : View.VISIBLE): View.GONE);
+        }
+        if(getDownloadButton() != null){
+            getDownloadButton()   .setVisibility(mSoftGotoDownloadKey?(disableHome       ? View.INVISIBLE : View.VISIBLE): View.GONE);
+        }
 
         final boolean showSearch = disableHome && !disableSearch;
         final boolean showCamera = showSearch && !mCameraDisabledByDpm;
@@ -496,6 +636,9 @@ public class NavigationBarView extends LinearLayout {
             // This will connect to KeyguardService so that touch events are processed.
             KeyguardTouchDelegate.getInstance(mContext);
         }
+        if(getDownloadButton() != null){     
+            getDownloadButton().setOnClickListener(mOnClickListener);
+        }
     }
 
     public boolean isVertical() {
@@ -522,12 +665,52 @@ public class NavigationBarView extends LinearLayout {
         }
 
         setNavigationIconHints(mNavigationIconHints, true);
+        if(getScreenShotButton() != null){     
+            getScreenShotButton().setOnClickListener(mOnClickListener);
+        }
+
+        /*
+        if(mSoftScreenShotKey ||mSoftVolumeKey){
+            getBackButton().setPadding(15, 0, 15, 0);
+            getBackButton().setLayoutParams(new LinearLayout.LayoutParams(100,ViewGroup.LayoutParams.FILL_PARENT));
+            getHomeButton().setPadding(15, 0, 15, 0);
+            getHomeButton().setLayoutParams(new LinearLayout.LayoutParams(100,ViewGroup.LayoutParams.FILL_PARENT));
+            getRecentsButton().setPadding(15, 0, 15, 0);
+            getRecentsButton().setLayoutParams(new LinearLayout.LayoutParams(100,ViewGroup.LayoutParams.FILL_PARENT));
+        }*/
+        
+        if(getDownloadButton() != null){     
+            getDownloadButton().setOnClickListener(mOnClickListener);
+        }
+        if(mSoftScreenShotKey ||mSoftVolumeKey || mSoftGotoDownloadKey){
+	    mOrientation = getResources().getConfiguration().orientation;
+	    setViewLayout(getBackButton());
+	    setViewLayout(getHomeButton());
+	    setViewLayout(getRecentsButton());
+	    setViewLayout(getScreenShotButton());
+	    setViewLayout(getVolumeDownButton());
+	    setViewLayout(getVolumeUpButton());
+	    setViewLayout(getDownloadButton());
+        }
+        
     }
+
+    protected void setViewLayout(View view){
+	Resources resources = getResources(); 
+	if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) { 
+           view.setPadding((int)resources.getDimension(R.dimen.navigation_key_land_width_space), 0,(int)resources.getDimension(R.dimen.navigation_key_land_width_space), 0);
+	   view.setLayoutParams(new LinearLayout.LayoutParams((int)resources.getDimension(R.dimen.navigation_key_land_width),ViewGroup.LayoutParams.FILL_PARENT));
+        } else  if (mOrientation == Configuration.ORIENTATION_PORTRAIT) { 
+	   view.setPadding((int)resources.getDimension(R.dimen.navigation_key_port_width_space), 0,(int)resources.getDimension(R.dimen.navigation_key_port_width_space), 0);
+	   view.setLayoutParams(new LinearLayout.LayoutParams((int)resources.getDimension(R.dimen.navigation_key_port_width),ViewGroup.LayoutParams.FILL_PARENT));
+        } 	 	 
+    }
+
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
-        mDelegateHelper.setInitialTouchRegion(getHomeButton(), getBackButton(), getRecentsButton());
+        mDelegateHelper.setInitialTouchRegion(getHomeButton(), getBackButton(), getRecentsButton(),getRotationSettingButton());
     }
 
     @Override

@@ -629,7 +629,7 @@ public class MediaController extends FrameLayout {
     private View.OnClickListener mFfwdListener = new View.OnClickListener() {
         public void onClick(View v) {
             int pos = mPlayer.getCurrentPosition();
-            pos += 15000; // milliseconds
+            pos += 5000; // milliseconds
             mPlayer.seekTo(pos);
             setProgress();
 

@@ -28,11 +28,11 @@
         android:paddingTop="4dip"
         android:orientation="horizontal">
 
-        <ImageButton android:id="@+id/prev" style="@android:style/MediaButton.Previous" />
-        <ImageButton android:id="@+id/rew" style="@android:style/MediaButton.Rew" />
-        <ImageButton android:id="@+id/pause" style="@android:style/MediaButton.Play" />
-        <ImageButton android:id="@+id/ffwd" style="@android:style/MediaButton.Ffwd" />
-        <ImageButton android:id="@+id/next" style="@android:style/MediaButton.Next" />
+        <ImageButton android:id="@+id/prev" style="@android:style/MediaButton.Previous" android:background="@drawable/btn_default_holo_light"/>
+        <ImageButton android:id="@+id/rew" style="@android:style/MediaButton.Rew"  android:background="@drawable/btn_default_holo_light"/>
+        <ImageButton android:id="@+id/pause" style="@android:style/MediaButton.Play" android:background="@drawable/btn_default_holo_light"/>
+        <ImageButton android:id="@+id/ffwd" style="@android:style/MediaButton.Ffwd" android:background="@drawable/btn_default_holo_light"/>
+        <ImageButton android:id="@+id/next" style="@android:style/MediaButton.Next" android:background="@drawable/btn_default_holo_light"/>
 
     </LinearLayout>
 

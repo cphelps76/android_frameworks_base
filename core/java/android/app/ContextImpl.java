@@ -73,6 +73,10 @@ import android.net.wifi.IWifiManager;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.IWifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.net.ethernet.IEthernetManager;
+import android.net.ethernet.EthernetManager;
+import android.net.pppoe.IPppoeManager;
+import android.net.pppoe.PppoeManager;
 import android.nfc.NfcManager;
 import android.os.Binder;
 import android.os.Bundle;
@@ -335,6 +339,20 @@ class ContextImpl extends Context {
                     return new AlarmManager(service, ctx);
                 }});
 
+        registerService(OVERLAYVIEW_SERVICE, new StaticServiceFetcher() {
+                public Object createStaticService() {
+                    IBinder b = ServiceManager.getService(OVERLAYVIEW_SERVICE);
+                    IOverlayView service = IOverlayView.Stub.asInterface(b);
+                    return new OverlayViewManager(service);
+                }});
+
+        registerService(SYSTEM_WRITE_SERVICE, new StaticServiceFetcher() {
+                public Object createStaticService() {
+                    IBinder b = ServiceManager.getService(SYSTEM_WRITE_SERVICE);
+                    ISystemWriteService service = ISystemWriteService.Stub.asInterface(b);
+                    return new SystemWriteManager(service);
+                }});
+
         registerService(AUDIO_SERVICE, new ServiceFetcher() {
                 public Object createService(ContextImpl ctx) {
                     return new AudioManager(ctx);
@@ -538,6 +556,19 @@ class ContextImpl extends Context {
                     IBinder b = ServiceManager.getService(WIFI_P2P_SERVICE);
                     IWifiP2pManager service = IWifiP2pManager.Stub.asInterface(b);
                     return new WifiP2pManager(service);
+                }});
+
+        registerService(ETH_SERVICE, new ServiceFetcher() {
+                public Object createService(ContextImpl ctx) {
+                    IBinder b = ServiceManager.getService(ETH_SERVICE);
+                    IEthernetManager service = IEthernetManager.Stub.asInterface(b);
+                    return new EthernetManager(service, ctx.mMainThread.getHandler());
+                }});
+		registerService(PPPOE_SERVICE, new ServiceFetcher() {
+                public Object createService(ContextImpl ctx) {
+                    IBinder b = ServiceManager.getService(PPPOE_SERVICE);
+                    IPppoeManager service = IPppoeManager.Stub.asInterface(b);
+                    return new PppoeManager(service, ctx.mMainThread.getHandler());
                 }});
 
         registerService(WINDOW_SERVICE, new ServiceFetcher() {

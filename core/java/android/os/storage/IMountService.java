@@ -142,6 +142,26 @@ public interface IMountService extends IInterface {
             }
 
             /**
+             * Returns true if a USB mass storage host is enabled (media is
+             * shared)
+             */
+            public boolean isUsbMassStorageAllEnabled() throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                boolean _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    mRemote.transact(Stub.TRANSACTION_isUsbMassStorageAllEnabled, _data, _reply, 0);
+                    _reply.readException();
+                    _result = 0 != _reply.readInt();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }
+
+            /**
              * Mount external storage at given mount point. Returns an int
              * consistent with MountServiceResultCode
              */
@@ -236,6 +256,26 @@ public interface IMountService extends IInterface {
                     _data.writeInterfaceToken(DESCRIPTOR);
                     _data.writeString(mountPoint);
                     mRemote.transact(Stub.TRANSACTION_getVolumeState, _data, _reply, 0);
+                    _reply.readException();
+                    _result = _reply.readString();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }
+
+            /**
+             * Gets the label of a volume via its mountpoint.
+             */
+            public String getVolumeLabel(String mountPoint) throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                String _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    _data.writeString(mountPoint);
+                    mRemote.transact(Stub.TRANSACTION_getVolumeLabel, _data, _reply, 0);
                     _reply.readException();
                     _result = _reply.readString();
                 } finally {
@@ -714,6 +754,105 @@ public interface IMountService extends IInterface {
             }
 
             /**
+             * Gets the fs label of a volume via its mountpoint.
+             */
+            public String getVolumeFSLabel(String mountPoint) throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                String _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    _data.writeString(mountPoint);
+                    mRemote.transact(Stub.TRANSACTION_getVolumeFSLabel, _data, _reply, 0);
+                    _reply.readException();
+                    _result = _reply.readString();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }
+
+	     /**
+             * Gets all volume mountpoint.
+             */
+            public java.util.ArrayList<java.lang.String>  getAllVolume() throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                java.util.ArrayList<java.lang.String>  _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    mRemote.transact(Stub.TRANSACTION_getAllVolume, _data, _reply, 0);
+                    _reply.readException();
+                    _result = _reply.createStringArrayList();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }
+
+	     /**
+             * Gets the devtype of a volume via its mountpoint.
+             */
+            public int getVolumedevtype(String mountPoint) throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                int _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    _data.writeString(mountPoint);
+                    mRemote.transact(Stub.TRANSACTION_getVolumedevtype, _data, _reply, 0);
+                    _reply.readException();
+                    _result = _reply.readInt();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }
+
+	     /**
+             * Gets the devnode of a volume via its mountpoint.
+             */
+            public int getVolumedevnode(String mountPoint) throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                int _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    _data.writeString(mountPoint);
+                    mRemote.transact(Stub.TRANSACTION_getVolumedevnode, _data, _reply, 0);
+                    _reply.readException();
+                     _result = _reply.readInt();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }
+
+	     /**
+             * Gets the UUID of a volume via its mountpoint.
+             */
+            public String getVolumeUUID(String mountPoint) throws RemoteException {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                String _result;
+                try {
+                    _data.writeInterfaceToken(DESCRIPTOR);
+                    _data.writeString(mountPoint);
+                    mRemote.transact(Stub.TRANSACTION_getVolumeUUID, _data, _reply, 0);
+                    _reply.readException();
+                    _result = _reply.readString();
+                } finally {
+                    _reply.recycle();
+                    _data.recycle();
+                }
+                return _result;
+            }	 
+
+            /**
              * Fix permissions in a container which has just been created and
              * populated. Returns an int consistent with MountServiceResultCode
              */
@@ -829,6 +968,20 @@ public interface IMountService extends IInterface {
 
         static final int TRANSACTION_mkdirs = IBinder.FIRST_CALL_TRANSACTION + 34;
 
+        static final int TRANSACTION_getVolumeLabel = IBinder.FIRST_CALL_TRANSACTION + 35;
+
+        static final int TRANSACTION_getVolumeFSLabel = IBinder.FIRST_CALL_TRANSACTION + 36;
+        
+        static final int TRANSACTION_isUsbMassStorageAllEnabled = IBinder.FIRST_CALL_TRANSACTION + 37;    
+
+        static final int TRANSACTION_getAllVolume = IBinder.FIRST_CALL_TRANSACTION + 38;
+
+        static final int TRANSACTION_getVolumedevtype = IBinder.FIRST_CALL_TRANSACTION + 39;
+
+        static final int TRANSACTION_getVolumedevnode = IBinder.FIRST_CALL_TRANSACTION + 40;
+
+        static final int TRANSACTION_getVolumeUUID = IBinder.FIRST_CALL_TRANSACTION + 41;
+
         /**
          * Cast an IBinder object into an IMountService interface, generating a
          * proxy if needed.
@@ -899,6 +1052,13 @@ public interface IMountService extends IInterface {
                     reply.writeInt((result ? 1 : 0));
                     return true;
                 }
+                case TRANSACTION_isUsbMassStorageAllEnabled: {
+                    data.enforceInterface(DESCRIPTOR);
+                    boolean result = isUsbMassStorageAllEnabled();
+                    reply.writeNoException();
+                    reply.writeInt((result ? 1 : 0));
+                    return true;
+                }                
                 case TRANSACTION_mountVolume: {
                     data.enforceInterface(DESCRIPTOR);
                     String mountPoint;
@@ -941,6 +1101,15 @@ public interface IMountService extends IInterface {
                     String mountPoint;
                     mountPoint = data.readString();
                     String state = getVolumeState(mountPoint);
+                    reply.writeNoException();
+                    reply.writeString(state);
+                    return true;
+                }
+                case TRANSACTION_getVolumeLabel: {
+                    data.enforceInterface(DESCRIPTOR);
+                    String mountPoint;
+                    mountPoint = data.readString();
+                    String state = getVolumeLabel(mountPoint);
                     reply.writeNoException();
                     reply.writeString(state);
                     return true;
@@ -1172,6 +1341,7 @@ public interface IMountService extends IInterface {
                     reply.writeInt(resultCode);
                     return true;
                 }
+
                 case TRANSACTION_mkdirs: {
                     data.enforceInterface(DESCRIPTOR);
                     String callingPkg = data.readString();
@@ -1245,6 +1415,11 @@ public interface IMountService extends IInterface {
     public String getVolumeState(String mountPoint) throws RemoteException;
 
     /**
+     * Gets the label of a volume via its mountpoint.
+     */
+    public String getVolumeLabel(String mountPoint) throws RemoteException;
+
+    /**
      * Checks whether the specified Opaque Binary Blob (OBB) is mounted
      * somewhere.
      */
@@ -1264,6 +1439,11 @@ public interface IMountService extends IInterface {
      * Returns true if a USB mass storage host is enabled (media is shared)
      */
     public boolean isUsbMassStorageEnabled() throws RemoteException;
+
+    /**
+     * Returns true if a USB mass storage host is enabled (media is shared)
+     */
+    public boolean isUsbMassStorageAllEnabled() throws RemoteException;    
 
     /**
      * Mounts an Opaque Binary Blob (OBB) with the specified decryption key and
@@ -1396,6 +1576,16 @@ public interface IMountService extends IInterface {
      * @throws RemoteException
      */
     public String getSecureContainerFilesystemPath(String cid) throws RemoteException;
+
+    public java.util.ArrayList<java.lang.String> getAllVolume() throws RemoteException;
+
+    public int getVolumedevtype(String mountPath) throws RemoteException;
+
+    public int getVolumedevnode(String mountPath) throws RemoteException;
+
+    public String getVolumeUUID(String mountPath) throws RemoteException;
+
+    public String getVolumeFSLabel(String mountPath) throws RemoteException;	
 
     /*
      * Fix permissions in a container which has just been created and populated.

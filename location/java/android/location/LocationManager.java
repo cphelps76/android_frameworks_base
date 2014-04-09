@@ -25,6 +25,7 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemProperties;
 import android.util.Log;
 
 
@@ -512,6 +513,8 @@ public class LocationManager {
         checkCriteria(criteria);
         checkListener(listener);
 
+        //TODO verify no gps
+        //boolean enableGPS = SystemProperties.getBoolean("gps.enable", false);
         LocationRequest request = LocationRequest.createFromDeprecatedCriteria(
                 criteria, minTime, minDistance, false);
         requestLocationUpdates(request, listener, looper, null);
@@ -856,11 +859,20 @@ public class LocationManager {
         // wrap the listener class
         ListenerTransport transport = wrapListener(listener, looper);
 
-        try {
-            mService.requestLocationUpdates(request, transport, intent, packageName);
-       } catch (RemoteException e) {
-           Log.e(TAG, "RemoteException", e);
-       }
+		if( null != request ){
+			String provider = request.getProvider();
+			if(((NETWORK_PROVIDER.equals(provider)) && (null == getProvider(NETWORK_PROVIDER))) ||
+				((GPS_PROVIDER.equals(provider)) && (null == getProvider(GPS_PROVIDER)))){
+				Log.v(TAG, "request provider:" + provider + " ,but system not include");
+				return ;
+			}
+		}
+		
+		try {
+			mService.requestLocationUpdates(request, transport, intent, packageName);
+		} catch (RemoteException e) {
+			Log.e(TAG, "RemoteException", e);
+		}
     }
 
     /**

@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.ContentObserver;
+import android.hardware.display.DisplayManager;
 import android.hardware.display.WifiDisplay;
 import android.hardware.display.WifiDisplaySessionInfo;
 import android.hardware.display.WifiDisplayStatus;
@@ -42,10 +43,12 @@ import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.net.wifi.p2p.WifiP2pManager.GroupInfoListener;
 import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.os.Handler;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Slog;
 import android.view.Surface;
-
+import android.view.WindowManager;
+import android.view.Display;
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -56,6 +59,21 @@ import java.util.Enumeration;
 
 import libcore.util.Objects;
 
+import android.util.Slog;
+import android.net.wifi.p2p.WifiP2pInfo;
+import android.os.FileObserver;
+import android.os.FileUtils;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import android.os.UserHandle;
+
+import android.os.PowerManager;
+import android.os.AsyncTask;
+import android.os.RemoteException;
+import android.view.IWindowManager;
+import android.view.WindowManagerGlobal;
 /**
  * Manages all of the various asynchronous interactions with the {@link WifiP2pManager}
  * on behalf of {@link WifiDisplayAdapter}.
@@ -95,9 +113,11 @@ final class WifiDisplayController implements DumpUtils.Dump {
     private final Handler mHandler;
     private final Listener mListener;
 
+    private final WindowManager mWindowManager;
     private final WifiP2pManager mWifiP2pManager;
     private final Channel mWifiP2pChannel;
-
+    private PowerManager.WakeLock mWakeLock;
+    private boolean isLockedByMiracast;
     private boolean mWifiP2pEnabled;
     private boolean mWfdEnabled;
     private boolean mWfdEnabling;
@@ -154,6 +174,53 @@ final class WifiDisplayController implements DumpUtils.Dump {
     private int mAdvertisedDisplayHeight;
     private int mAdvertisedDisplayFlags;
 
+	public static final String DNSMASQ_IP_ADDR_ACTION = "android.net.dnsmasq.IP_ADDR";
+	public static final String DNSMASQ_MAC_EXTRA = "MAC_EXTRA";
+	public static final String DNSMASQ_IP_EXTRA = "IP_EXTRA";
+	public static final String DNSMASQ_PORT_EXTRA = "PORT_EXTRA";
+
+	private WifiP2pInfo mP2pInfo;
+	private FileObserver mAddrObserver = null;
+	private File mFolder = new File("/data/misc/adb");
+	private boolean mAutoStartWfd = false;
+	private int mWfdPort;
+	private int mRotation = -1;
+	private int lastRotation = -1;
+	private int hwrot = 0;
+	private Display display;
+	
+	private void connectToRtspServer(String ip, int wfdPort) {
+
+		String port = String.valueOf(wfdPort);
+		sendDnsmasqBroadcast(new String("xx.xx.xx.xx.xx.xx"), ip, port);
+	}
+	
+	private void parseDnsmasqAddr(String fileName) {
+		File file = new File(fileName);
+		BufferedReader reader = null;
+		String mac = new String();
+		String ip = new String();
+		try {
+			reader = new BufferedReader(new FileReader(file));
+			mac = reader.readLine();
+			ip = reader.readLine();
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		if (!mac.isEmpty() && !ip.isEmpty()) {
+			connectToRtspServer(ip, mWfdPort);
+		}
+	}
+	
     // Certification
     private boolean mWifiDisplayCertMode;
     private int mWifiDisplayWpsConfig = WpsInfo.INVALID;
@@ -164,15 +231,35 @@ final class WifiDisplayController implements DumpUtils.Dump {
         mContext = context;
         mHandler = handler;
         mListener = listener;
+        isLockedByMiracast = false;
+		
+		mAddrObserver = new FileObserver(mFolder.getPath(), /*FileObserver.CLOSE_WRITE |*/ FileObserver.MODIFY) {
+			public void onEvent(int event, String path) {
+				File ipFile = new File(mFolder, path);
+				String fullName = ipFile.getPath();
+				Slog.d(TAG, "WFD : File changed : path=" + path + " event=" + event);
+				if (mAutoStartWfd == true && path.equals(new String("dnsmasq.txt"))) {
+					parseDnsmasqAddr(fullName);
+				}
+			}
+		};
+		mAddrObserver.startWatching();
 
         mWifiP2pManager = (WifiP2pManager)context.getSystemService(Context.WIFI_P2P_SERVICE);
         mWifiP2pChannel = mWifiP2pManager.initialize(context, handler.getLooper(), null);
 
+        hwrot = SystemProperties.getInt("ro.sf.hwrotation", 0);
+        mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        display = mWindowManager.getDefaultDisplay();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        intentFilter.addAction(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED);
+        intentFilter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
+        intentFilter.addAction(DNSMASQ_IP_ADDR_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+
         context.registerReceiver(mWifiP2pReceiver, intentFilter, null, mHandler);
 
         ContentObserver settingsObserver = new ContentObserver(mHandler) {
@@ -542,6 +629,15 @@ final class WifiDisplayController implements DumpUtils.Dump {
 
     private void disconnect() {
         mDesiredDevice = null;
+        Slog.d(TAG,"disconnectv mWakeLock != null"+(mWakeLock != null)+" isLockedByMiracast?"+isLockedByMiracast);
+        if(mWakeLock != null){
+            mWakeLock.release();
+            mWakeLock = null;
+            if(isLockedByMiracast){
+                setRotationLockForAccessibility(mContext,false);
+                isLockedByMiracast = false;
+            }
+        }
         updateConnection();
     }
 
@@ -699,7 +795,16 @@ final class WifiDisplayController implements DumpUtils.Dump {
                     // for WIFI_P2P_CONNECTION_CHANGED_ACTION.  However, we might never
                     // get that broadcast, so we register a timeout.
                     Slog.i(TAG, "Initiated connection to Wifi display: " + newDevice.deviceName);
-
+                    PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+                    mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, TAG);
+                    if(mWakeLock != null){
+                         mWakeLock.acquire();
+                         Slog.d(TAG,"isRotationLocked?"+isRotationLocked(mContext));
+                         if(!isRotationLocked(mContext)){
+                            isLockedByMiracast = true;
+                            setRotationLockForAccessibility(mContext,true);
+                         }
+                    }
                     mHandler.postDelayed(mConnectionTimeout, CONNECTION_TIMEOUT_SECONDS * 1000);
                 }
 
@@ -785,6 +890,32 @@ final class WifiDisplayController implements DumpUtils.Dump {
         }
     }
 
+    /**
+    *Returns true if rotation lock is enabled.
+    **/
+    public static boolean isRotationLocked(Context context) {
+        return Settings.System.getIntForUser(context.getContentResolver(),
+                Settings.System.ACCELEROMETER_ROTATION, 0, UserHandle.USER_CURRENT) == 0;
+    }
+
+     public static void setRotationLockForAccessibility(Context context, final boolean enabled) {
+
+         AsyncTask.execute(new Runnable() {
+             @Override
+             public void run() {
+                try {
+                    IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+                    if (enabled) {
+                        wm.freezeRotation(-1);
+                    } else {
+                        wm.thawRotation();
+                    }
+                }catch (RemoteException exc) {
+                    Slog.w(TAG, "Unable to save auto-rotate setting");
+                }
+             }
+         });
+     }
     private WifiDisplaySessionInfo getSessionInfo(WifiP2pGroup info, int session) {
         if (info == null) {
             return null;
@@ -870,7 +1001,41 @@ final class WifiDisplayController implements DumpUtils.Dump {
                     }
                 });
             }
+			else {
+                mWifiP2pManager.requestGroupInfo(mWifiP2pChannel, new GroupInfoListener() {
+                    @Override
+                    public void onGroupInfoAvailable(WifiP2pGroup info) {
+                        if (DEBUG) {
+                            Slog.d(TAG, "Received group info: " + describeWifiP2pGroup(info));
+                        }
+						
+						if (info.isGroupOwner() == true) {
+							Slog.d(TAG, "WFD : I am GO");
+							WifiP2pDevice device = null;
+							for (WifiP2pDevice c : info.getClientList()) {
+								device = c;
+								break;
+							}
+							if (device != null && device.wfdInfo != null) {
+								mWfdPort = device.wfdInfo.getControlPort();
+								mAutoStartWfd = true;
+							}
+						}
+						else {
+							Slog.d(TAG, "WFD : I am GC");
+							InetAddress addr = null;							
+							WifiP2pDevice device = info.getOwner();
+							if (device != null && device.wfdInfo != null && mP2pInfo != null) {
+								mWfdPort = device.wfdInfo.getControlPort();
+								addr = mP2pInfo.groupOwnerAddress;
+								connectToRtspServer(addr.getHostAddress(), mWfdPort);
+							}
+						}
+                    }
+                });			
+			}
         } else {
+        	mAutoStartWfd = false;
             mConnectedDeviceGroupInfo = null;
 
             // Disconnect if we lost the network while connecting or connected to a display.
@@ -961,7 +1126,8 @@ final class WifiDisplayController implements DumpUtils.Dump {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (oldSurface != null && surface != oldSurface) {
+                    //if (oldSurface != null && surface != oldSurface) {
+                    if (oldDisplay != null && mAdvertisedDisplay == null) {
                         mListener.onDisplayDisconnected();
                     } else if (oldDisplay != null && !oldDisplay.hasSameAddress(display)) {
                         mListener.onDisplayConnectionFailed();
@@ -975,7 +1141,7 @@ final class WifiDisplayController implements DumpUtils.Dump {
                             // name must have changed.
                             mListener.onDisplayChanged(display);
                         }
-                        if (surface != null && surface != oldSurface) {
+                        if (width >0 && height >0) {
                             mListener.onDisplayConnected(display, surface, width, height, flags);
                         }
                     }
@@ -1075,12 +1241,19 @@ final class WifiDisplayController implements DumpUtils.Dump {
             } else if (action.equals(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)) {
                 NetworkInfo networkInfo = (NetworkInfo)intent.getParcelableExtra(
                         WifiP2pManager.EXTRA_NETWORK_INFO);
+				WifiP2pInfo p2pInfo = (WifiP2pInfo)intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO);
                 if (DEBUG) {
                     Slog.d(TAG, "Received WIFI_P2P_CONNECTION_CHANGED_ACTION: networkInfo="
-                            + networkInfo);
+                            + networkInfo + " p2pInfo=" + p2pInfo);
                 }
 
+				mP2pInfo = p2pInfo;
                 handleConnectionChanged(networkInfo);
+            } else if (action.equals(DNSMASQ_IP_ADDR_ACTION)) {
+            	String mac = intent.getStringExtra(DNSMASQ_MAC_EXTRA);
+				String ip = intent.getStringExtra(DNSMASQ_IP_EXTRA);
+				String port = intent.getStringExtra(DNSMASQ_PORT_EXTRA);
+				Slog.d(TAG, "Received DNSMASQ_IP_ADDR_ACTION : mac=" + mac + " ip=" + ip + " port=" + port);
             } else if (action.equals(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)) {
                 mThisDevice = (WifiP2pDevice) intent.getParcelableExtra(
                         WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
@@ -1088,9 +1261,51 @@ final class WifiDisplayController implements DumpUtils.Dump {
                     Slog.d(TAG, "Received WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: mThisDevice= "
                             + mThisDevice);
                 }
+            }else if(action.equals(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED)) {
+                WifiDisplayStatus mWifiDisplayStatus = (WifiDisplayStatus)intent.getParcelableExtra(
+                        DisplayManager.EXTRA_WIFI_DISPLAY_STATUS);
+                if(mWifiDisplayStatus.getActiveDisplayState() == WifiDisplayStatus.DISPLAY_STATE_CONNECTED){
+                   mRotation = lastRotation = display.getRotation();
+                   if(mRemoteDisplay != null && mRotation >= 0){
+                        mRemoteDisplay.setRotation(computeWifiDisplayRotation(display.getWidth(),display.getHeight(),mRotation));
+                   }
+                }else {
+                    mRotation = lastRotation = -1;
+                }
+            }else if(action.equals(Intent.ACTION_CONFIGURATION_CHANGED)){
+                if (mConnectedDevice != null
+                    && mRemoteDisplay != null && mRemoteDisplayConnected) {
+                   mRotation = display.getRotation();
+                   if(mRotation >= 0 && mRotation != lastRotation){
+                       lastRotation = mRotation;
+                       mRemoteDisplay.setRotation(computeWifiDisplayRotation(display.getWidth(),display.getHeight(),mRotation));
+                    }    
+                }    
             }
         }
     };
+	public int computeWifiDisplayRotation(int width, int height, int rot){
+	    if(width >= height){
+		if(rot == 1 || rot == 3){
+		    rot = rot +1;
+		 }
+	    }else{
+		 if(rot == 2 || rot == 0){
+		    rot = rot +1;
+		 }
+	    }
+	    return (rot+ (hwrot/90))%4;
+	}
+	public void sendDnsmasqBroadcast(String mac, String ip, String port) {
+		Slog.d(TAG, "Sending DNSMASQ_IP_ADDR_ACTION broadcast : mac=" + mac + " ip=" + ip + " port=" + port);
+		Intent intent = new Intent(DNSMASQ_IP_ADDR_ACTION);
+        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                | Intent.FLAG_RECEIVER_REPLACE_PENDING);
+		intent.putExtra(DNSMASQ_MAC_EXTRA, mac);
+		intent.putExtra(DNSMASQ_IP_EXTRA, ip);
+		intent.putExtra(DNSMASQ_PORT_EXTRA, port);
+		mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
+	}
 
     /**
      * Called on the handler thread when displays are connected or disconnected.

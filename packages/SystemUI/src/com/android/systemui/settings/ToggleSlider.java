@@ -44,7 +44,7 @@ public class ToggleSlider extends RelativeLayout
     private CompoundButton mToggle;
     private SeekBar mSlider;
     private TextView mLabel;
-
+	private boolean automaticAvailable;
     public ToggleSlider(Context context) {
         this(context, null);
     }
@@ -70,7 +70,16 @@ public class ToggleSlider extends RelativeLayout
 
         mLabel = (TextView)findViewById(R.id.label);
         mLabel.setText(a.getString(R.styleable.ToggleSlider_text));
-
+		automaticAvailable = context.getResources().getBoolean(
+                com.android.internal.R.bool.config_automatic_brightness_available);
+		if(!automaticAvailable){
+			 mToggle.setVisibility(View.INVISIBLE);
+			 mLabel.setVisibility(View.INVISIBLE);
+			 LayoutParams  lp = (LayoutParams) mSlider.getLayoutParams();
+			 lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT, TRUE);
+			 mSlider.setLayoutParams(lp);
+			 mSlider.setPadding(20, 0, 20, 0);
+		}
         a.recycle();
     }
 

@@ -686,6 +686,17 @@ class WindowStateAnimator {
                             mSession.mSurfaceSession,
                             attrs.getTitle().toString(),
                             w, h, format, flags);
+                } else if (attrs.format == PixelFormat.VIDEO_HOLE) {
+                    mSurfaceControl = new SurfaceControl(
+                            mSession.mSurfaceSession,
+                            attrs.getTitle().toString(),
+                            w, h, PixelFormat.RGBA_8888, flags|SurfaceControl.OPAQUE);
+                    
+                } else if (attrs.format == PixelFormat.VIDEO_HOLE_REAL) {
+                    mSurfaceControl = new SurfaceControl(
+                        mSession.mSurfaceSession,
+                        attrs.getTitle().toString(),
+			            w, h, PixelFormat.RGBA_8888, flags|SurfaceControl.VIDEOHOLE);
                 } else {
                     mSurfaceControl = new SurfaceControl(
                         mSession.mSurfaceSession,

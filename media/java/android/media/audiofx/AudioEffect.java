@@ -73,6 +73,20 @@ public class AudioEffect {
      * OpenSLES_IID.h
      */
     /**
+     * UUID for HP Equalizer effect
+     * @hide
+     */
+    public static final UUID EFFECT_TYPE_HPEQ = UUID
+            .fromString("76733af0-2889-11e2-81c1-0800200c9a66");
+
+    /**
+     * UUID for Sound Retrieval System (SRS) effect
+     * @hide
+     */
+    public static final UUID EFFECT_TYPE_SRS = UUID
+            .fromString("8a857720-0209-11e2-a9d8-0002a5d5c51b");
+
+    /**
      * UUID for environmental reverberation effect
      */
     public static final UUID EFFECT_TYPE_ENV_REVERB = UUID

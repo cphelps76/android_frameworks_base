@@ -41,7 +41,9 @@ import android.view.LayoutInflater.Filter;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewConfiguration;
+import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -460,6 +462,7 @@ public class NumberPicker extends LinearLayout {
     private boolean mDecrementVirtualButtonPressed;
 
     /**
+      
      * Provider to report to clients the semantic structure of this widget.
      */
     private AccessibilityNodeProviderImpl mAccessibilityNodeProvider;
@@ -714,6 +717,8 @@ public class NumberPicker extends LinearLayout {
         mAdjustScroller = new Scroller(getContext(), new DecelerateInterpolator(2.5f));
 
         updateInputTextView();
+		
+		     setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
 
         // If not explicitly specified this view is important for accessibility.
         if (getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
@@ -848,6 +853,36 @@ public class NumberPicker extends LinearLayout {
         }
         return false;
     }
+
+	@Override
+	public boolean onKeyDown (int keyCode, KeyEvent event){   
+		hideSoftInput();
+				
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            changeValueByOne(true);
+			return true;
+        } else if(keyCode == KeyEvent.KEYCODE_DPAD_UP){
+            changeValueByOne(false);
+			return true;
+        }
+
+		   return super.onKeyDown(keyCode,event);
+	 }
+
+	   
+	@Override
+	protected void onFocusChanged (boolean gainFocus, int direction, Rect previouslyFocusedRect){
+		if (gainFocus==true && previouslyFocusedRect!=null){
+			mScrollState = OnScrollListener.SCROLL_STATE_IDLE;	
+			mDecrementVirtualButtonPressed = true;
+			mIncrementVirtualButtonPressed = true;
+			invalidate(0, 0, mRight, mBottom);
+		} else {
+			mDecrementVirtualButtonPressed = false;
+			mIncrementVirtualButtonPressed = false;
+			invalidate(0, 0, mRight, mBottom);
+		}
+	}
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {

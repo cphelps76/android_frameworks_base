@@ -45,6 +45,7 @@ import android.os.Handler;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.SystemProperties;
 import android.provider.AlarmClock;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
@@ -106,8 +107,10 @@ class QuickSettings {
     private AsyncTask<Void, Void, Pair<Boolean, Boolean>> mQueryCertTask;
 
     boolean mTilesSetUp = false;
+    private final boolean isSupportAirPlaneMode = false ;
     boolean mUseDefaultAvatar = false;
 
+	private final boolean isSupportEmergencyCall = false ;
     private Handler mHandler;
 
     // The set of QuickSettingsTiles that have dynamic spans (and need to be updated on
@@ -342,8 +345,10 @@ class QuickSettings {
                         R.string.accessibility_quick_settings_user, state.label));
             }
         });
-        parent.addView(userTile);
-        mDynamicSpannedTiles.add(userTile);
+        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))){
+            parent.addView(userTile);
+            mDynamicSpannedTiles.add(userTile);
+        }
 
         // Brightness
         final QuickSettingsBasicTile brightnessTile
@@ -358,8 +363,10 @@ class QuickSettings {
         });
         mModel.addBrightnessTile(brightnessTile,
                 new QuickSettingsModel.BasicRefreshCallback(brightnessTile));
-        parent.addView(brightnessTile);
-        mDynamicSpannedTiles.add(brightnessTile);
+        if (!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))) {
+            parent.addView(brightnessTile);
+            mDynamicSpannedTiles.add(brightnessTile);
+        }
 
         // Settings tile
         final QuickSettingsBasicTile settingsTile = new QuickSettingsBasicTile(mContext);
@@ -468,7 +475,10 @@ class QuickSettings {
                             state.label));
                 }
             });
-            parent.addView(rssiTile);
+            
+            if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))&& isSupportEmergencyCall){
+                parent.addView(rssiTile);
+            }
         }
 
         // Rotation Lock
@@ -483,6 +493,7 @@ class QuickSettings {
                     mRotationLockController.setRotationLocked(!locked);
                 }
             });
+
             mModel.addRotationLockTile(rotationLockTile, mRotationLockController,
                     new QuickSettingsModel.RefreshCallback() {
                         @Override
@@ -501,7 +512,9 @@ class QuickSettings {
                             }
                         }
                     });
-            parent.addView(rotationLockTile);
+            if (!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))) {
+                parent.addView(rotationLockTile);
+            }
         }
 
         // Battery
@@ -534,7 +547,10 @@ class QuickSettings {
                         mContext.getString(R.string.accessibility_quick_settings_battery, t));
             }
         });
-        parent.addView(batteryTile);
+        
+        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))){
+            parent.addView(batteryTile);
+        }
 
         // Airplane Mode
         final QuickSettingsBasicTile airplaneTile
@@ -552,7 +568,10 @@ class QuickSettings {
                 airplaneTile.setText(state.label);
             }
         });
-        parent.addView(airplaneTile);
+        
+        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false")) && isSupportAirPlaneMode){
+            parent.addView(airplaneTile);
+        }
 
         // Bluetooth
         if (mModel.deviceSupportsBluetooth()

@@ -436,6 +436,22 @@ public class StorageManager {
     }
 
     /**
+     * Query if a USB Mass Storage (UMS) is enabled on the device.
+     * @return true if UMS host is enabled.
+     *
+     * @hide
+     */
+    public boolean isUsbMassStorageAllEnabled() {
+        try {
+            return mMountService.isUsbMassStorageAllEnabled();
+        } catch (RemoteException rex) {
+            Log.e(TAG, "Failed to get UMS enable state", rex);
+        }
+        return false;
+    }
+
+
+    /**
      * Mount an Opaque Binary Blob (OBB) file. If a <code>key</code> is
      * specified, it is supplied to the mounting process to be used in any
      * encryption used in the OBB.
@@ -596,6 +612,19 @@ public class StorageManager {
             paths[i] = volumes[i].getPath();
         }
         return paths;
+    }
+
+    /**
+     * Gets the filesystem label of the mountpoint.
+     * @hide
+     */
+    public String getVolumeFSLabel(String mountPoint) {
+        try {
+            return mMountService.getVolumeFSLabel(mountPoint);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Failed to get volume label", e);
+            return null;
+        }
     }
 
     /** {@hide} */

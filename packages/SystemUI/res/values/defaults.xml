@@ -17,4 +17,6 @@
  */
 -->
 <resources>
+	  <!-- Whether the tablet can auto-rotate  -->
+    <bool name="has_auto_rotate_setting">true</bool>
 </resources>

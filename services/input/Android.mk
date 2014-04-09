@@ -25,7 +25,8 @@ LOCAL_SRC_FILES:= \
     InputReader.cpp \
     InputWindow.cpp \
     PointerController.cpp \
-    SpriteController.cpp
+    SpriteController.cpp \
+    OSD2CursorController.cpp
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

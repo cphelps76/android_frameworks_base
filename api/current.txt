@@ -3687,6 +3687,27 @@ package android.app {
     field public static final int TRANSIT_UNSET = -1; // 0xffffffff
   }
 
+  public abstract interface IOverlayView implements android.os.IInterface {
+    method public abstract void deinit() throws android.os.RemoteException;
+    method public abstract int displayAndroid() throws android.os.RemoteException;
+    method public abstract int displayHdmi() throws android.os.RemoteException;
+    method public abstract int displayPip(int, int, int, int) throws android.os.RemoteException;
+    method public abstract int enableAudio(int) throws android.os.RemoteException;
+    method public abstract int getHActive() throws android.os.RemoteException;
+    method public abstract int getVActive() throws android.os.RemoteException;
+    method public abstract int handleAudio() throws android.os.RemoteException;
+    method public abstract void init() throws android.os.RemoteException;
+    method public abstract boolean isDvi() throws android.os.RemoteException;
+    method public abstract boolean isInterlace() throws android.os.RemoteException;
+  }
+
+  public static abstract class IOverlayView.Stub extends android.os.Binder implements android.app.IOverlayView {
+    ctor public IOverlayView.Stub();
+    method public android.os.IBinder asBinder();
+    method public static android.app.IOverlayView asInterface(android.os.IBinder);
+    method public boolean onTransact(int, android.os.Parcel, android.os.Parcel, int) throws android.os.RemoteException;
+  }
+
   public class Instrumentation {
     ctor public Instrumentation();
     method public void addMonitor(android.app.Instrumentation.ActivityMonitor);
@@ -4065,6 +4086,20 @@ package android.app {
     method public void cancelAll();
     method public void notify(int, android.app.Notification);
     method public void notify(java.lang.String, int, android.app.Notification);
+  }
+
+  public class OverlayViewManager {
+    method public void deinit();
+    method public int displayAndroid();
+    method public int displayHdmi();
+    method public int displayPip(int, int, int, int);
+    method public int enableAudio(int);
+    method public int getHActive();
+    method public int getVActive();
+    method public int handleAudio();
+    method public void init();
+    method public boolean isDvi();
+    method public boolean isInterlace();
   }
 
   public final class PendingIntent implements android.os.Parcelable {
@@ -5987,6 +6022,7 @@ package android.content {
     field public static final java.lang.String DISPLAY_SERVICE = "display";
     field public static final java.lang.String DOWNLOAD_SERVICE = "download";
     field public static final java.lang.String DROPBOX_SERVICE = "dropbox";
+    field public static final java.lang.String ETH_SERVICE = "ethernet";
     field public static final java.lang.String INPUT_METHOD_SERVICE = "input_method";
     field public static final java.lang.String INPUT_SERVICE = "input";
     field public static final java.lang.String KEYGUARD_SERVICE = "keyguard";
@@ -6002,7 +6038,9 @@ package android.content {
     field public static final java.lang.String NFC_SERVICE = "nfc";
     field public static final java.lang.String NOTIFICATION_SERVICE = "notification";
     field public static final java.lang.String NSD_SERVICE = "servicediscovery";
+    field public static final java.lang.String OVERLAYVIEW_SERVICE = "overlayview";
     field public static final java.lang.String POWER_SERVICE = "power";
+    field public static final java.lang.String PPPOE_SERVICE = "pppoe";
     field public static final java.lang.String PRINT_SERVICE = "print";
     field public static final java.lang.String SEARCH_SERVICE = "search";
     field public static final java.lang.String SENSOR_SERVICE = "sensor";
@@ -8341,6 +8379,7 @@ package android.database.sqlite {
     field public static final int OPEN_READONLY = 1; // 0x1
     field public static final int OPEN_READWRITE = 0; // 0x0
     field public static final int SQLITE_MAX_LIKE_PATTERN_LENGTH = 50000; // 0xc350
+    field public int mNativeHandle;
   }
 
   public static abstract interface SQLiteDatabase.CursorFactory {
@@ -9689,6 +9728,8 @@ package android.graphics {
     field public static final int TRANSLUCENT = -3; // 0xfffffffd
     field public static final int TRANSPARENT = -2; // 0xfffffffe
     field public static final int UNKNOWN = 0; // 0x0
+    field public static final int VIDEO_HOLE = 257; // 0x101
+    field public static final int VIDEO_HOLE_REAL = 258; // 0x102
     field public static final deprecated int YCbCr_420_SP = 17; // 0x11
     field public static final deprecated int YCbCr_422_I = 20; // 0x14
     field public static final deprecated int YCbCr_422_SP = 16; // 0x10
@@ -12586,6 +12627,15 @@ package android.media {
     method public void setWakeMode(android.content.Context, int);
     method public void start() throws java.lang.IllegalStateException;
     method public void stop() throws java.lang.IllegalStateException;
+    field public static final int KEY_PARAMETER_AML_PLAYER_FORCE_HARD_DECODE = 2007; // 0x7d7
+    field public static final int KEY_PARAMETER_AML_PLAYER_FORCE_SOFT_DECODE = 2008; // 0x7d8
+    field public static final int KEY_PARAMETER_AML_PLAYER_SWITCH_AUDIO_TRACK = 2004; // 0x7d4
+    field public static final int KEY_PARAMETER_AML_PLAYER_SWITCH_SOUND_TRACK = 2003; // 0x7d3
+    field public static final int KEY_PARAMETER_AML_PLAYER_TRICKPLAY_BACKWARD = 2006; // 0x7d6
+    field public static final int KEY_PARAMETER_AML_PLAYER_TRICKPLAY_FORWARD = 2005; // 0x7d5
+    field public static final int KEY_PARAMETER_AML_PLAYER_TYPE_STR = 2001; // 0x7d1
+    field public static final int KEY_PARAMETER_AML_PLAYER_VIDEO_OUT_TYPE = 2002; // 0x7d2
+    field public static final int KEY_PARAMETER_AML_VIDEO_POSITION_INFO = 2000; // 0x7d0
     field public static final int MEDIA_ERROR_IO = -1004; // 0xfffffc14
     field public static final int MEDIA_ERROR_MALFORMED = -1007; // 0xfffffc11
     field public static final int MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK = 200; // 0xc8
@@ -12604,6 +12654,8 @@ package android.media {
     field public static final int MEDIA_INFO_VIDEO_RENDERING_START = 3; // 0x3
     field public static final int MEDIA_INFO_VIDEO_TRACK_LAGGING = 700; // 0x2bc
     field public static final java.lang.String MEDIA_MIMETYPE_TEXT_SUBRIP = "application/x-subrip";
+    field public static final int VIDEO_OUT_HARDWARE = 1; // 0x1
+    field public static final int VIDEO_OUT_SOFT_RENDER = 0; // 0x0
     field public static final int VIDEO_SCALING_MODE_SCALE_TO_FIT = 1; // 0x1
     field public static final int VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING = 2; // 0x2
   }
@@ -13385,6 +13437,27 @@ package android.media.audiofx {
     field public short numBands;
   }
 
+  public class Hpeq extends android.media.audiofx.AudioEffect {
+    ctor public Hpeq(int, int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.RuntimeException, java.lang.UnsupportedOperationException;
+    method public int getBandCount();
+    method public int getGainForAllBands(int[]) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public int getGainForBand(int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public int getGainRange(int[]);
+    method public int setGainForAllBands(int[]) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public void setGainForBand(int, int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public void setParameterListener(android.media.audiofx.Hpeq.OnParameterChangeListener);
+    field public static final int HPEQ_PARAM_BAND_GAIN_3 = 2; // 0x2
+    field public static final int HPEQ_PARAM_BAND_GAIN_4 = 3; // 0x3
+    field public static final int HPEQ_PARAM_BAND_GAIN_5 = 4; // 0x4
+    field public static final int HPEQ_PARAM_GAIN_BAND_1 = 0; // 0x0
+    field public static final int HPEQ_PARAM_GAIN_BAND_2 = 1; // 0x1
+    field public static final int PARAM_STRING_SIZE_MAX = 32; // 0x20
+  }
+
+  public static abstract interface Hpeq.OnParameterChangeListener {
+    method public abstract void onParameterChange(android.media.audiofx.Hpeq, int, int, int, int);
+  }
+
   public class LoudnessEnhancer extends android.media.audiofx.AudioEffect {
     ctor public LoudnessEnhancer(int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.RuntimeException, java.lang.UnsupportedOperationException;
     method public float getTargetGain() throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
@@ -13422,6 +13495,30 @@ package android.media.audiofx {
     ctor public PresetReverb.Settings();
     ctor public PresetReverb.Settings(java.lang.String);
     field public short preset;
+  }
+
+  public class Srs extends android.media.audiofx.AudioEffect {
+    ctor public Srs(int, int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.RuntimeException, java.lang.UnsupportedOperationException;
+    method public float getGain(int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public int getSpeakerLfResponse() throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public boolean getSrsItemEnabled(int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public void setGain(int, float) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public void setParameterListener(android.media.audiofx.Srs.OnParameterChangeListener);
+    method public void setSpeakerLfResponse(int) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    method public void setSrsItemEnabled(int, boolean) throws java.lang.IllegalArgumentException, java.lang.IllegalStateException, java.lang.UnsupportedOperationException;
+    field public static final int PARAM_STRING_SIZE_MAX = 32; // 0x20
+    field public static final int SRS_PARAM_DEFINITION_GAIN = 6; // 0x6
+    field public static final int SRS_PARAM_DIALOGCLARITY_ENABLE = 1; // 0x1
+    field public static final int SRS_PARAM_DIALOGCLARTY_GAIN = 5; // 0x5
+    field public static final int SRS_PARAM_SURROUND_ENABLE = 2; // 0x2
+    field public static final int SRS_PARAM_SURROUND_GAIN = 7; // 0x7
+    field public static final int SRS_PARAM_TRUEBASS_ENABLE = 0; // 0x0
+    field public static final int SRS_PARAM_TRUEBASS_GAIN = 4; // 0x4
+    field public static final int SRS_PARAM_TRUEBASS_SPKER_SIZE = 3; // 0x3
+  }
+
+  public static abstract interface Srs.OnParameterChangeListener {
+    method public abstract void onParameterChange(android.media.audiofx.Srs, int, int, int, int);
   }
 
   public class Virtualizer extends android.media.audiofx.AudioEffect {
@@ -14077,6 +14174,82 @@ package android.net {
     method public android.net.VpnService.Builder setConfigureIntent(android.app.PendingIntent);
     method public android.net.VpnService.Builder setMtu(int);
     method public android.net.VpnService.Builder setSession(java.lang.String);
+  }
+
+}
+
+package android.net.ethernet {
+
+  public class EthernetDevInfo implements android.os.Parcelable {
+    ctor public EthernetDevInfo();
+    method public int describeContents();
+    method public java.lang.String getConnectMode();
+    method public java.lang.String getDnsAddr();
+    method public java.lang.String getIfName();
+    method public java.lang.String getIpAddress();
+    method public java.lang.String getNetMask();
+    method public java.lang.String getProxyExclusionList();
+    method public java.lang.String getProxyHost();
+    method public int getProxyPort();
+    method public java.lang.String getRouteAddr();
+    method public boolean hasProxy();
+    method public boolean setConnectMode(java.lang.String);
+    method public void setDnsAddr(java.lang.String);
+    method public void setIfName(java.lang.String);
+    method public void setIpAddress(java.lang.String);
+    method public void setNetMask(java.lang.String);
+    method public void setProxy(java.lang.String, int, java.lang.String);
+    method public void setRouteAddr(java.lang.String);
+    method public void writeToParcel(android.os.Parcel, int);
+    field public static final java.lang.String ETH_CONN_MODE_DHCP = "dhcp";
+    field public static final java.lang.String ETH_CONN_MODE_MANUAL = "manual";
+  }
+
+  public class EthernetManager {
+    ctor public EthernetManager(android.net.ethernet.IEthernetManager, android.os.Handler);
+    method public boolean ethConfigured();
+    method public void ethSetDefaultConf();
+    method public java.lang.String[] getDeviceNameList();
+    method public android.net.DhcpInfo getDhcpInfo();
+    method public int getEthState();
+    method public android.net.ethernet.EthernetDevInfo getSavedEthConfig();
+    method public int getTotalInterface();
+    method public boolean isEthConfigured();
+    method public boolean isEthDeviceAdded();
+    method public boolean isEthDeviceUp();
+    method public void setEthEnabled(boolean);
+    method public void updateEthDevInfo(android.net.ethernet.EthernetDevInfo);
+    field public static final int ETH_DEVICE_SCAN_RESULT_READY = 0; // 0x0
+    field public static final java.lang.String ETH_STATE_CHANGED_ACTION = "android.net.ethernet.ETH_STATE_CHANGED";
+    field public static final int ETH_STATE_DISABLED = 1; // 0x1
+    field public static final int ETH_STATE_ENABLED = 2; // 0x2
+    field public static final int ETH_STATE_UNKNOWN = 0; // 0x0
+    field public static final java.lang.String EXTRA_ETH_STATE = "eth_state";
+    field public static final java.lang.String EXTRA_NETWORK_INFO = "networkInfo";
+    field public static final java.lang.String EXTRA_PREVIOUS_ETH_STATE = "previous_eth_state";
+    field public static final java.lang.String NETWORK_STATE_CHANGED_ACTION = "android.net.ethernet.STATE_CHANGE";
+    field public static final java.lang.String TAG = "EthernetManager";
+  }
+
+  public abstract interface IEthernetManager implements android.os.IInterface {
+    method public abstract void UpdateEthDevInfo(android.net.ethernet.EthernetDevInfo) throws android.os.RemoteException;
+    method public abstract java.lang.String[] getDeviceNameList() throws android.os.RemoteException;
+    method public abstract android.net.DhcpInfo getDhcpInfo() throws android.os.RemoteException;
+    method public abstract int getEthState() throws android.os.RemoteException;
+    method public abstract android.net.ethernet.EthernetDevInfo getSavedEthConfig() throws android.os.RemoteException;
+    method public abstract int getTotalInterface() throws android.os.RemoteException;
+    method public abstract boolean isEthConfigured() throws android.os.RemoteException;
+    method public abstract boolean isEthDeviceAdded() throws android.os.RemoteException;
+    method public abstract boolean isEthDeviceUp() throws android.os.RemoteException;
+    method public abstract void setEthMode(java.lang.String) throws android.os.RemoteException;
+    method public abstract void setEthState(int) throws android.os.RemoteException;
+  }
+
+  public static abstract class IEthernetManager.Stub extends android.os.Binder implements android.net.ethernet.IEthernetManager {
+    ctor public IEthernetManager.Stub();
+    method public android.os.IBinder asBinder();
+    method public static android.net.ethernet.IEthernetManager asInterface(android.os.IBinder);
+    method public boolean onTransact(int, android.os.Parcel, android.os.Parcel, int) throws android.os.RemoteException;
   }
 
 }
@@ -17728,11 +17901,18 @@ package android.os {
     ctor public Environment();
     method public static java.io.File getDataDirectory();
     method public static java.io.File getDownloadCacheDirectory();
+    method public static java.io.File getExternalStorage2Directory();
+    method public static java.lang.String getExternalStorage2State();
     method public static java.io.File getExternalStorageDirectory();
+    method public static java.lang.String getExternalStorageLabel();
     method public static java.io.File getExternalStoragePublicDirectory(java.lang.String);
     method public static java.lang.String getExternalStorageState();
+    method public static java.io.File getInternalStorageDirectory();
+    method public static java.lang.String getInternalStorageState();
     method public static java.io.File getRootDirectory();
     method public static java.lang.String getStorageState(java.io.File);
+    method public static boolean isExternalStorage2Removable();
+    method public static boolean isExternalStorageBeSdcard();
     method public static boolean isExternalStorageEmulated();
     method public static boolean isExternalStorageRemovable();
     field public static java.lang.String DIRECTORY_ALARMS;
@@ -18203,6 +18383,7 @@ package android.os {
   public class RecoverySystem {
     ctor public RecoverySystem();
     method public static void installPackage(android.content.Context, java.io.File) throws java.io.IOException;
+    method public static void rebootRestoreSystem(android.content.Context) throws java.io.IOException;
     method public static void rebootWipeCache(android.content.Context) throws java.io.IOException;
     method public static void rebootWipeUserData(android.content.Context) throws java.io.IOException;
     method public static void verifyPackage(java.io.File, android.os.RecoverySystem.ProgressListener, java.io.File) throws java.security.GeneralSecurityException, java.io.IOException;
@@ -21145,6 +21326,14 @@ package android.provider {
     field public static final deprecated java.lang.String DEVICE_PROVISIONED = "device_provisioned";
     field public static final java.lang.String ENABLED_ACCESSIBILITY_SERVICES = "enabled_accessibility_services";
     field public static final java.lang.String ENABLED_INPUT_METHODS = "enabled_input_methods";
+    field public static final java.lang.String ETH_CONF = "eth_conf";
+    field public static final java.lang.String ETH_DNS = "eth_dns";
+    field public static final java.lang.String ETH_IFNAME = "eth_ifname";
+    field public static final java.lang.String ETH_IP = "eth_ip";
+    field public static final java.lang.String ETH_MASK = "eth_mask";
+    field public static final java.lang.String ETH_MODE = "eth_mode";
+    field public static final java.lang.String ETH_ON = "eth_on";
+    field public static final java.lang.String ETH_ROUTE = "eth_route";
     field public static final deprecated java.lang.String HTTP_PROXY = "http_proxy";
     field public static final java.lang.String INPUT_METHOD_SELECTOR_VISIBILITY = "input_method_selector_visibility";
     field public static final deprecated java.lang.String INSTALL_NON_MARKET_APPS = "install_non_market_apps";
@@ -21245,6 +21434,8 @@ package android.provider {
     field public static final java.lang.String END_BUTTON_BEHAVIOR = "end_button_behavior";
     field public static final java.lang.String FONT_SCALE = "font_scale";
     field public static final java.lang.String HAPTIC_FEEDBACK_ENABLED = "haptic_feedback_enabled";
+    field public static final java.lang.String HDMI_AUTO_SWITCH = "hdmi_auto_switch";
+    field public static final java.lang.String HDMI_SPDIF = "hdmi_spdif";
     field public static final deprecated java.lang.String HTTP_PROXY = "http_proxy";
     field public static final deprecated java.lang.String INSTALL_NON_MARKET_APPS = "install_non_market_apps";
     field public static final deprecated java.lang.String LOCATION_PROVIDERS_ALLOWED = "location_providers_allowed";
@@ -26707,6 +26898,7 @@ package android.view {
     field public static final int KEYCODE_8 = 15; // 0xf
     field public static final int KEYCODE_9 = 16; // 0x10
     field public static final int KEYCODE_A = 29; // 0x1d
+    field public static final int KEYCODE_ALTERNATE = 226; // 0xe2
     field public static final int KEYCODE_ALT_LEFT = 57; // 0x39
     field public static final int KEYCODE_ALT_RIGHT = 58; // 0x3a
     field public static final int KEYCODE_APOSTROPHE = 75; // 0x4b
@@ -26762,6 +26954,7 @@ package android.view {
     field public static final int KEYCODE_CAPTIONS = 175; // 0xaf
     field public static final int KEYCODE_CHANNEL_DOWN = 167; // 0xa7
     field public static final int KEYCODE_CHANNEL_UP = 166; // 0xa6
+    field public static final int KEYCODE_CHILD_LOCK = 256; // 0x100
     field public static final int KEYCODE_CLEAR = 28; // 0x1c
     field public static final int KEYCODE_COMMA = 55; // 0x37
     field public static final int KEYCODE_CONTACTS = 207; // 0xcf
@@ -26769,6 +26962,7 @@ package android.view {
     field public static final int KEYCODE_CTRL_RIGHT = 114; // 0x72
     field public static final int KEYCODE_D = 32; // 0x20
     field public static final int KEYCODE_DEL = 67; // 0x43
+    field public static final int KEYCODE_DISPLAY_MODE = 232; // 0xe8
     field public static final int KEYCODE_DPAD_CENTER = 23; // 0x17
     field public static final int KEYCODE_DPAD_DOWN = 20; // 0x14
     field public static final int KEYCODE_DPAD_LEFT = 21; // 0x15
@@ -26776,9 +26970,11 @@ package android.view {
     field public static final int KEYCODE_DPAD_UP = 19; // 0x13
     field public static final int KEYCODE_DVR = 173; // 0xad
     field public static final int KEYCODE_E = 33; // 0x21
+    field public static final int KEYCODE_EARLY_POWER = 2008; // 0x7d8
     field public static final int KEYCODE_EISU = 212; // 0xd4
     field public static final int KEYCODE_ENDCALL = 6; // 0x6
     field public static final int KEYCODE_ENTER = 66; // 0x42
+    field public static final int KEYCODE_ENTER_EPG = 229; // 0xe5
     field public static final int KEYCODE_ENVELOPE = 65; // 0x41
     field public static final int KEYCODE_EQUALS = 70; // 0x46
     field public static final int KEYCODE_ESCAPE = 111; // 0x6f
@@ -26796,6 +26992,36 @@ package android.view {
     field public static final int KEYCODE_F7 = 137; // 0x89
     field public static final int KEYCODE_F8 = 138; // 0x8a
     field public static final int KEYCODE_F9 = 139; // 0x8b
+    field public static final int KEYCODE_FACTORY_AGING_MODE = 706; // 0x2c2
+    field public static final int KEYCODE_FACTORY_ALONE_LISTEN = 724; // 0x2d4
+    field public static final int KEYCODE_FACTORY_AUTO_ADC = 707; // 0x2c3
+    field public static final int KEYCODE_FACTORY_AV1 = 708; // 0x2c4
+    field public static final int KEYCODE_FACTORY_AV2 = 710; // 0x2c6
+    field public static final int KEYCODE_FACTORY_AV3 = 711; // 0x2c7
+    field public static final int KEYCODE_FACTORY_BARCODE = 726; // 0x2d6
+    field public static final int KEYCODE_FACTORY_BUS_OFF = 705; // 0x2c1
+    field public static final int KEYCODE_FACTORY_CA_CARD = 725; // 0x2d5
+    field public static final int KEYCODE_FACTORY_DREAM_PANEL = 722; // 0x2d2
+    field public static final int KEYCODE_FACTORY_FACTORY_MODE = 700; // 0x2bc
+    field public static final int KEYCODE_FACTORY_HDMI1 = 716; // 0x2cc
+    field public static final int KEYCODE_FACTORY_HDMI2 = 717; // 0x2cd
+    field public static final int KEYCODE_FACTORY_HDMI3 = 718; // 0x2ce
+    field public static final int KEYCODE_FACTORY_KALA_OK = 719; // 0x2cf
+    field public static final int KEYCODE_FACTORY_LAN = 721; // 0x2d1
+    field public static final int KEYCODE_FACTORY_OUTSET = 704; // 0x2c0
+    field public static final int KEYCODE_FACTORY_RESET = 701; // 0x2bd
+    field public static final int KEYCODE_FACTORY_RF_AGC = 709; // 0x2c5
+    field public static final int KEYCODE_FACTORY_S1 = 712; // 0x2c8
+    field public static final int KEYCODE_FACTORY_SEARCH_DOWN = 728; // 0x2d8
+    field public static final int KEYCODE_FACTORY_SEARCH_UP = 727; // 0x2d7
+    field public static final int KEYCODE_FACTORY_SOURCE_ADD = 702; // 0x2be
+    field public static final int KEYCODE_FACTORY_SOURCE_REDUCE = 703; // 0x2bf
+    field public static final int KEYCODE_FACTORY_UPLAYER = 720; // 0x2d0
+    field public static final int KEYCODE_FACTORY_VGA = 715; // 0x2cb
+    field public static final int KEYCODE_FACTORY_WHITE_BALANCE = 723; // 0x2d3
+    field public static final int KEYCODE_FACTORY_YUV1 = 713; // 0x2c9
+    field public static final int KEYCODE_FACTORY_YUV2 = 714; // 0x2ca
+    field public static final int KEYCODE_FAV = 2018; // 0x7e2
     field public static final int KEYCODE_FOCUS = 80; // 0x50
     field public static final int KEYCODE_FORWARD = 125; // 0x7d
     field public static final int KEYCODE_FORWARD_DEL = 112; // 0x70
@@ -26808,6 +27034,7 @@ package android.view {
     field public static final int KEYCODE_HENKAN = 214; // 0xd6
     field public static final int KEYCODE_HOME = 3; // 0x3
     field public static final int KEYCODE_I = 37; // 0x25
+    field public static final int KEYCODE_IMAGE_MODE = 230; // 0xe6
     field public static final int KEYCODE_INFO = 165; // 0xa5
     field public static final int KEYCODE_INSERT = 124; // 0x7c
     field public static final int KEYCODE_J = 38; // 0x26
@@ -26817,19 +27044,32 @@ package android.view {
     field public static final int KEYCODE_L = 40; // 0x28
     field public static final int KEYCODE_LANGUAGE_SWITCH = 204; // 0xcc
     field public static final int KEYCODE_LEFT_BRACKET = 71; // 0x47
+    field public static final int KEYCODE_LIST = 2019; // 0x7e3
     field public static final int KEYCODE_M = 41; // 0x29
     field public static final int KEYCODE_MANNER_MODE = 205; // 0xcd
+    field public static final int KEYCODE_MEDIA_AUDIO_CONTORL = 2020; // 0x7e4
+    field public static final int KEYCODE_MEDIA_AUDIO_CONTROL = 238; // 0xee
     field public static final int KEYCODE_MEDIA_AUDIO_TRACK = 222; // 0xde
+    field public static final int KEYCODE_MEDIA_BOOKING = 236; // 0xec
     field public static final int KEYCODE_MEDIA_CLOSE = 128; // 0x80
+    field public static final int KEYCODE_MEDIA_DELETE = 243; // 0xf3
     field public static final int KEYCODE_MEDIA_EJECT = 129; // 0x81
     field public static final int KEYCODE_MEDIA_FAST_FORWARD = 90; // 0x5a
+    field public static final int KEYCODE_MEDIA_FAVORITES = 237; // 0xed
+    field public static final int KEYCODE_MEDIA_FUNCTION = 239; // 0xef
     field public static final int KEYCODE_MEDIA_NEXT = 87; // 0x57
+    field public static final int KEYCODE_MEDIA_ORIGINAL_SOUNDTRACK = 240; // 0xf0
     field public static final int KEYCODE_MEDIA_PAUSE = 127; // 0x7f
     field public static final int KEYCODE_MEDIA_PLAY = 126; // 0x7e
     field public static final int KEYCODE_MEDIA_PLAY_PAUSE = 85; // 0x55
     field public static final int KEYCODE_MEDIA_PREVIOUS = 88; // 0x58
+    field public static final int KEYCODE_MEDIA_PRIORITY = 242; // 0xf2
     field public static final int KEYCODE_MEDIA_RECORD = 130; // 0x82
+    field public static final int KEYCODE_MEDIA_RELATIONSHIP = 235; // 0xeb
     field public static final int KEYCODE_MEDIA_REWIND = 89; // 0x59
+    field public static final int KEYCODE_MEDIA_SCORE_DISPLAY = 244; // 0xf4
+    field public static final int KEYCODE_MEDIA_SELECTED_SONGS = 241; // 0xf1
+    field public static final int KEYCODE_MEDIA_SONG_SYSTEM = 234; // 0xea
     field public static final int KEYCODE_MEDIA_STOP = 86; // 0x56
     field public static final int KEYCODE_MENU = 82; // 0x52
     field public static final int KEYCODE_META_LEFT = 117; // 0x75
@@ -26885,12 +27125,23 @@ package android.view {
     field public static final int KEYCODE_SCROLL_LOCK = 116; // 0x74
     field public static final int KEYCODE_SEARCH = 84; // 0x54
     field public static final int KEYCODE_SEMICOLON = 74; // 0x4a
+    field public static final int KEYCODE_SENSE_ALL = 247; // 0xf7
+    field public static final int KEYCODE_SENSE_BACK = 250; // 0xfa
+    field public static final int KEYCODE_SENSE_CENTER = 249; // 0xf9
+    field public static final int KEYCODE_SENSE_CHANNEL_DOWN = 254; // 0xfe
+    field public static final int KEYCODE_SENSE_CHANNEL_UP = 253; // 0xfd
+    field public static final int KEYCODE_SENSE_LEAVE = 255; // 0xff
+    field public static final int KEYCODE_SENSE_MENU = 248; // 0xf8
+    field public static final int KEYCODE_SENSE_VOLUME_DOWN = 252; // 0xfc
+    field public static final int KEYCODE_SENSE_VOLUME_UP = 251; // 0xfb
     field public static final int KEYCODE_SETTINGS = 176; // 0xb0
+    field public static final int KEYCODE_SHARE = 228; // 0xe4
     field public static final int KEYCODE_SHIFT_LEFT = 59; // 0x3b
     field public static final int KEYCODE_SHIFT_RIGHT = 60; // 0x3c
     field public static final int KEYCODE_SLASH = 76; // 0x4c
     field public static final int KEYCODE_SOFT_LEFT = 1; // 0x1
     field public static final int KEYCODE_SOFT_RIGHT = 2; // 0x2
+    field public static final int KEYCODE_SOUND_MODE = 231; // 0xe7
     field public static final int KEYCODE_SPACE = 62; // 0x3e
     field public static final int KEYCODE_STAR = 17; // 0x11
     field public static final int KEYCODE_STB_INPUT = 180; // 0xb4
@@ -26901,11 +27152,28 @@ package android.view {
     field public static final int KEYCODE_T = 48; // 0x30
     field public static final int KEYCODE_TAB = 61; // 0x3d
     field public static final int KEYCODE_TV = 170; // 0xaa
+    field public static final int KEYCODE_TV_ALTERNATE = 2017; // 0x7e1
+    field public static final int KEYCODE_TV_BROWSER = 2016; // 0x7e0
     field public static final int KEYCODE_TV_INPUT = 178; // 0xb2
     field public static final int KEYCODE_TV_POWER = 177; // 0xb1
+    field public static final int KEYCODE_TV_REPEAT = 2011; // 0x7db
+    field public static final int KEYCODE_TV_SHORTCUTKEY_3DMODE = 2003; // 0x7d3
+    field public static final int KEYCODE_TV_SHORTCUTKEY_DISPAYMODE = 2004; // 0x7d4
+    field public static final int KEYCODE_TV_SHORTCUTKEY_GLOBALSETUP = 2001; // 0x7d1
+    field public static final int KEYCODE_TV_SHORTCUTKEY_SOURCE_LIST = 2002; // 0x7d2
+    field public static final int KEYCODE_TV_SHORTCUTKEY_TVINFO = 2007; // 0x7d7
+    field public static final int KEYCODE_TV_SHORTCUTKEY_VIEWMODE = 2005; // 0x7d5
+    field public static final int KEYCODE_TV_SHORTCUTKEY_VOICEMODE = 2006; // 0x7d6
+    field public static final int KEYCODE_TV_SLEEP = 2009; // 0x7d9
+    field public static final int KEYCODE_TV_SOUND_CHANNEL = 2010; // 0x7da
+    field public static final int KEYCODE_TV_SUBTITLE = 2012; // 0x7dc
+    field public static final int KEYCODE_TV_SWITCH = 2013; // 0x7dd
+    field public static final int KEYCODE_TV_VTION = 2015; // 0x7df
+    field public static final int KEYCODE_TV_WASU = 2014; // 0x7de
     field public static final int KEYCODE_U = 49; // 0x31
     field public static final int KEYCODE_UNKNOWN = 0; // 0x0
     field public static final int KEYCODE_V = 50; // 0x32
+    field public static final int KEYCODE_VOICE = 227; // 0xe3
     field public static final int KEYCODE_VOLUME_DOWN = 25; // 0x19
     field public static final int KEYCODE_VOLUME_MUTE = 164; // 0xa4
     field public static final int KEYCODE_VOLUME_UP = 24; // 0x18
@@ -31663,6 +31931,23 @@ package android.widget {
     method public void startScroll(int, int, int, int, int);
   }
 
+  public class OverlayView extends android.view.SurfaceView {
+    ctor public OverlayView(android.content.Context);
+    ctor public OverlayView(android.content.Context, android.util.AttributeSet);
+    ctor public OverlayView(android.content.Context, android.util.AttributeSet, int);
+    method public void deinit();
+    method public int displayAndroid();
+    method public int displayHdmi();
+    method public int displayPip(int, int, int, int);
+    method public int enableAudio(int);
+    method public int getHActive();
+    method public int getVActive();
+    method public int handleAudio();
+    method public void init();
+    method public boolean isDvi();
+    method public boolean isInterlace();
+  }
+
   public class PopupMenu {
     ctor public PopupMenu(android.content.Context, android.view.View);
     ctor public PopupMenu(android.content.Context, android.view.View, int);
@@ -32672,7 +32957,7 @@ package android.widget {
     method public android.widget.TextView getText2();
   }
 
-  public class VideoView extends android.view.SurfaceView implements android.widget.MediaController.MediaPlayerControl {
+  public class VideoView extends android.view.SurfaceView implements android.widget.MediaController.MediaPlayerControl android.view.View.OnLayoutChangeListener {
     ctor public VideoView(android.content.Context);
     ctor public VideoView(android.content.Context, android.util.AttributeSet);
     ctor public VideoView(android.content.Context, android.util.AttributeSet, int);
@@ -32685,6 +32970,7 @@ package android.widget {
     method public int getCurrentPosition();
     method public int getDuration();
     method public boolean isPlaying();
+    method public void onLayoutChange(android.view.View, int, int, int, int, int, int, int, int);
     method public void pause();
     method public int resolveAdjustedSize(int, int);
     method public void resume();

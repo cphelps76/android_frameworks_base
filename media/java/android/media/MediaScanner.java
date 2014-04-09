@@ -1300,8 +1300,37 @@ public class MediaScanner
         }
     }
 
+    private boolean mStopScan = false;//jni will read it to check if need stop scan
+    private Object  mLock = new Object();
+    private int     mScanCount = 0;
+
+    //for mediaprovider to stop all scan
+    public void stopScan() {
+        synchronized(mLock) {
+            if(mScanCount > 0)
+                mStopScan = true;
+        }
+    }
+
+    private void startScan() {
+        synchronized(mLock) {
+            mScanCount ++;
+        }
+    }
+
+    private void exitScan() {
+        synchronized(mLock) {
+            mScanCount --;
+            if( mScanCount == 0 ){
+                if(mStopScan == true)
+                    mStopScan = false;
+            }
+        }
+    }
+
     public void scanDirectories(String[] directories, String volumeName) {
         try {
+            startScan();
             long start = System.currentTimeMillis();
             initialize(volumeName);
             prescan(null, true);
@@ -1313,6 +1342,11 @@ public class MediaScanner
             }
 
             for (int i = 0; i < directories.length; i++) {
+                synchronized(mLock){
+                    if(mStopScan == true) {
+                        break;
+                    }
+                }
                 processDirectory(directories[i], mClient);
             }
 
@@ -1341,6 +1375,7 @@ public class MediaScanner
         } catch (RemoteException e) {
             Log.e(TAG, "RemoteException in MediaScanner.scan()", e);
         }
+        exitScan();
     }
 
     // this function is used to scan a single file

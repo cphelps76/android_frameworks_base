@@ -90,7 +90,17 @@ public class UsbStorageActivity extends Activity
     private StorageEventListener mStorageListener = new StorageEventListener() {
         @Override
         public void onStorageStateChanged(String path, String oldState, String newState) {
-            final boolean on = newState.equals(Environment.MEDIA_SHARED);
+            boolean on = newState.equals(Environment.MEDIA_SHARED);
+            // if unshared, make sure all volumes are unshared before switching display
+            if (!on && mStorageManager.isUsbMassStorageEnabled()) {
+                on = true;
+                return;
+            }
+            // if shared, make sure all volumes are shared before switching display    
+            if (on && !mStorageManager.isUsbMassStorageAllEnabled()) {
+                on = false;
+                return;
+            }                  
             switchDisplay(on);
         }
     };

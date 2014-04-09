@@ -462,7 +462,7 @@
             1 - Global actions menu
             2 - Power off (with confirmation)
     -->
-    <integer name="config_longPressOnPowerBehavior">1</integer>
+    <integer name="config_longPressOnPowerBehavior">2</integer>
 
     <!-- Package name for default keyguard appwidget [DO NOT TRANSLATE] -->
     <string name="widget_default_package_name"></string>
@@ -640,9 +640,10 @@
     <integer-array name="config_autoBrightnessLevels">
     </integer-array>
 
-    <!-- Minimum screen brightness setting allowed by the power manager.
+    <!-- Minimum screen brightness setting allowed by the power manager.chang to
+	20 for the status when user set bright to minimum still can see screen
          The user is forbidden from setting the brightness below this level. -->
-    <integer name="config_screenBrightnessSettingMinimum">10</integer>
+    <integer name="config_screenBrightnessSettingMinimum">20</integer>
 
     <!-- Maximum screen brightness allowed by the power manager.
          The user is forbidden from setting the brightness above this level. -->
@@ -773,6 +774,7 @@
     <string-array name="config_locationProviderPackageNames" translatable="false">
         <!-- The standard AOSP fused location provider -->
         <item>com.android.location.fused</item>
+        <item>com.google.android.gms</item>
     </string-array>
 
     <!-- Boolean indicating if current platform supports bluetooth SCO for off call
@@ -782,6 +784,10 @@
     <!-- Boolean indicating if current platform supports bluetooth wide band
          speech -->
     <bool name="config_bluetooth_wide_band_speech">true</bool>
+
+    <!-- Boolean indicating if current platform supports quick switch-on/off of
+         Bluetooth Module -->
+    <bool name="config_bluetooth_adapter_quick_switch">false</bool>
 
     <!-- Boolean indicating if current platform need do one-time bluetooth address
          re-validation -->
@@ -1086,10 +1092,14 @@
     <!-- Base "touch slop" value used by ViewConfiguration as a
          movement threshold where scrolling should begin. -->
     <dimen name="config_viewConfigurationTouchSlop">8dp</dimen>
-
+    
     <!-- Maximum number of grid columns permitted in the ResolverActivity
          used for picking activities to handle an intent. -->
     <integer name="config_maxResolverActivityColumns">2</integer>
+
+    <!-- Default wallpaper width and height -->
+    <integer name="config_defaultWallPaper_width">0</integer>
+    <integer name="config_defaultWallPaper_height">0</integer>
 
     <!-- Array of OEM specific USB mode override config.
          OEM can override a certain USB mode depending on ro.bootmode.
@@ -1097,6 +1107,9 @@
          [bootmode]:[original USB mode]:[USB mode used]-->
     <integer-array translatable="false" name="config_oemUsbModeOverride">
     </integer-array>
+ 
+   <!-- Enables or disables ringtong storage notification -->
+    <bool name="config_storage_notification">false</bool>
 
     <!-- Set to true to add links to Cell Broadcast app from Settings and MMS app. -->
     <bool name="config_cellBroadcastAppLinks">false</bool>

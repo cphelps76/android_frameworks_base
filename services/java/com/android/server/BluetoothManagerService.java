@@ -16,6 +16,8 @@
 
 package com.android.server;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.IBluetooth;
@@ -42,8 +44,12 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
+import android.os.PowerManager;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
+import java.util.ArrayList;
+import java.util.List;
 class BluetoothManagerService extends IBluetoothManager.Stub {
     private static final String TAG = "BluetoothManagerService";
     private static final boolean DBG = true;
@@ -66,8 +72,10 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
 
     private static final int MESSAGE_ENABLE = 1;
     private static final int MESSAGE_DISABLE = 2;
-    private static final int MESSAGE_REGISTER_ADAPTER = 20;
-    private static final int MESSAGE_UNREGISTER_ADAPTER = 21;
+    private static final int MESSAGE_ENABLE_RADIO = 3;
+    private static final int MESSAGE_DISABLE_RADIO = 4;
+    //private static final int MESSAGE_REGISTER_ADAPTER = 20;
+    //private static final int MESSAGE_UNREGISTER_ADAPTER = 21;
     private static final int MESSAGE_REGISTER_STATE_CHANGE_CALLBACK = 30;
     private static final int MESSAGE_UNREGISTER_STATE_CHANGE_CALLBACK = 31;
     private static final int MESSAGE_BLUETOOTH_SERVICE_CONNECTED = 40;
@@ -79,7 +87,29 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
     private static final int MESSAGE_GET_NAME_AND_ADDRESS=200;
     private static final int MESSAGE_SAVE_NAME_AND_ADDRESS=201;
     private static final int MESSAGE_USER_SWITCHED = 300;
+    private static final int MESSAGE_GET_RX_COUNT=400;
     private static final int MAX_SAVE_RETRIES=3;
+
+	private static String debugGetMessageName(int msgType) {
+        switch (msgType) {
+        case MESSAGE_ENABLE: return "MESSAGE_ENABLE";
+        case MESSAGE_DISABLE:return "MESSAGE_DISABLE";
+        case MESSAGE_ENABLE_RADIO: return "MESSAGE_ENABLE_RADIO";
+        case MESSAGE_DISABLE_RADIO: return "MESSAGE_DISABLE_RADIO";
+        //case MESSAGE_REGISTER_ADAPTER: return "MESSAGE_REGISTER_ADAPTER";
+        // MESSAGE_UNREGISTER_ADAPTER: return "MESSAGE_UNREGISTER_ADAPTER";
+        case MESSAGE_REGISTER_STATE_CHANGE_CALLBACK:return "MESSAGE_REGISTER_STATE_CHANGE_CALLBACK";
+        case MESSAGE_UNREGISTER_STATE_CHANGE_CALLBACK:return "MESSAGE_UNREGISTER_STATE_CHANGE_CALLBACK";
+        case MESSAGE_BLUETOOTH_SERVICE_CONNECTED:return "MESSAGE_BLUETOOTH_SERVICE_CONNECTED";
+        case MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED:return "MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED";
+        case MESSAGE_BLUETOOTH_STATE_CHANGE:return "MESSAGE_BLUETOOTH_STATE_CHANGE";
+        case MESSAGE_TIMEOUT_BIND: return "MESSAGE_TIMEOUT_BIND";
+        case MESSAGE_TIMEOUT_UNBIND: return "MESSAGE_TIMEOUT_UNBIND";
+        case MESSAGE_GET_NAME_AND_ADDRESS: return "MESSAGE_GET_NAME_AND_ADDRESS";
+        case MESSAGE_SAVE_NAME_AND_ADDRESS: return "MESSAGE_SAVE_NAME_AND_ADDRESS";
+        }
+        return "UNKNOWN("+msgType+")";
+    }
     private static final int MAX_ERROR_RESTART_RETRIES=6;
 
     // Bluetooth persisted setting is off
@@ -96,6 +126,11 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
     private static final int SERVICE_IBLUETOOTHGATT = 2;
 
     private final Context mContext;
+
+    private PowerManager.WakeLock mWakeLock;
+    private PowerManager.WakeLock mRadioWakeLock;
+    private Handler mDelayedHandler;
+    private boolean mScreenOff;
 
     // Locks are not provided for mName and mAddress.
     // They are accessed in handler or broadcast receiver, same thread context.
@@ -138,8 +173,23 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
     private final IBluetoothCallback mBluetoothCallback =  new IBluetoothCallback.Stub() {
         @Override
         public void onBluetoothStateChange(int prevState, int newState) throws RemoteException  {
+            if (DBG) Log.d(TAG, "onBluetoothStateChange prev=" + prevState + " new=" + newState);
+            if ((prevState == BluetoothAdapter.STATE_TURNING_ON) &&
+                (newState == BluetoothAdapter.STATE_OFF)) {
+                mEnable = false;
+            }
             Message msg = mHandler.obtainMessage(MESSAGE_BLUETOOTH_STATE_CHANGE,prevState,newState);
             mHandler.sendMessage(msg);
+        }
+    };
+    private final Runnable mBTtimer = new Runnable() {
+        public void run() {
+            if (isEnabled() || isRadioEnabled()) {
+                if (DBG) Log.d(TAG, "1.5s is passed , get rx count again");
+                mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_GET_RX_COUNT,
+                               0, 0));
+                mDelayedHandler.postDelayed(this, 1*1500);
+            }
         }
     };
 
@@ -147,6 +197,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            
             if (BluetoothAdapter.ACTION_LOCAL_NAME_CHANGED.equals(action)) {
                 String newName = intent.getStringExtra(BluetoothAdapter.EXTRA_LOCAL_NAME);
                 if (DBG) Log.d(TAG, "Bluetooth Adapter name changed to " + newName);
@@ -168,6 +219,36 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                     } else if (mEnableExternal) {
                         // enable without persisting the setting
                         sendEnableMsg(mQuietEnableExternal);
+                    }
+                }
+            } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                if(!("true".equals(SystemProperties.get("bt.keep_on.enable")))) {
+                    Log.v(TAG, "bt mScreenOn");
+                    mScreenOff = false;
+                    
+                    mDelayedHandler.removeCallbacks(mBTtimer);
+                    if (isBluetoothPersistedStateOn()) {
+                        // enable without persisting the setting
+                        mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_ENABLE,
+                               0, 0));
+                    } else {
+                        if (DBG) Log.d(TAG, "enable Bluetooth radio for GPS after screen on");
+    					//if radio is not on, so enable radio
+    					//mDelayedHandler.removeCallbacks(mBTDelayeddisableradio);
+    					if (!isRadioEnabled())
+    						enableRadio();
+                    }
+                }
+            } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                if(!("true".equals(SystemProperties.get("bt.keep_on.enable")))) {
+                    Log.v(TAG, "bt mScreenOff");
+                    mScreenOff = true;
+                    //when bt is on or turning on in screen off, launch a timer to check whether bt 
+                    //is in receving state
+                    if (isEnabled() || mState == BluetoothAdapter.STATE_TURNING_ON || isRadioEnabled()) {
+                        mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_GET_RX_COUNT,
+                               0, 0));
+                        mDelayedHandler.postDelayed(mBTtimer, 1*1500);
                     }
                 }
             } else if (Intent.ACTION_USER_SWITCHED.equals(action)) {
@@ -212,10 +293,22 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         filter.addAction(BluetoothAdapter.ACTION_LOCAL_NAME_CHANGED);
         filter.addAction(Intent.ACTION_USER_SWITCHED);
         registerForAirplaneMode(filter);
+        // Bluetooth suspend/wakeup
+        mDelayedHandler = new Handler();
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+
+        PowerManager powerManager = (PowerManager)mContext.getSystemService(Context.POWER_SERVICE);
+        mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
+        mRadioWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BluetoothRadio");
+        
         mContext.registerReceiver(mReceiver, filter);
         loadStoredNameAndAddress();
         if (isBluetoothPersistedStateOn()) {
             mEnableExternal = true;
+        }else{
+            Log.d(TAG, "enable Bluetooth radio for GPS");
+            enableRadio();
         }
     }
 
@@ -306,11 +399,36 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         }
     }
 
+    public void acquireWakeLock() {
+        if (DBG) Log.d(TAG,"acquireWakeLockk");
+        if (mWakeLock != null && !mWakeLock.isHeld())
+            mWakeLock.acquire();
+    }
+	
+    public void releaseWakeLock() {
+        if (DBG) Log.d(TAG,"releaseWakeLock");
+        if (mWakeLock != null && mWakeLock.isHeld())
+            mWakeLock.release();
+    }
+
+    public void acquire_radioWakeLock() {
+        if (DBG) Log.d(TAG,"acquireRadioWakeLockk");
+        if (mRadioWakeLock != null && !mRadioWakeLock.isHeld())
+            mRadioWakeLock.acquire();
+    }
+	
+    public void release_radioWakeLock() {
+        if (DBG) Log.d(TAG,"releaseRadioWakeLock");
+        if (mRadioWakeLock != null && mRadioWakeLock.isHeld())
+            mRadioWakeLock.release();
+    }
+
     public IBluetooth registerAdapter(IBluetoothManagerCallback callback){
-        Message msg = mHandler.obtainMessage(MESSAGE_REGISTER_ADAPTER);
-        msg.obj = callback;
-        mHandler.sendMessage(msg);
+        //Message msg = mHandler.obtainMessage(MESSAGE_REGISTER_ADAPTER);
+        //msg.obj = callback;
+        //mHandler.sendMessage(msg);
         synchronized(mConnection) {
+            boolean added = mCallbacks.register(callback);
             return mBluetooth;
         }
     }
@@ -318,9 +436,12 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
     public void unregisterAdapter(IBluetoothManagerCallback callback) {
         mContext.enforceCallingOrSelfPermission(BLUETOOTH_PERM,
                                                 "Need BLUETOOTH permission");
-        Message msg = mHandler.obtainMessage(MESSAGE_UNREGISTER_ADAPTER);
-        msg.obj = callback;
-        mHandler.sendMessage(msg);
+        //Message msg = mHandler.obtainMessage(MESSAGE_UNREGISTER_ADAPTER);
+        // msg.obj = callback;
+        //mHandler.sendMessage(msg);
+        synchronized (mConnection) {
+            boolean removed = mCallbacks.unregister(callback);
+        }
     }
 
     public void registerStateChangeCallback(IBluetoothStateChangeCallback callback) {
@@ -351,6 +472,21 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                 return (mBluetooth != null && mBluetooth.isEnabled());
             } catch (RemoteException e) {
                 Log.e(TAG, "isEnabled()", e);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tells whether the other radios(like fm/gps etc) are turned on or not
+     * irrespective of the BT state.
+     */
+    public boolean isRadioEnabled() {
+        synchronized(mConnection) {
+            try {
+                return (mBluetooth != null && mBluetooth.isRadioEnabled());
+            } catch (RemoteException e) {
+                Log.e(TAG, "isRadioEnabled()", e);
             }
         }
         return false;
@@ -413,6 +549,29 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         return true;
     }
 
+    public boolean enableRadio() {
+        if (DBG) {
+            Log.d(TAG,"enable():  mBluetooth =" +
+                    (mBluetooth==null?"null":mBluetooth) +
+                    " mBinding = " + mBinding );
+        }
+
+        synchronized(mConnection) {
+            //if (mBluetooth != null) return false;
+            if (mBinding) {
+                Log.w(TAG,"enable(): binding in progress. Returning..");
+                return true;
+            }
+            if (mConnection == null) mBinding = true;
+        }
+
+        Message msg = mHandler.obtainMessage(MESSAGE_ENABLE_RADIO);
+        // TO DO :handle persist when Fm app if required
+        msg.arg1=1; //persist
+        mHandler.sendMessage(msg);
+        return true;
+    }
+
     public boolean disable(boolean persist) {
         mContext.enforceCallingOrSelfPermission(BLUETOOTH_ADMIN_PERM,
                                                 "Need BLUETOOTH ADMIN permissicacheNameAndAddresson");
@@ -438,6 +597,23 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
             mEnableExternal = false;
             sendDisableMsg();
         }
+        return true;
+    }
+
+    public boolean disableRadio() {
+
+        if (DBG) {
+            Log.d(TAG,"disable(): mBluetooth = " +
+                (mBluetooth==null?"null":mBluetooth) +
+                " mBinding = " + mBinding);}
+
+        synchronized(mConnection) {
+             if (mBluetooth == null) return false;
+        }
+        Message msg = mHandler.obtainMessage(MESSAGE_DISABLE_RADIO);
+        // TO DO :handle persist when Fm app if required
+
+        mHandler.sendMessage(msg);
         return true;
     }
 
@@ -578,6 +754,16 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
     private class BluetoothServiceConnection implements ServiceConnection {
 
         private boolean mGetNameAddressOnly;
+        private boolean mIsTurnOnRadio;
+
+        public void setTurnOnRadio(boolean isTurnOnRadio) {
+            mIsTurnOnRadio = isTurnOnRadio;
+        }
+
+        public boolean isTurnOnRadio() {
+            return mIsTurnOnRadio;
+        }
+
 
         public void setGetNameAddressOnly(boolean getOnly) {
             mGetNameAddressOnly = getOnly;
@@ -669,11 +855,13 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                     if (DBG) Log.d(TAG,"MESSAGE_SAVE_NAME_AND_ADDRESS");
                     synchronized(mConnection) {
                         if (!mEnable && mBluetooth != null) {
+                        /*
                             try {
                                 mBluetooth.enable();
                             } catch (RemoteException e) {
                                 Log.e(TAG,"Unable to call enable()",e);
                             }
+                        */
                         }
                     }
                     if (mBluetooth != null) waitForOnOff(true, false);
@@ -707,11 +895,13 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                                 }
                             }
                             if (!mEnable) {
+                                /*
                                 try {
                                     mBluetooth.disable();
                                 } catch (RemoteException e) {
                                     Log.e(TAG,"Unable to call disable()",e);
                                 }
+                                */
                             }
                         } else {
                             // rebind service by Request GET NAME AND ADDRESS
@@ -749,20 +939,18 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                     }
                     break;
 
-                case MESSAGE_REGISTER_ADAPTER:
-                {
-                    IBluetoothManagerCallback callback = (IBluetoothManagerCallback) msg.obj;
-                    boolean added = mCallbacks.register(callback);
-                    Log.d(TAG,"Added callback: " +  (callback == null? "null": callback)  +":" +added );
-                }
+                case MESSAGE_ENABLE_RADIO:
+                    if (DBG) {
+                        Log.d(TAG, "MESSAGE_ENABLE_RADIO: mBluetooth = " + mBluetooth);
+                    }
+
+                    handleEnableRadio();
                     break;
-                case MESSAGE_UNREGISTER_ADAPTER:
-                {
-                    IBluetoothManagerCallback callback = (IBluetoothManagerCallback) msg.obj;
-                    boolean removed = mCallbacks.unregister(callback);
-                    Log.d(TAG,"Removed callback: " +  (callback == null? "null": callback)  +":" + removed);
+
+                case MESSAGE_DISABLE_RADIO:
+                    handleDisableRadio();
                     break;
-                }
+
                 case MESSAGE_REGISTER_STATE_CHANGE_CALLBACK:
                 {
                     IBluetoothStateChangeCallback callback = (IBluetoothStateChangeCallback) msg.obj;
@@ -810,7 +998,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                             //Request GET NAME AND ADDRESS
                             Message getMsg = mHandler.obtainMessage(MESSAGE_GET_NAME_AND_ADDRESS);
                             mHandler.sendMessage(getMsg);
-                            if (!mEnable) return;
+                            //if (!mEnable) return;
                         }
 
                         mConnection.setGetNameAddressOnly(false);
@@ -824,6 +1012,18 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                         sendBluetoothServiceUpCallback();
 
                         //Do enable request
+                        if (mConnection.isTurnOnRadio()){
+                            try {
+                                if(!mBluetooth.enableRadio()) {
+                                    Log.e(TAG,"IBluetooth.enableRadio() returned false");
+                                }
+                                mConnection.setTurnOnRadio(false);
+
+                            } catch (RemoteException e) {
+                                Log.e(TAG,"Unable to call enableRadio()",e);
+                            }
+                            break;
+                        }
                         try {
                             if (mQuietEnable == false) {
                                 if(!mBluetooth.enable()) {
@@ -953,7 +1153,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                     }
                     mHandler.removeMessages(MESSAGE_USER_SWITCHED);
                     /* disable and enable BT when detect a user switch */
-                    if (mEnable && mBluetooth != null) {
+                    if ( (mEnable || isRadioEnabled()) && mBluetooth != null) {
                         synchronized (mConnection) {
                             if (mBluetooth != null) {
                                 //Unregister callback object
@@ -983,6 +1183,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
 
                         // disable
                         handleDisable();
+                        handleDisableRadio();
                         // Pbap service need receive STATE_TURNING_OFF intent to close
                         bluetoothStateChangeHandler(BluetoothAdapter.STATE_ON,
                                                     BluetoothAdapter.STATE_TURNING_OFF);
@@ -1017,13 +1218,32 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
 		    }
                     break;
                 }
+                case MESSAGE_GET_RX_COUNT:
+                {
+                    if (DBG) {
+                        Log.d(TAG, "MESSAGE_GET_RX_COUNT");
+                    }
+                    synchronized(mConnection) {
+                        if(mBluetooth == null)
+                            Log.e(TAG, "mBluetooth is null");
+                        if (mBluetooth != null) {
+                            try {
+                                if (DBG) {
+                                    Log.d(TAG, "mBluetooth.get_rx_count");
+                                }
+                                mBluetooth.get_rx_count();
+                            } catch (RemoteException e) {
+                                Log.e(TAG,"Unable to call get_rx_count()",e);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
     private void handleEnable(boolean quietMode) {
         mQuietEnable = quietMode;
-
         synchronized(mConnection) {
             if ((mBluetooth == null) && (!mBinding)) {
                 //Start bind timeout and bind
@@ -1051,7 +1271,6 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                     //Inform BluetoothAdapter instances that service is up
                     sendBluetoothServiceUpCallback();
                 }
-
                 //Enable bluetooth
                 try {
                     if (!mQuietEnable) {
@@ -1121,8 +1340,36 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         return valid;
     }
 
+    private final Runnable mBTShutDown = new Runnable() {
+        public void run() {
+            releaseWakeLock();
+        }
+    };
+
     private void bluetoothStateChangeHandler(int prevState, int newState) {
         if (prevState != newState) {
+			if(!("true".equals(SystemProperties.get("bt.keep_on.enable")))) {
+	            if(newState == BluetoothAdapter.STATE_RADIO_ON) {
+	                acquire_radioWakeLock();
+	            }
+
+	            if(newState == BluetoothAdapter.STATE_RADIO_OFF) {
+	                release_radioWakeLock();
+	            }
+			}
+            
+            if ((prevState == BluetoothAdapter.STATE_OFF) && (newState == BluetoothAdapter.STATE_RADIO_OFF)) {
+                Intent intentRadio1 = new Intent(BluetoothAdapter.ACTION_RADIO_STATE_CHANGED);
+                intentRadio1.putExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, prevState);
+                intentRadio1.putExtra(BluetoothAdapter.EXTRA_STATE, newState);
+                if (DBG) Log.d(TAG,"Radio State Change Intent: " + prevState + " -> " + newState);
+                mContext.sendBroadcast(intentRadio1);
+
+                sendBluetoothServiceDownCallback();
+                unbindAndFinish();
+                return;
+            }
+ 
             //Notify all proxy objects first of adapter state change
             if (newState == BluetoothAdapter.STATE_ON || newState == BluetoothAdapter.STATE_OFF) {
                 boolean isUp = (newState==BluetoothAdapter.STATE_ON);
@@ -1138,20 +1385,52 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                 } else {
                     //If Bluetooth is off, send service down event to proxy objects, and unbind
                     if (!isUp && canUnbindBluetoothService()) {
-                        sendBluetoothServiceDownCallback();
-                        unbindAndFinish();
+                        if (!isRadioEnabled()) {
+                            sendBluetoothServiceDownCallback();
+                            unbindAndFinish();
+                        }
                     }
                 }
-            }
+			}
+			if(!("true".equals(SystemProperties.get("bt.keep_on.enable")))) {
+	            //when turning on bt, acquire wake lock
+	            if(newState == BluetoothAdapter.STATE_TURNING_ON) {
+	                mDelayedHandler.removeCallbacks(mBTShutDown);
+	                acquireWakeLock();
+	            }
+	                
+	            //when bt is off, release wake lock after 200ms
+	            if(newState == BluetoothAdapter.STATE_OFF){
+	                //cancle the bt timer
+	                mDelayedHandler.removeCallbacks(mBTtimer);
+	                mDelayedHandler.postDelayed(mBTShutDown, 2*100);
+	            }
+			}
 
             //Send broadcast message to everyone else
-            Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
-            intent.putExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, prevState);
-            intent.putExtra(BluetoothAdapter.EXTRA_STATE, newState);
-            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-            if (DBG) Log.d(TAG,"Bluetooth State Change Intent: " + prevState + " -> " + newState);
-            mContext.sendBroadcastAsUser(intent, UserHandle.ALL,
-                    BLUETOOTH_PERM);
+            // BT specific braodcast event
+            if ((newState != BluetoothAdapter.STATE_RADIO_ON) &&
+                    (newState != BluetoothAdapter.STATE_RADIO_OFF)) {
+                Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
+                intent.putExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, prevState);
+                intent.putExtra(BluetoothAdapter.EXTRA_STATE, newState);
+                intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
+                if (DBG) Log.d(TAG,"Bluetooth State Change Intent: " +
+                            prevState + " -> " + newState);
+                mContext.sendBroadcastAsUser(intent, UserHandle.ALL,
+                   BLUETOOTH_PERM);
+
+            } else {
+                // Radio specific braodcast event
+                Intent intentRadio =
+                        new Intent(BluetoothAdapter.ACTION_RADIO_STATE_CHANGED);
+                intentRadio.putExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, prevState);
+                intentRadio.putExtra(BluetoothAdapter.EXTRA_STATE, newState);
+                if (DBG) Log.d(TAG,"Radio State Change Intent: " +
+                                prevState + " -> " + newState);
+                mContext.sendBroadcast(intentRadio);
+
+            }
         }
     }
 
@@ -1187,6 +1466,53 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         }
         Log.e(TAG,"waitForOnOff time out");
         return false;
+    }
+    private void handleEnableRadio() {
+
+        synchronized(mConnection) {
+            if (mBluetooth == null) {
+                //Start bind timeout and bind
+                Message timeoutMsg=mHandler.obtainMessage(MESSAGE_TIMEOUT_BIND);
+                mHandler.sendMessageDelayed(timeoutMsg,TIMEOUT_BIND_MS);
+                mConnection.setGetNameAddressOnly(false);
+                mConnection.setTurnOnRadio(true);
+                Intent i = new Intent(IBluetooth.class.getName());
+                if (!mContext.bindService(i, mConnection,Context.BIND_AUTO_CREATE)) {
+                    mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
+                    Log.e(TAG, "Fail to bind to: " + IBluetooth.class.getName());
+                }
+            } else {
+
+                try {
+                    if (DBG) Log.d(TAG,"Getting and storing Bluetooth name and address prior to enable.");
+                    storeNameAndAddress(mBluetooth.getName(),mBluetooth.getAddress());
+                } catch (RemoteException e) {Log.e(TAG, "", e);};
+
+                //Enable Radio
+                try {
+
+                    if(!mBluetooth.enableRadio()) {
+                        Log.e(TAG,"IBluetooth.enableRadio() returned false");
+                    }
+                } catch (RemoteException e) {
+                    Log.e(TAG,"Unable to call enableRadio()",e);
+                }
+            }
+        }
+    }
+
+    private void handleDisableRadio() {
+        synchronized(mConnection) {
+            if (isRadioEnabled()) {
+                try {
+                    if(!mBluetooth.disableRadio()) {
+                        Log.e(TAG,"IBluetooth.disableRadio() returned false");
+                    }
+                } catch (RemoteException e) {
+                    Log.e(TAG,"Unable to call disableRadio()",e);
+                }
+            }
+        }
     }
 
     private void sendDisableMsg() {

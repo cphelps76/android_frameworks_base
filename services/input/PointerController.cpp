@@ -24,6 +24,7 @@
 #include "PointerController.h"
 
 #include <cutils/log.h>
+#include <cutils/properties.h>
 
 #include <SkBitmap.h>
 #include <SkCanvas.h>
@@ -55,6 +56,7 @@ PointerController::PointerController(const sp<PointerControllerPolicyInterface>&
         const sp<Looper>& looper, const sp<SpriteController>& spriteController) :
         mPolicy(policy), mLooper(looper), mSpriteController(spriteController) {
     mHandler = new WeakMessageHandler(this);
+    mOSD2CursorController = new OSD2CursorController();
 
     AutoMutex _l(mLock);
 
@@ -66,6 +68,15 @@ PointerController::PointerController(const sp<PointerControllerPolicyInterface>&
 
     mLocked.presentation = PRESENTATION_POINTER;
     mLocked.presentationChanged = false;
+
+    mLocked.pointerType = MOUSE_CURSOR_OSD2;
+    char value[PROPERTY_VALUE_MAX];
+    if (property_get("ro.ui.cursor", value, NULL) > 0) {
+        if (strcmp(value, "none") == 0)
+            mLocked.pointerType = MOUSE_CURSOR_NONE;
+        else if (strcmp(value, "surface") == 0)
+            mLocked.pointerType = MOUSE_CURSOR_SURFACE;
+    }
 
     mLocked.inactivityTimeout = INACTIVITY_TIMEOUT_NORMAL;
 
@@ -87,6 +98,10 @@ PointerController::~PointerController() {
     AutoMutex _l(mLock);
 
     mLocked.pointerSprite.clear();
+    if (mLocked.pointerType == MOUSE_CURSOR_OSD2) {
+        ALOGD("hiding OSD2");
+        mOSD2CursorController->hide();
+    }
 
     for (size_t i = 0; i < mLocked.spots.size(); i++) {
         delete mLocked.spots.itemAt(i);
@@ -240,6 +255,48 @@ void PointerController::setPresentation(Presentation presentation) {
     }
 }
 
+void PointerController::setTvOutStatus(bool on) {
+    AutoMutex _l(mLock);
+
+    if (mLocked.presentation == PRESENTATION_POINTER &&
+            mLocked.pointerType == MOUSE_CURSOR_OSD2) {
+        mOSD2CursorController->tvOutChanged(on);
+    }
+}
+
+int PointerController::setMouseCursorType(int type) {
+    AutoMutex _l(mLock);
+
+    if (type != MOUSE_CURSOR_NONE && type != MOUSE_CURSOR_SURFACE &&
+            type != MOUSE_CURSOR_OSD2) {
+        return -1;
+    }
+
+    if (mLocked.presentation == PRESENTATION_POINTER) {
+        // fade old cursor
+        mLocked.pointerFadeDirection = 0;
+        mLocked.pointerAlpha = 0.0f;
+        updatePointerLocked();
+        mLocked.pointerType = type;
+        if (type != MOUSE_CURSOR_NONE) {
+            // activate and unfade new cursor
+            mLocked.pointerFadeDirection = 0;
+            mLocked.pointerAlpha = 1.0f;
+            updatePointerLocked();
+        }
+    }
+    return 0;
+}
+
+int PointerController::getMouseCursorType() {
+    AutoMutex _l(mLock);
+
+    if (mLocked.presentation == PRESENTATION_POINTER) {
+        return mLocked.pointerType;
+    }
+    return -1;
+}
+
 void PointerController::setSpots(const PointerCoords* spotCoords,
         const uint32_t* spotIdToIndex, BitSet32 spotIdBits) {
 #if DEBUG_POINTER_UPDATES
@@ -309,6 +366,17 @@ void PointerController::setInactivityTimeout(InactivityTimeout inactivityTimeout
 
 void PointerController::setDisplayViewport(int32_t width, int32_t height, int32_t orientation) {
     AutoMutex _l(mLock);
+    char value[PROPERTY_VALUE_MAX];
+    property_get("debug.default.dimention", value, "0");
+    int rot = atoi(value);
+    if(rot==1||rot==3)
+    {
+        int32_t temp = height;
+        height = width;
+        width = temp;
+    }
+
+    ALOGW("setDisplaySize %d %d",width,height);
 
     // Adjust to use the display's unrotated coordinate frame.
     if (orientation == DISPLAY_ORIENTATION_90
@@ -330,6 +398,9 @@ void PointerController::setDisplayViewport(int32_t width, int32_t height, int32_
             mLocked.pointerX = 0;
             mLocked.pointerY = 0;
         }
+
+        if (mLocked.presentation == PRESENTATION_POINTER)
+            mOSD2CursorController->setDisplaySize((short)width, (short)height);
 
         fadeOutAndReleaseAllSpotsLocked();
     }
@@ -383,6 +454,10 @@ void PointerController::setDisplayViewport(int32_t width, int32_t height, int32_
         mLocked.pointerX = x - 0.5f;
         mLocked.pointerY = y - 0.5f;
         mLocked.displayOrientation = orientation;
+
+        if (mLocked.presentation == PRESENTATION_POINTER)
+            mOSD2CursorController->setRotation(orientation);
+
     }
 
     updatePointerLocked();
@@ -481,6 +556,26 @@ void PointerController::removeInactivityTimeoutLocked() {
 }
 
 void PointerController::updatePointerLocked() {
+    if (mLocked.presentation == PRESENTATION_POINTER &&
+                mLocked.pointerType == MOUSE_CURSOR_NONE) {
+        return;
+    }
+    if (mLocked.presentation == PRESENTATION_POINTER &&
+                mLocked.pointerType == MOUSE_CURSOR_OSD2) {
+        if (mLocked.pointerIconChanged || mLocked.presentationChanged) {
+            mOSD2CursorController->setIcon(mLocked.pointerIcon);
+            mLocked.pointerIconChanged = false;
+            mLocked.presentationChanged = false;
+        }
+        mOSD2CursorController->setPosition(mLocked.pointerX, mLocked.pointerY);
+        if (mLocked.pointerAlpha > 0) {
+            mOSD2CursorController->show();
+        } else {
+            mOSD2CursorController->hide();
+        }
+        return;
+    }
+
     mSpriteController->openTransaction();
 
     mLocked.pointerSprite->setLayer(Sprite::BASE_LAYER_POINTER);

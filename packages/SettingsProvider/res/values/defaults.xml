@@ -165,6 +165,9 @@
     <!-- Number of retries for connecting to DHCP.
          Value here is the same as WifiStateMachine.DEFAULT_MAX_DHCP_RETRIES -->
     <integer name="def_max_dhcp_retries">9</integer>
+    
+    <!--Setting default IME config-->
+    <string name="config_defaultIME">com.android.inputmethod.latin/.LatinIME</string>
 
     <!-- Default for Settings.Secure.USER_SETUP_COMPLETE -->
     <bool name="def_user_setup_complete">false</bool>
@@ -173,4 +176,7 @@
          0 means no timeout; battery sounds will always play
          >0 is milliseconds of screen-off time after which battery sounds will not play -->
     <integer name="def_low_battery_sound_timeout">0</integer>
+
+    <!--Default values for hardware keyboard enable-->
+    <bool name="def_hard_input_enable">true</bool>
 </resources>

@@ -330,6 +330,7 @@ public class ProgramStore extends BaseObj {
         BlendSrcFunc mBlendSrc;
         BlendDstFunc mBlendDst;
         boolean mDither;
+        private int mMaskChanges;
 
         public Builder(RenderScript rs) {
             mRS = rs;
@@ -341,6 +342,7 @@ public class ProgramStore extends BaseObj {
             mColorMaskA = true;
             mBlendSrc = BlendSrcFunc.ONE;
             mBlendDst = BlendDstFunc.ZERO;
+            mMaskChanges = 0;
         }
 
         /**
@@ -383,6 +385,13 @@ public class ProgramStore extends BaseObj {
             mColorMaskG = g;
             mColorMaskB = b;
             mColorMaskA = a;
+            if (++mMaskChanges >= 32) {
+                mMaskChanges = 0;
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+            }
             return this;
         }
 
