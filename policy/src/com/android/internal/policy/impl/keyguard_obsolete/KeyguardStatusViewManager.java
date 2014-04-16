@@ -145,13 +145,7 @@ class KeyguardStatusViewManager implements OnClickListener {
                         final Data oldData = mMessages.get(last);
                         lastText = oldData.text;
                         lastIcon = oldData.icon;
-                    } else {
-                        final MutableInt tmpIcon = new MutableInt(0);
-                        lastText = getAltTextMessage(tmpIcon);
-                        lastIcon = tmpIcon.value;
                     }
-                    mTextView.setText(lastText);
-                    mTextView.setCompoundDrawablesWithIntrinsicBounds(lastIcon, 0, 0, 0);
                 }
             }, duration);
         }
@@ -367,46 +361,12 @@ class KeyguardStatusViewManager implements OnClickListener {
         }
     }
 
-    private CharSequence getAltTextMessage(MutableInt icon) {
-        // If we have replaced the status area with a single widget, then this code
-        // prioritizes what to show in that space when all transient messages are gone.
-        CharSequence string = null;
-        if (mShowingBatteryInfo) {
-            // Battery status
-            if (mPluggedIn) {
-                // Charging, charged or waiting to charge.
-                string = getContext().getString(mBatteryCharged ? R.string.lockscreen_charged
-                        :R.string.lockscreen_plugged_in, mBatteryLevel);
-                icon.value = CHARGING_ICON;
-            } else if (mBatteryIsLow) {
-                // Battery is low
-                string = getContext().getString(R.string.lockscreen_low_battery);
-                icon.value = BATTERY_LOW_ICON;
-            }
-        } else {
-            string = mCarrierText;
-        }
-        return string;
-    }
-
     private CharSequence getPriorityTextMessage(MutableInt icon) {
         CharSequence string = null;
         if (!TextUtils.isEmpty(mInstructionText)) {
             // Instructions only
             string = mInstructionText;
             icon.value = LOCK_ICON;
-        } else if (mShowingBatteryInfo) {
-            // Battery status
-            if (mPluggedIn) {
-                // Charging, charged or waiting to charge.
-                string = getContext().getString(mBatteryCharged ? R.string.lockscreen_charged
-                        :R.string.lockscreen_plugged_in, mBatteryLevel);
-                icon.value = CHARGING_ICON;
-            } else if (mBatteryIsLow) {
-                // Battery is low
-                string = getContext().getString(R.string.lockscreen_low_battery);
-                icon.value = BATTERY_LOW_ICON;
-            }
         } else if (!inWidgetMode() && mOwnerInfoView == null && mOwnerInfoText != null) {
             // OwnerInfo shows in status if we don't have a dedicated widget
             string = mOwnerInfoText;
@@ -627,7 +587,6 @@ class KeyguardStatusViewManager implements OnClickListener {
             mBatteryCharged = status.isCharged();
             mBatteryIsLow = status.isBatteryLow();
             final MutableInt tmpIcon = new MutableInt(0);
-            update(BATTERY_INFO, getAltTextMessage(tmpIcon));
         }
 
         @Override

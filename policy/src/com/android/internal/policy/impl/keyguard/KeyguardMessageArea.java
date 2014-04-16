@@ -186,7 +186,7 @@ class KeyguardMessageArea extends TextView {
      */
     void update() {
         MutableInt icon = new MutableInt(0);
-        CharSequence status = concat(getChargeInfo(icon), getOwnerInfo(), getCurrentMessage());
+        CharSequence status = concat(getOwnerInfo(), getCurrentMessage());
         setCompoundDrawablesWithIntrinsicBounds(icon.value, 0, 0, 0);
         setText(status);
     }
@@ -219,26 +219,6 @@ class KeyguardMessageArea extends TextView {
         return ownerInfoEnabled && !mShowingMessage ?
                 Settings.Secure.getStringForUser(res, Settings.Secure.LOCK_SCREEN_OWNER_INFO,
                         UserHandle.USER_CURRENT) : null;
-    }
-
-    private CharSequence getChargeInfo(MutableInt icon) {
-        CharSequence string = null;
-        if (mShowingBatteryInfo && !mShowingMessage) {
-            // Battery status
-            if (mCharging) {
-                // Charging, charged or waiting to charge.
-                string = getContext().getString(mBatteryCharged
-                        ? com.android.internal.R.string.lockscreen_charged
-                        : com.android.internal.R.string.lockscreen_plugged_in, mBatteryLevel);
-                icon.value = CHARGING_ICON;
-            } else if (mBatteryIsLow) {
-                // Battery is low
-                string = getContext().getString(
-                        com.android.internal.R.string.lockscreen_low_battery);
-                icon.value = BATTERY_LOW_ICON;
-            }
-        }
-        return string;
     }
 
     private void hideMessage(int duration, boolean thenUpdate) {
