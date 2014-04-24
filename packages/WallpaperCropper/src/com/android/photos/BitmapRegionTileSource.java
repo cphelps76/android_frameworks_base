@@ -282,9 +282,6 @@ public class BitmapRegionTileSource implements TiledImageRenderer.TileSource {
             } catch (FileNotFoundException e) {
                 Log.e("BitmapRegionTileSource", "Failed to load URI " + mUri, e);
                 return null;
-            } catch (IOException e) {
-                Log.e("BitmapRegionTileSource", "Failure while reading URI " + mUri, e);
-                return null;
             }
         }
         @Override
