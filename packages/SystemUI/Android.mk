@@ -8,6 +8,8 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src) \
 
 LOCAL_JAVA_LIBRARIES := telephony-common
 
+LOCAL_STATIC_JAVA_LIBRARIES := libGoogleAnalyticsV2
+
 LOCAL_PACKAGE_NAME := SystemUI
 LOCAL_CERTIFICATE := platform
 LOCAL_PRIVILEGED_MODULE := true
