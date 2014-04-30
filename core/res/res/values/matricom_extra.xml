@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2014 Matricom
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- Do not translate - Dummy strings to quiet appt warnings -->
+    <string name="media_route_chooser_grouping_done"></string>
+    <string name="mediaSize_iso_a0"></string>
+    <string name="mediaSize_iso_a10"></string>
+    <string name="mediaSize_iso_a1"></string>
+    <string name="mediaSize_iso_a2"></string>
+    <string name="mediaSize_iso_a3"></string>
+    <string name="mediaSize_iso_a4"></string>
+    <string name="mediaSize_iso_a5"></string>
+    <string name="mediaSize_iso_a6"></string>
+    <string name="mediaSize_iso_a7"></string>
+    <string name="mediaSize_iso_a8"></string>
+    <string name="mediaSize_iso_a9"></string>
+    <string name="mediaSize_iso_b0"></string>
+    <string name="mediaSize_iso_b10"></string>
+    <string name="mediaSize_iso_b1"></string>
+    <string name="mediaSize_iso_b2"></string>
+    <string name="mediaSize_iso_b3"></string>
+    <string name="mediaSize_iso_b4"></string>
+    <string name="mediaSize_iso_b5"></string>
+    <string name="mediaSize_iso_b6"></string>
+    <string name="mediaSize_iso_b7"></string>
+    <string name="mediaSize_iso_b8"></string>
+    <string name="mediaSize_iso_b9"></string>
+    <string name="mediaSize_iso_c0"></string>
+    <string name="mediaSize_iso_c10"></string>
+    <string name="mediaSize_iso_c1"></string>
+    <string name="mediaSize_iso_c2"></string>
+    <string name="mediaSize_iso_c3"></string>
+    <string name="mediaSize_iso_c4"></string>
+    <string name="mediaSize_iso_c5"></string>
+    <string name="mediaSize_iso_c6"></string>
+    <string name="mediaSize_iso_c7"></string>
+    <string name="mediaSize_iso_c8"></string>
+    <string name="mediaSize_iso_c9"></string>
+    <string name="mediaSize_na_gvrnmt_letter"></string>
+    <string name="mediaSize_na_junior_legal"></string>
+    <string name="mediaSize_na_ledger"></string>
+    <string name="mediaSize_na_legal"></string>
+    <string name="mediaSize_na_letter"></string>
+    <string name="mediaSize_na_tabloid"></string>
+    <string name="permdesc_accessAllPrintJobs"></string>
+    <string name="permdesc_accessInputFlinger"></string>
+    <string name="permdesc_hotwordRecognition"></string>
+    <string name="permlab_accessAllPrintJobs"></string>
+    <string name="permlab_accessInputFlinger"></string>
+    <string name="permlab_hotwordRecognition"></string>
+    <string name="status_bar_device_locked"></string>
+    <string name="wifi_display_notification_message"></string>
+    <string name="wifi_display_notification_title"></string>
+</resources>
