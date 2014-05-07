@@ -557,9 +557,9 @@ public class WindowManagerService extends IWindowManager.Stub
 	
     private boolean mTVOutOn = false;
 
-    float mWindowAnimationScale = 1.0f;
-    float mTransitionAnimationScale = 1.0f;
-    float mAnimatorDurationScale = 1.0f;
+    float mWindowAnimationScale = 0.5f;
+    float mTransitionAnimationScale = 0.5f;
+    float mAnimatorDurationScale = 0.5f;
 
     final InputManagerService mInputManager;
     final DisplayManagerService mDisplayManagerService;
