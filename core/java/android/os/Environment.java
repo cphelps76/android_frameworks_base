@@ -346,7 +346,7 @@ public class Environment {
             = getDirectory("EXTERNAL_STORAGE", "/storage/sdcard0");
 
     private static final File EXTERNAL_STORAGE2_DIRECTORY
-            = getDirectory("EXTERNAL_STORAGE2", "/storage/external_storage/sdcard1");
+            = getDirectory("EXTERNAL_STORAGE2", "/storage/external_sd");
 
     private static final File EXTERNAL_STORAGE_ANDROID_DATA_DIRECTORY = new File(new File(
             getDirectory("EXTERNAL_STORAGE", "/storage/sdcard0"), "Android"), "data");

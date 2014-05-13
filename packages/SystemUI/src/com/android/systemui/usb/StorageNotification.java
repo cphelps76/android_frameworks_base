@@ -55,12 +55,12 @@ public class StorageNotification extends SystemUI {
      */
     private static final String EXT_STORAGE_PATH = Environment.getExternalStorageDirectory().toString();
     private static final String EXT2_STORAGE_PATH = Environment.getExternalStorage2Directory().toString();
-    
+
     /** int_media_* messages shown for this path */
     private static final String INT_STORAGE_PATH =
             Environment.getInternalStorageDirectory().toString();
     //filter wifi storage in MBX
-    private static final String WIFI_STORAGE_PATH = "/storage/external_storage/sda";     
+    private static final String WIFI_STORAGE_PATH = "/storage/usb";
     /**
      * The notification that is shown when a USB mass storage host
      * is connected.
