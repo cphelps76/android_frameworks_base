@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -49,6 +50,8 @@ public class ReportingService extends Service {
 
     private StatsUploadTask mTask;
 
+    private boolean mStatsEnabled = true;
+
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -56,13 +59,18 @@ public class ReportingService extends Service {
 
     @Override
     public int onStartCommand (Intent intent, int flags, int startId) {
-        Log.d(TAG, "User has opted in -- reporting.");
+        final Context context = ReportingService.this;
 
-        if (mTask == null || mTask.getStatus() == AsyncTask.Status.FINISHED) {
-            mTask = new StatsUploadTask();
-            mTask.execute();
+        // Stats are enabled by default, but can be overriden via config or Build.TYPE
+        mStatsEnabled = context.getResources().getBoolean(R.bool.ga_enableTracking);
+        if (mStatsEnabled && Build.TYPE.equalsIgnoreCase("user")) {
+            Log.d(TAG, "User has opted in -- reporting.");
+
+            if (mTask == null || mTask.getStatus() == AsyncTask.Status.FINISHED) {
+                mTask = new StatsUploadTask();
+                mTask.execute();
+            }
         }
-
         return Service.START_REDELIVER_INTENT;
     }
 
