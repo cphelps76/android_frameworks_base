@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <resources>
+
+  <bool name="ga_enableTracking">true</bool>
+
   <!--Replace placeholder ID with your tracking ID-->
   <string name="ga_trackingId">UA-49468127-3</string>
 
