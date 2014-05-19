@@ -3266,6 +3266,12 @@ public final class Settings {
         public static final String ALLOW_MOCK_LOCATION = "mock_location";
 
         /**
+         * When the user wants to set a custom network time server
+         * @hide
+         */
+        public static final String NTP_SERVER_CUSTOM = "ntp_server_custom";
+
+        /**
          * A 64-bit number (as a hex string) that is randomly
          * generated on the device's first boot and should remain
          * constant for the lifetime of the device.  (The value may
