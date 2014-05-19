@@ -56,6 +56,8 @@ public class NtpTrustedTime implements TrustedTime {
 
             final String defaultServer = res.getString(
                     com.android.internal.R.string.config_ntpServer);
+            final String customServer = Settings.Secure.getString(
+                    resolver, Settings.Secure.NTP_SERVER_CUSTOM);
             final long defaultTimeout = res.getInteger(
                     com.android.internal.R.integer.config_ntpTimeout);
 
@@ -64,8 +66,13 @@ public class NtpTrustedTime implements TrustedTime {
             final long timeout = Settings.Global.getLong(
                     resolver, Settings.Global.NTP_TIMEOUT, defaultTimeout);
 
-            final String server = secureServer != null ? secureServer : defaultServer;
-            sSingleton = new NtpTrustedTime(server, timeout);
+            if (customServer == null) {
+                final String server = secureServer != null ? secureServer : defaultServer;
+                sSingleton = new NtpTrustedTime(server, timeout);
+            } else {
+                final String server = secureServer != null ? secureServer : customServer;
+                sSingleton = new NtpTrustedTime(server, timeout);
+            }
         }
 
         return sSingleton;
