@@ -1789,6 +1789,12 @@
   <java-symbol type="string" name="websearch" />
   <java-symbol type="drawable" name="ic_media_video_poster" />
 
+  <!-- Matricom Symbols -->
+  <java-symbol type="drawable" name="ic_lock_reboot" />
+  <java-symbol type="string" name="reboot" />
+  <java-symbol type="array" name="reboot_options" />
+  <java-symbol type="array" name="reboot_values" />
+
   <!-- From SubtitleView -->
   <java-symbol type="dimen" name="subtitle_corner_radius" />
   <java-symbol type="dimen" name="subtitle_shadow_radius" />
