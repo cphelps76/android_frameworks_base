@@ -102,6 +102,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
     private boolean mIsWaitingForEcmExit = false;
     private boolean mHasTelephony;
     private boolean mHasVibrator;
+    private static int rebootIndex = 0;
 
     /**
      * @param context everything needs a context :(
@@ -256,62 +257,27 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 }
             });
 
-        // next: airplane mode
-        mItems.add(mAirplaneModeOn);
+        // next: reboot
+        mItems.add(
+                new SinglePressAction(
+                        com.android.internal.R.drawable.ic_lock_reboot,
+                        com.android.internal.R.string.reboot) {
 
-        // next: bug report, if enabled
-        if (Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.BUGREPORT_IN_POWER_MENU, 0) != 0) {
-            mItems.add(
-                new SinglePressAction(com.android.internal.R.drawable.stat_sys_adb,
-                        R.string.global_action_bug_report) {
-
-                    public void onPress() {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-                        builder.setTitle(com.android.internal.R.string.bugreport_title);
-                        builder.setMessage(com.android.internal.R.string.bugreport_message);
-                        builder.setNegativeButton(com.android.internal.R.string.cancel, null);
-                        builder.setPositiveButton(com.android.internal.R.string.report,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        // Add a little delay before executing, to give the
-                                        // dialog a chance to go away before it takes a
-                                        // screenshot.
-                                        mHandler.postDelayed(new Runnable() {
-                                            @Override public void run() {
-                                                try {
-                                                    ActivityManagerNative.getDefault()
-                                                            .requestBugReport();
-                                                } catch (RemoteException e) {
-                                                }
-                                            }
-                                        }, 500);
-                                    }
-                                });
-                        AlertDialog dialog = builder.create();
-                        dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-                        dialog.show();
-                    }
-
-                    public boolean onLongPress() {
+                    @Override
+                    public boolean showDuringKeyguard() {
                         return false;
                     }
 
-                    public boolean showDuringKeyguard() {
+                    @Override
+                    public boolean showBeforeProvisioning() {
                         return true;
                     }
 
-                    public boolean showBeforeProvisioning() {
-                        return false;
+                    @Override
+                    public void onPress() {
+                        createRebootDialog().show();
                     }
                 });
-        }
-
-        // last: silent mode
-        if (SHOW_SILENT_TOGGLE) {
-            mItems.add(mSilentModeAction);
-        }
 
         // one more thing: optionally add a list of users to switch to
         if (SystemProperties.getBoolean("fw.power_user_switcher", false)) {
@@ -1027,5 +993,45 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             }
             return super.onKeyUp(keyCode, event);
         }
+    }
+
+    public AlertDialog createRebootDialog() {
+        final String[] rebootOptions = mContext.getResources().getStringArray(R.array.reboot_options);
+        final String[] rebootReasons = mContext.getResources().getStringArray(R.array.reboot_values);
+
+        AlertDialog d = new AlertDialog.Builder(mContext)
+                .setSingleChoiceItems(rebootOptions, 0,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                rebootIndex = which;
+                            }
+                        })
+                .setNegativeButton(android.R.string.cancel,
+                        new DialogInterface.OnClickListener() {
+
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                .setPositiveButton(R.string.reboot, new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mWindowManagerFuncs.reboot(rebootReasons[rebootIndex]);
+                    }
+                })
+                .setCancelable(false)
+                .create();
+
+        d.getListView().setItemsCanFocus(true);
+        if (mKeyguardShowing) {
+            d.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+        } else {
+            d.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG);
+        }
+
+        return d;
     }
 }

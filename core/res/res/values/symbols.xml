@@ -1871,5 +1871,9 @@
   <java-symbol type="bool" name="config_disableAppVerification" />
   <java-symbol type="bool" name="config_allowUnknownSources" />
   <java-symbol type="bool" name="config_hardwareKeyboardEnabledByDefault" />
+  <java-symbol type="drawable" name="ic_lock_reboot" />
+  <java-symbol type="string" name="reboot" />
+  <java-symbol type="array" name="reboot_options" />
+  <java-symbol type="array" name="reboot_values" />
 
 </resources>
