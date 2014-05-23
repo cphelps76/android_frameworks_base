@@ -7098,9 +7098,10 @@ public class WindowManagerService extends IWindowManager.Stub
             boolean hardKeyboardAvailable = config.keyboard != Configuration.KEYBOARD_NOKEYS;
             if (hardKeyboardAvailable != mHardKeyboardAvailable) {
                 mHardKeyboardAvailable = hardKeyboardAvailable;
+                mHardKeyboardEnabled = hardKeyboardAvailable;
                 // IR and Flymote do not report as InputDevice.KEYBOARD_TYPE_ALPHABETIC
                 // For now use value of Settings.Global to determine if enabled
-                mHardKeyboardEnabled = mIsHardKeyBoardEnableDef != 0 ? true : false;
+                if (mIsHardKeyBoardEnableDef == 0) mHardKeyboardEnabled = false;
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
                 mH.sendEmptyMessage(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
             }
