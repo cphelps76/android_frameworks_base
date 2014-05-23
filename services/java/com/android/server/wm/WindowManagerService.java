@@ -879,8 +879,15 @@ public class WindowManagerService extends IWindowManager.Stub
             Surface.closeTransaction();
         }
 
-		mIsHardKeyBoardEnableDef = Settings.Global.getInt(context.getContentResolver(), 
-			Settings.Global.HARD_KEYBOARD_DEFAULT_ENABLE,1);
+        mHardKeyboardEnabledDefault = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_hardwareKeyboardEnabledByDefault);
+        if (mHardKeyboardEnabledDefault) {
+            // Set HARD_KEYBOARD_DEFAULT_ENABLE to true before fetching value
+            Settings.Global.putInt(context.getContentResolver(),
+                    Settings.Global.HARD_KEYBOARD_DEFAULT_ENABLE, 1);
+        }
+        mIsHardKeyBoardEnableDef = Settings.Global.getInt(context.getContentResolver(),
+                Settings.Global.HARD_KEYBOARD_DEFAULT_ENABLE, 0);
     }
 
     public InputMonitor getInputMonitor() {
@@ -7082,7 +7089,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
                     if (device.getKeyboardType() == InputDevice.KEYBOARD_TYPE_ALPHABETIC) {
                         config.keyboard = Configuration.KEYBOARD_QWERTY;
-                        keyboardPresence |= presenceFlag; 
+                        keyboardPresence |= presenceFlag;
                     }
                 }
             }
@@ -7091,10 +7098,9 @@ public class WindowManagerService extends IWindowManager.Stub
             boolean hardKeyboardAvailable = config.keyboard != Configuration.KEYBOARD_NOKEYS;
             if (hardKeyboardAvailable != mHardKeyboardAvailable) {
                 mHardKeyboardAvailable = hardKeyboardAvailable;
-                mHardKeyboardEnabled = hardKeyboardAvailable;
-                mHardKeyboardEnabledDefault = mContext.getResources().getBoolean(com.android.internal.R.bool.config_hardwareKeyboardEnabledByDefault);
-				if(mIsHardKeyBoardEnableDef == 0)
-				    mHardKeyboardEnabled = false;
+                // IR and Flymote do not report as InputDevice.KEYBOARD_TYPE_ALPHABETIC
+                // For now use value of Settings.Global to determine if enabled
+                mHardKeyboardEnabled = mIsHardKeyBoardEnableDef != 0 ? true : false;
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
                 mH.sendEmptyMessage(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
             }
@@ -7120,9 +7126,6 @@ public class WindowManagerService extends IWindowManager.Stub
 
     public boolean isHardKeyboardEnabled() {
         synchronized (mWindowMap) {
-            if (mHardKeyboardEnabledDefault) {
-                return true;
-            }
             return mHardKeyboardEnabled;
         }
     }
