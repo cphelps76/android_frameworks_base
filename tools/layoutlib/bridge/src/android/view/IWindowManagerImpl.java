@@ -343,6 +343,12 @@ public class IWindowManagerImpl implements IWindowManager {
     }
 
     @Override
+    public boolean isHardKeyboardEnabled() throws RemoteException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public void setForcedDisplaySize(int displayId, int arg0, int arg1) throws RemoteException {
         // TODO Auto-generated method stub
     }
