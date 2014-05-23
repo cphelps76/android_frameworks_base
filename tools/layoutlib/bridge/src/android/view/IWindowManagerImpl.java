@@ -331,6 +331,11 @@ public class IWindowManagerImpl implements IWindowManager {
     @Override
     public void getBaseDisplaySize(int displayId, Point size) {
         // TODO Auto-generated method stub
+
+    @Override
+    public boolean isHardKeyboardEnabled() throws RemoteException {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     @Override
