@@ -1085,7 +1085,7 @@ int32_t InputDispatcher::findFocusedWindowTargetsLocked(nsecs_t currentTime,
             goto Unresponsive;
         }
 
-        ALOGI("Dropping event because there is no focused window or focused application.");
+        ALOGV("Dropping event because there is no focused window or focused application.");
         injectionResult = INPUT_EVENT_INJECTION_FAILED;
         goto Failed;
     }
@@ -1295,7 +1295,7 @@ int32_t InputDispatcher::findTouchedWindowTargetsLocked(nsecs_t currentTime,
             // Try to assign the pointer to the first foreground window we find, if there is one.
             newTouchedWindowHandle = mTempTouchState.getFirstForegroundWindowHandle();
             if (newTouchedWindowHandle == NULL) {
-                ALOGI("Dropping event because there is no touchable window at (%d, %d).", x, y);
+                ALOGV("Dropping event because there is no touchable window at (%d, %d).", x, y);
                 injectionResult = INPUT_EVENT_INJECTION_FAILED;
                 goto Failed;
             }
