@@ -803,27 +803,27 @@ class MountService extends IMountService.Stub
                 /**
                  * Determine media state and UMS detection status
                  */
-                String path = null;
-
                 try {
                     final String[] vols = NativeDaemonEvent.filterMessageList(
                             mConnector.executeForList("volume", "list"),
                             VoldResponseCode.VolumeListResult);
                     for (String volstr : vols) {
                         String[] tok = volstr.split(" ");
-                        // FMT: <label> <mountpoint> <state>
-                        String state = Environment.MEDIA_REMOVED;
-
+                        // FMT: <label> <mountpoint> <state> <uuid>
                         String label=tok[0];
-                        path = tok[1];
-			   if(label.equals("loop"))
-                               continue;			
+                        String path = tok[1];
+                        String state = Environment.MEDIA_REMOVED;
+                        String uuid = tok[3];
+
+                        if(label.equals("loop"))
+                            continue;
+
                         mVolumeLabel.put(path,label);
 
                         final StorageVolume volume;
                         synchronized (mVolumesLock) {
                             StorageVolume volumetemplete = mVolumesByPath.get(path);
-				if(volumetemplete == null){			
+				if(volumetemplete == null){
 				   volumetemplete = new StorageVolume(new File(path),
 						usbdescriptionId, false, true, false, 0,
                                           false, 0, null);
@@ -852,6 +852,9 @@ class MountService extends IMountService.Stub
                         if (state != null) {
                             if (DEBUG_EVENTS) Slog.i(TAG, "Updating valid state " + state);
                             updatePublicVolumeState(volume, state);
+                            if (uuid != "-") {
+                                volume.setUuid(uuid);
+                            }
                         }
                     }
                 } catch (Exception e) {
