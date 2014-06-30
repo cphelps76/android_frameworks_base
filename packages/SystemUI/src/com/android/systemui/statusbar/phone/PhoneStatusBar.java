@@ -322,7 +322,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         public void onChange(boolean selfChange) {
             boolean wasUsing = mUseHeadsUp;
             mUseHeadsUp = ENABLE_HEADS_UP && 0 != Settings.Global.getInt(
-                    mContext.getContentResolver(), SETTING_HEADS_UP, 0);
+                    mContext.getContentResolver(), Settings.Global.HEADS_UP_ENABLED, 0);
             Log.d(TAG, "heads up is " + (mUseHeadsUp ? "enabled" : "disabled"));
             if (wasUsing != mUseHeadsUp) {
                 if (!mUseHeadsUp) {
@@ -367,7 +367,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         mHeadsUpObserver.onChange(true); // set up
         if (ENABLE_HEADS_UP) {
             mContext.getContentResolver().registerContentObserver(
-                    Settings.Global.getUriFor(SETTING_HEADS_UP), true,
+                    Settings.Global.getUriFor(Settings.Global.HEADS_UP_ENABLED), true,
                     mHeadsUpObserver);
         }
     }
