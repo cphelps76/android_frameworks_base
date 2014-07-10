@@ -65,10 +65,11 @@ interface IWindowManager
     void setForcedDisplayDensity(int displayId, int density);
     void clearForcedDisplayDensity(int displayId);
 
-    boolean isHardKeyboardEnabled();
-
     // Is the device configured to have a full system bar for larger screens?
     boolean hasSystemNavBar();
+
+    boolean isHardKeyboardEnabled();
+    void setHardKeyboardEnabled(boolean enabled);
 
     // These can only be called when holding the MANAGE_APP_TOKENS permission.
     void pauseKeyDispatching(IBinder token);
