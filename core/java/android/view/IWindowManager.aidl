@@ -72,9 +72,7 @@ interface IWindowManager
     void setOverscan(int displayId, int left, int top, int right, int bottom);
 
     boolean isHardKeyboardEnabled();
-
-    // Is the device configured to have a full system bar for larger screens?
-    boolean hasSystemNavBar();
+    void setHardKeyboardEnabled(boolean enabled);
 
     // These can only be called when holding the MANAGE_APP_TOKENS permission.
     void pauseKeyDispatching(IBinder token);
