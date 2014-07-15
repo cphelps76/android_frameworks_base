@@ -174,10 +174,10 @@
     <bool name="def_user_setup_complete">true</bool>
 
     <!--Default values for Settings.System.TIME_12_24-->
-    <string name="def_time_12_24">24</string>
+    <string name="def_time_12_24">12</string>
     <!--Default values for Settings.System.FontScale-->
     <fraction name="def_font_scale">100%</fraction>
     
 	<!--Default values for hardware keyboard enable-->
-    <bool name="def_hard_input_enable">true</bool>
+    <bool name="def_hard_input_enable">false</bool>
 </resources>
