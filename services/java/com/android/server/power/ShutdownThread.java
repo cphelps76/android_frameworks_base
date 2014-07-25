@@ -105,6 +105,17 @@ public final class ShutdownThread extends Thread {
         shutdownInner(context, confirm);
     }
 
+    public static void sleep(final Context context, boolean confirm) {
+        mReboot = false;
+        mRebootSafeMode = false;
+        sleepInner(context, confirm);
+    }
+
+    static void sleepInner(final Context context, boolean confirm) {
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        pm.goToSleep(SystemClock.uptimeMillis());
+    }
+
     static void shutdownInner(final Context context, boolean confirm) {
         // ensure that only one thread is trying to power down.
         // any additional calls are just returned

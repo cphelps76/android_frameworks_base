@@ -240,7 +240,8 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
                 public void onPress() {
                     // shutdown by making sure radio and power are handled accordingly.
-                    mWindowManagerFuncs.shutdown(true);
+                    // MBX devices can't shut down cleanly, sleep instead
+                    mWindowManagerFuncs.sleep(true);
                 }
 
                 public boolean onLongPress() {
