@@ -312,25 +312,25 @@ int register_android_server_BatteryService(JNIEnv* env)
     }
 
     if (!gPaths.acOnlinePath)
-        ALOGE("acOnlinePath not found");
+        ALOGW("acOnlinePath not found (set top box)");
     if (!gPaths.usbOnlinePath)
-        ALOGE("usbOnlinePath not found");
+        ALOGW("usbOnlinePath not found (set top box)");
     if (!gPaths.wirelessOnlinePath)
-        ALOGE("wirelessOnlinePath not found");
+        ALOGW("wirelessOnlinePath not found (set top box)");
     if (!gPaths.batteryStatusPath)
-        ALOGE("batteryStatusPath not found");
+        ALOGW("batteryStatusPath not found (set top box)");
     if (!gPaths.batteryHealthPath)
-        ALOGE("batteryHealthPath not found");
+        ALOGW("batteryHealthPath not found (set top box)");
     if (!gPaths.batteryPresentPath)
-        ALOGE("batteryPresentPath not found");
+        ALOGW("batteryPresentPath not found (set top box)");
     if (!gPaths.batteryCapacityPath)
-        ALOGE("batteryCapacityPath not found");
+        ALOGW("batteryCapacityPath not found (set top box)");
     if (!gPaths.batteryVoltagePath)
-        ALOGE("batteryVoltagePath not found");
+        ALOGW("batteryVoltagePath not found (set top box)");
     if (!gPaths.batteryTemperaturePath)
-        ALOGE("batteryTemperaturePath not found");
+        ALOGW("batteryTemperaturePath not found (set top box)");
     if (!gPaths.batteryTechnologyPath)
-        ALOGE("batteryTechnologyPath not found");
+        ALOGW("batteryTechnologyPath not found (set top box)");
 
     jclass clazz = env->FindClass("com/android/server/BatteryService");
 
