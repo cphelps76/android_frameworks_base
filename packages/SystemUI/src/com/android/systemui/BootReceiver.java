@@ -34,12 +34,14 @@ public class BootReceiver extends BroadcastReceiver {
 
     private EthernetManager mEm;
     private SystemWriteManager mSw;
+    private HdmiManager mHdmiManager;
 
     @Override
     public void onReceive(final Context context, Intent intent) {
         ContentResolver res = context.getContentResolver();
         mEm = (EthernetManager) context.getSystemService(Context.ETH_SERVICE);
         mSw = (SystemWriteManager) context.getSystemService("system_write");
+        mHdmiManager = new HdmiManager(context);
 
         try {
             // Start the load average overlay, if activated
@@ -62,5 +64,9 @@ public class BootReceiver extends BroadcastReceiver {
 
         // Lock orientation to landscape
         mSw.setProperty("ubootenv.var.has.accelerometer", "false");
+
+        if (mHdmiManager.isHdmiPlugged()) {
+            mHdmiManager.hdmiPlugged();
+        }
     }
 }
