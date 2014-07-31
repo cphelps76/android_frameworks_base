@@ -115,7 +115,7 @@ public class HdmiManager {
         }
     }
 
-    private static int[] getPosition(String mode) {
+    public static int[] getPosition(String mode) {
         int[] currentPosition = { 0, 0, 1280, 720 };
         int index = 4; // 720p
         for (int i = 0; i < COMMON_MODE_VALUE_LIST.length; i++) {

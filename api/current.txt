@@ -10151,6 +10151,7 @@ package android.hardware.display {
     ctor public HdmiManager(android.content.Context);
     method public void closeVdac(java.lang.String);
     method public java.lang.String getBestResolution();
+    method public static int[] getPosition(java.lang.String);
     method public void hdmiPlugged();
     method public void hdmiUnplugged();
     method public boolean isFreescaleClosed();
