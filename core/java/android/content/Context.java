@@ -2258,6 +2258,14 @@ public abstract class Context {
 
     /**
      * Use with {@link #getSystemService} to retrieve a
+     * {@link android.hardware.display.HdmiManager} for interacting with HDMI devices.
+     * @see #getSystemService
+     * @see android.hardware.display.HdmiManager
+     */
+    public static final String HDMI_SERVICE = "hdmi";
+
+    /**
+     * Use with {@link #getSystemService} to retrieve a
      * {@link android.os.SchedulingPolicyService} for managing scheduling policy.
      *
      * @see #getSystemService

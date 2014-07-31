@@ -5474,6 +5474,7 @@ package android.content {
     field public static final java.lang.String DOWNLOAD_SERVICE = "download";
     field public static final java.lang.String DROPBOX_SERVICE = "dropbox";
     field public static final java.lang.String ETH_SERVICE = "ethernet";
+    field public static final java.lang.String HDMI_SERVICE = "hdmi";
     field public static final java.lang.String INPUT_METHOD_SERVICE = "input_method";
     field public static final java.lang.String INPUT_SERVICE = "input";
     field public static final java.lang.String KEYGUARD_SERVICE = "keyguard";
@@ -10144,6 +10145,42 @@ package android.hardware.display {
     method public abstract void onDisplayAdded(int);
     method public abstract void onDisplayChanged(int);
     method public abstract void onDisplayRemoved(int);
+  }
+
+  public class HdmiManager {
+    ctor public HdmiManager(android.content.Context);
+    method public void closeVdac(java.lang.String);
+    method public java.lang.String getBestResolution();
+    method public void hdmiPlugged();
+    method public void hdmiUnplugged();
+    method public boolean isFreescaleClosed();
+    method public static boolean isHdmiPlugged();
+    method public void setOutputMode(java.lang.String);
+    method public void setOutputWithoutFreescale(java.lang.String);
+  }
+
+  public final class HdmiManagerGlobal {
+    method public static android.hardware.display.HdmiManagerGlobal getInstance();
+  }
+
+  public abstract interface IHdmiManager implements android.os.IInterface {
+    method public abstract void closeVdac(java.lang.String) throws android.os.RemoteException;
+    method public abstract java.lang.String getBestResolution() throws android.os.RemoteException;
+    method public abstract int[] getPosition(java.lang.String) throws android.os.RemoteException;
+    method public abstract void hdmiPlugged() throws android.os.RemoteException;
+    method public abstract void hdmiUnplugged() throws android.os.RemoteException;
+    method public abstract boolean isFreescaleClosed() throws android.os.RemoteException;
+    method public abstract boolean isHdmiPlugged() throws android.os.RemoteException;
+    method public abstract java.lang.String readSupportList(java.lang.String) throws android.os.RemoteException;
+    method public abstract void setOutputMode(java.lang.String) throws android.os.RemoteException;
+    method public abstract void setOutputWithoutFreescale(java.lang.String) throws android.os.RemoteException;
+  }
+
+  public static abstract class IHdmiManager.Stub extends android.os.Binder implements android.hardware.display.IHdmiManager {
+    ctor public IHdmiManager.Stub();
+    method public android.os.IBinder asBinder();
+    method public static android.hardware.display.IHdmiManager asInterface(android.os.IBinder);
+    method public boolean onTransact(int, android.os.Parcel, android.os.Parcel, int) throws android.os.RemoteException;
   }
 
 }

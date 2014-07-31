@@ -51,6 +51,7 @@ import android.hardware.SensorManager;
 import android.hardware.SerialManager;
 import android.hardware.SystemSensorManager;
 import android.hardware.display.DisplayManager;
+import android.hardware.display.HdmiManager;
 import android.hardware.input.IInputManager;
 import android.hardware.input.InputManager;
 import android.hardware.usb.IUsbManager;
@@ -389,6 +390,12 @@ class ContextImpl extends Context {
                 @Override
                 public Object createService(ContextImpl ctx) {
                     return new DisplayManager(ctx.getOuterContext());
+                }});
+
+        registerService(HDMI_SERVICE, new ServiceFetcher() {
+                @Override
+                public Object createService(ContextImpl ctx) {
+                    return new HdmiManager(ctx.getOuterContext());
                 }});
 
         registerService(INPUT_METHOD_SERVICE, new ServiceFetcher() {
