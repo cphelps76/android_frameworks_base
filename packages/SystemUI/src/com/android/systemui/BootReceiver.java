@@ -21,6 +21,7 @@ import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.display.HdmiManager;
 import android.net.ethernet.EthernetManager;
 import android.provider.Settings;
 import android.util.Slog;
@@ -41,7 +42,7 @@ public class BootReceiver extends BroadcastReceiver {
         ContentResolver res = context.getContentResolver();
         mEm = (EthernetManager) context.getSystemService(Context.ETH_SERVICE);
         mSw = (SystemWriteManager) context.getSystemService("system_write");
-        mHdmiManager = new HdmiManager(context);
+        mHdmiManager = (HdmiManager) context.getSystemService(Context.HDMI_SERVICE);
 
         try {
             // Start the load average overlay, if activated

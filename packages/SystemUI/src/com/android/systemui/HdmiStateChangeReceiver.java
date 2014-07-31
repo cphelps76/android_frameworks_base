@@ -4,6 +4,7 @@ import android.app.SystemWriteManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.display.HdmiManager;
 import android.view.WindowManagerPolicy;
 import android.util.Log;
 
@@ -19,7 +20,7 @@ public class HdmiStateChangeReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
          String action = intent.getAction();
-         mHdmiManager = new HdmiManager(context);
+         mHdmiManager = (HdmiManager) context.getSystemService(Context.HDMI_SERVICE);
 
          if (action.equals(WindowManagerPolicy.ACTION_HDMI_HW_PLUGGED)) {
              boolean plugged = intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_HW_PLUGGED_STATE, false);
