@@ -10158,6 +10158,64 @@ package android.hardware.display {
     method public static boolean isHdmiPlugged();
     method public void setOutputMode(java.lang.String);
     method public void setOutputWithoutFreescale(java.lang.String);
+    field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
+    field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;
+    field public static final java.lang.String DISPLAY_MODE = "/sys/class/display/mode";
+    field public static final java.lang.String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
+    field public static final java.lang.String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";
+    field public static final java.lang.String HDMIONLY_PROP = "ro.platform.hdmionly";
+    field public static final java.lang.String HDMI_PLUGGED = "/sys/class/aml_mod/mod_off";
+    field public static final java.lang.String HDMI_SUPPORT_LIST = "/sys/class/amhdmitx/amhdmitx0/disp_cap";
+    field public static final java.lang.String HDMI_UNPLUGGED = "/sys/class/aml_mod/mod_on";
+    field public static final int OUTPUT1080_FULL_HEIGHT = 1080; // 0x438
+    field public static final int OUTPUT1080_FULL_WIDTH = 1920; // 0x780
+    field public static final int OUTPUT480_FULL_HEIGHT = 480; // 0x1e0
+    field public static final int OUTPUT480_FULL_WIDTH = 720; // 0x2d0
+    field public static final int OUTPUT576_FULL_HEIGHT = 576; // 0x240
+    field public static final int OUTPUT576_FULL_WIDTH = 720; // 0x2d0
+    field public static final int OUTPUT720_FULL_HEIGHT = 720; // 0x2d0
+    field public static final int OUTPUT720_FULL_WIDTH = 1280; // 0x500
+    field public static final java.lang.String OUTPUT_AXIS = "/sys/class/display/axis";
+    field public static final java.lang.String PPSCALER_RECT = "/sys/class/ppmgr/ppscaler_rect";
+    field public static final java.lang.String REQUEST_2X_SCALE = "/sys/class/graphics/fb0/request2XScale";
+    field public static final java.lang.String SCALE_AXIS_OSD0 = "/sys/class/graphics/fb0/scale_axis";
+    field public static final java.lang.String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
+    field public static final java.lang.String SCALE_OSD1 = "/sys/class/graphics/fb1/scale";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_HEIGHT = "ubootenv.var.1080ioutputheight";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_WIDTH = "ubootenv.var.1080ioutputwidth";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_X = "ubootenv.var.1080ioutputx";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_Y = "ubootenv.var.1080ioutputy";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_HEIGHT = "ubootenv.var.1080poutputheight";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_WIDTH = "ubootenv.var.1080poutputwidth";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_X = "ubootenv.var.1080poutputx";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_Y = "ubootenv.var.1080poutputy";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_HEIGHT = "ubootenv.var.480ioutputheight";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_WIDTH = "ubootenv.var.480ioutputwidth";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_X = "ubootenv.var.480ioutputx";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_Y = "ubootenv.var.480ioutputy";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_HEIGHT = "ubootenv.var.480poutputheight";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_WIDTH = "ubootenv.var.480poutputwidth";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_X = "ubootenv.var.480poutputx";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_Y = "ubootenv.var.480poutputy";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_HEIGHT = "ubootenv.var.576ioutputheight";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_WIDTH = "ubootenv.var.576ioutputwidth";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_X = "ubootenv.var.576ioutputx";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_Y = "ubootenv.var.576ioutputy";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_HEIGHT = "ubootenv.var.576poutputheight";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_WIDTH = "ubootenv.var.576poutputwidth";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_X = "ubootenv.var.576poutputx";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_Y = "ubootenv.var.576poutputy";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_HEIGHT = "ubootenv.var.720ioutputheight";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_WIDTH = "ubootenv.var.720ioutputwidth";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_X = "ubootenv.var.720ioutputx";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_Y = "ubootenv.var.720ioutputy";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_HEIGHT = "ubootenv.var.720poutputheight";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_WIDTH = "ubootenv.var.720poutputwidth";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_X = "ubootenv.var.720poutputx";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_Y = "ubootenv.var.720poutputy";
+    field public static final java.lang.String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
+    field public static final java.lang.String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
+    field public static final java.lang.String VIDEO_AXIS = "/sys/class/video/axis";
   }
 
   public final class HdmiManagerGlobal {

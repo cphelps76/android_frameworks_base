@@ -21,62 +21,75 @@ public class HdmiManager {
     private static final String ACTION_OUTPUTMODE_SAVE = "android.intent.action.OUTPUTMODE_SAVE";
     private static final String ACTION_OUTPUTMODE_CANCEL = "android.intent.action.OUTPUTMODE_CANCEL";
 
-    private static final String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
-    private static final String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";
-    private static final String HDMI_UNPLUGGED = "/sys/class/aml_mod/mod_on";
-    private static final String HDMI_PLUGGED = "/sys/class/aml_mod/mod_off";
-    private static final String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
-    private static final String PPSCALER_RECT = "/sys/class/ppmgr/ppscaler_rect";
-    private static final String HDMI_SUPPORT_LIST = "/sys/class/amhdmitx/amhdmitx0/disp_cap";
-    private static final String DISPLAY_MODE = "/sys/class/display/mode";
-    private static final String VIDEO_AXIS = "/sys/class/video/axis";
-    private static final String REQUEST_2X_SCALE = "/sys/class/graphics/fb0/request2XScale";
-    private static final String SCALE_AXIS_OSD0 = "/sys/class/graphics/fb0/scale_axis";
-    private static final String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
-    private static final String SCALE_OSD1 = "/sys/class/graphics/fb1/scale";
-    private static final String OUTPUT_AXIS = "/sys/class/display/axis";
+    public static final String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
+    public static final String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";
+    public static final String HDMI_UNPLUGGED = "/sys/class/aml_mod/mod_on";
+    public static final String HDMI_PLUGGED = "/sys/class/aml_mod/mod_off";
+    public static final String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
+    public static final String PPSCALER_RECT = "/sys/class/ppmgr/ppscaler_rect";
+    public static final String HDMI_SUPPORT_LIST = "/sys/class/amhdmitx/amhdmitx0/disp_cap";
+    public static final String DISPLAY_MODE = "/sys/class/display/mode";
+    public static final String VIDEO_AXIS = "/sys/class/video/axis";
+    public static final String REQUEST_2X_SCALE = "/sys/class/graphics/fb0/request2XScale";
+    public static final String SCALE_AXIS_OSD0 = "/sys/class/graphics/fb0/scale_axis";
+    public static final String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
+    public static final String SCALE_OSD1 = "/sys/class/graphics/fb1/scale";
+    public static final String OUTPUT_AXIS = "/sys/class/display/axis";
 
-    private static final String HDMIONLY_PROP = "ro.platform.hdmionly";
-    private static final String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
-    private static final String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
+    public static final String HDMIONLY_PROP = "ro.platform.hdmionly";
+    public static final String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
+    public static final String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
 
-    private static final String UBOOT_480I_OUTPUT_X = "ubootenv.var.480ioutputx";
-    private static final String UBOOT_480I_OUTPUT_Y = "ubootenv.var.480ioutputy";
-    private static final String UBOOT_480I_OUTPUT_WIDTH = "ubootenv.var.480ioutputwidth";
-    private static final String UBOOT_480I_OUTPUT_HEIGHT = "ubootenv.var.480ioutputheight";
-    private static final String UBOOT_480P_OUTPUT_X = "ubootenv.var.480poutputx";
-    private static final String UBOOT_480P_OUTPUT_Y = "ubootenv.var.480poutputy";
-    private static final String UBOOT_480P_OUTPUT_WIDTH = "ubootenv.var.480poutputwidth";
-    private static final String UBOOT_480P_OUTPUT_HEIGHT = "ubootenv.var.480poutputheight";
-    private static final String UBOOT_576I_OUTPUT_X = "ubootenv.var.576ioutputx";
-    private static final String UBOOT_576I_OUTPUT_Y = "ubootenv.var.576ioutputy";
-    private static final String UBOOT_576I_OUTPUT_WIDTH = "ubootenv.var.576ioutputwidth";
-    private static final String UBOOT_576I_OUTPUT_HEIGHT = "ubootenv.var.576ioutputheight";
-    private static final String UBOOT_576P_OUTPUT_X = "ubootenv.var.576poutputx";
-    private static final String UBOOT_576P_OUTPUT_Y = "ubootenv.var.576poutputy";
-    private static final String UBOOT_576P_OUTPUT_WIDTH = "ubootenv.var.576poutputwidth";
-    private static final String UBOOT_576P_OUTPUT_HEIGHT = "ubootenv.var.576poutputheight";
-    private static final String UBOOT_720I_OUTPUT_X = "ubootenv.var.720ioutputx";
-    private static final String UBOOT_720I_OUTPUT_Y = "ubootenv.var.720ioutputy";
-    private static final String UBOOT_720I_OUTPUT_WIDTH = "ubootenv.var.720ioutputwidth";
-    private static final String UBOOT_720I_OUTPUT_HEIGHT = "ubootenv.var.720ioutputheight";
-    private static final String UBOOT_720P_OUTPUT_X = "ubootenv.var.720poutputx";
-    private static final String UBOOT_720P_OUTPUT_Y = "ubootenv.var.720poutputy";
-    private static final String UBOOT_720P_OUTPUT_WIDTH = "ubootenv.var.720poutputwidth";
-    private static final String UBOOT_720P_OUTPUT_HEIGHT = "ubootenv.var.720poutputheight";
-    private static final String UBOOT_1080I_OUTPUT_X = "ubootenv.var.1080ioutputx";
-    private static final String UBOOT_1080I_OUTPUT_Y = "ubootenv.var.1080ioutputy";
-    private static final String UBOOT_1080I_OUTPUT_WIDTH = "ubootenv.var.1080ioutputwidth";
-    private static final String UBOOT_1080I_OUTPUT_HEIGHT = "ubootenv.var.1080ioutputheight";
-    private static final String UBOOT_1080P_OUTPUT_X = "ubootenv.var.1080poutputx";
-    private static final String UBOOT_1080P_OUTPUT_Y = "ubootenv.var.1080poutputy";
-    private static final String UBOOT_1080P_OUTPUT_WIDTH = "ubootenv.var.1080poutputwidth";
-    private static final String UBOOT_1080P_OUTPUT_HEIGHT = "ubootenv.var.1080poutputheight";
+    public static final String UBOOT_480I_OUTPUT_X = "ubootenv.var.480ioutputx";
+    public static final String UBOOT_480I_OUTPUT_Y = "ubootenv.var.480ioutputy";
+    public static final String UBOOT_480I_OUTPUT_WIDTH = "ubootenv.var.480ioutputwidth";
+    public static final String UBOOT_480I_OUTPUT_HEIGHT = "ubootenv.var.480ioutputheight";
+    public static final String UBOOT_480P_OUTPUT_X = "ubootenv.var.480poutputx";
+    public static final String UBOOT_480P_OUTPUT_Y = "ubootenv.var.480poutputy";
+    public static final String UBOOT_480P_OUTPUT_WIDTH = "ubootenv.var.480poutputwidth";
+    public static final String UBOOT_480P_OUTPUT_HEIGHT = "ubootenv.var.480poutputheight";
+    public static final String UBOOT_576I_OUTPUT_X = "ubootenv.var.576ioutputx";
+    public static final String UBOOT_576I_OUTPUT_Y = "ubootenv.var.576ioutputy";
+    public static final String UBOOT_576I_OUTPUT_WIDTH = "ubootenv.var.576ioutputwidth";
+    public static final String UBOOT_576I_OUTPUT_HEIGHT = "ubootenv.var.576ioutputheight";
+    public static final String UBOOT_576P_OUTPUT_X = "ubootenv.var.576poutputx";
+    public static final String UBOOT_576P_OUTPUT_Y = "ubootenv.var.576poutputy";
+    public static final String UBOOT_576P_OUTPUT_WIDTH = "ubootenv.var.576poutputwidth";
+    public static final String UBOOT_576P_OUTPUT_HEIGHT = "ubootenv.var.576poutputheight";
+    public static final String UBOOT_720I_OUTPUT_X = "ubootenv.var.720ioutputx";
+    public static final String UBOOT_720I_OUTPUT_Y = "ubootenv.var.720ioutputy";
+    public static final String UBOOT_720I_OUTPUT_WIDTH = "ubootenv.var.720ioutputwidth";
+    public static final String UBOOT_720I_OUTPUT_HEIGHT = "ubootenv.var.720ioutputheight";
+    public static final String UBOOT_720P_OUTPUT_X = "ubootenv.var.720poutputx";
+    public static final String UBOOT_720P_OUTPUT_Y = "ubootenv.var.720poutputy";
+    public static final String UBOOT_720P_OUTPUT_WIDTH = "ubootenv.var.720poutputwidth";
+    public static final String UBOOT_720P_OUTPUT_HEIGHT = "ubootenv.var.720poutputheight";
+    public static final String UBOOT_1080I_OUTPUT_X = "ubootenv.var.1080ioutputx";
+    public static final String UBOOT_1080I_OUTPUT_Y = "ubootenv.var.1080ioutputy";
+    public static final String UBOOT_1080I_OUTPUT_WIDTH = "ubootenv.var.1080ioutputwidth";
+    public static final String UBOOT_1080I_OUTPUT_HEIGHT = "ubootenv.var.1080ioutputheight";
+    public static final String UBOOT_1080P_OUTPUT_X = "ubootenv.var.1080poutputx";
+    public static final String UBOOT_1080P_OUTPUT_Y = "ubootenv.var.1080poutputy";
+    public static final String UBOOT_1080P_OUTPUT_WIDTH = "ubootenv.var.1080poutputwidth";
+    public static final String UBOOT_1080P_OUTPUT_HEIGHT = "ubootenv.var.1080poutputheight";
 
-    private static final String[] COMMON_MODE_VALUE_LIST =  {
+    public static final String[] COMMON_MODE_VALUE_LIST =  {
             "480i", "480p", "576i", "576p", "720p", "1080i", "1080p",
             "720p50hz", "1080i50hz", "1080p50hz", "480cvbs", "576cvbs"
     };
+
+    // 480p values
+    public static final int OUTPUT480_FULL_WIDTH = 720;
+    public static final int OUTPUT480_FULL_HEIGHT = 480;
+    // 576p values
+    public static final int OUTPUT576_FULL_WIDTH = 720;
+    public static final int OUTPUT576_FULL_HEIGHT = 576;
+    // 720p values
+    public static final int OUTPUT720_FULL_WIDTH = 1280;
+    public static final int OUTPUT720_FULL_HEIGHT = 720;
+    // 1080p values
+    public static final int OUTPUT1080_FULL_WIDTH = 1920;
+    public static final int OUTPUT1080_FULL_HEIGHT = 1080;
 
     private Context mContext;
     private static SystemWriteManager mSystemWriteManager;
