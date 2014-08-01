@@ -233,7 +233,8 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         mItems = new ArrayList<Action>();
 
         // first: power off
-        mItems.add(
+        // TODO: Reword to 'sleep' and turn off LED in 1.2.1
+        /*mItems.add(
             new SinglePressAction(
                     com.android.internal.R.drawable.ic_lock_power_off,
                     R.string.global_action_power_off) {
@@ -256,7 +257,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 public boolean showBeforeProvisioning() {
                     return true;
                 }
-            });
+            });*/
 
         // next: reboot
         mItems.add(
