@@ -16,6 +16,7 @@
 
 package com.android.systemui;
 
+import android.app.SystemWriteManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -30,8 +31,11 @@ import android.util.Log;
 public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "SystemUIBootReceiver";
 
-    @Override
+    private SystemWriteManager mSw;
+
     public void onReceive(final Context context, Intent intent) {
+        mSw = (SystemWriteManager) context.getSystemService("system_write");
+
         try {
             // Start the load average overlay, if activated
             ContentResolver res = context.getContentResolver();
@@ -42,5 +46,8 @@ public class BootReceiver extends BroadcastReceiver {
         } catch (Exception e) {
             Log.e(TAG, "Can't start load average service", e);
         }
+
+        // Lock orientation to landscape
+        mSw.setProperty("ubootenv.var.has.accelerometer", "false");
     }
 }
