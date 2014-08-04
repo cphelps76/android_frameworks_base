@@ -16,6 +16,7 @@
 
 package com.android.systemui;
 
+import android.app.SystemWriteManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -32,11 +33,14 @@ public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "SystemUIBootReceiver";
 
     private EthernetManager mEm;
+    private SystemWriteManager mSw;
 
     @Override
     public void onReceive(final Context context, Intent intent) {
         ContentResolver res = context.getContentResolver();
         mEm = (EthernetManager) context.getSystemService(Context.ETH_SERVICE);
+        mSw = (SystemWriteManager) mContext.getSystemService("system_write");
+
         try {
             // Start the load average overlay, if activated
             if (Settings.Global.getInt(res, Settings.Global.SHOW_PROCESSES, 0) != 0) {
@@ -55,5 +59,8 @@ public class BootReceiver extends BroadcastReceiver {
         } catch (Exception e) {
             Slog.e(TAG, "Can't start Ethernet service", e);
         }
+
+        // Lock orientation to landscape
+        mSw.setProperty("ubootenv.var.has.accelerometer", "false");
     }
 }
