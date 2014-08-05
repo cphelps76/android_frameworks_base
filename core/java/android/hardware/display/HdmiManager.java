@@ -2,6 +2,7 @@ package android.hardware.display;
 
 import android.app.SystemWriteManager;
 import android.content.Context;
+import android.provider.Settings;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -117,12 +118,23 @@ public class HdmiManager {
         Log.d(TAG, "HDMI plugged");
         if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, true)) {
             mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
+            String resolution = getBestResolution(); // default to best resolution
+            boolean autoAdjust = Settings.Secure.getInt(mContext.getContentResolver(),
+                        Settings.Secure.HDMI_AUTO_ADJUST, 0) != 0;
+
+            if (!autoAdjust) {
+                // auto adjust not enabled so lets try to read user selected resolution
+                // if not available fall back to 720p
+                String userResolution = Settings.Secure.getString(mContext.getContentResolver(),
+                        Settings.Secure.HDMI_RESOLUTION);
+                resolution = (userResolution != null ? userResolution : "720p");
+            }
             if (isFreescaleClosed()) {
                 Log.d(TAG, "Freescale is closed");
-                setOutputWithoutFreescale(getBestResolution());
+                setOutputWithoutFreescale(resolution);
             } else {
                 Log.d(TAG, "Freescale is open");
-                setOutputMode(getBestResolution());
+                setOutputMode(resolution);
             }
             mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
         }
