@@ -39,7 +39,7 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(final Context context, Intent intent) {
         ContentResolver res = context.getContentResolver();
         mEm = (EthernetManager) context.getSystemService(Context.ETH_SERVICE);
-        mSw = (SystemWriteManager) mContext.getSystemService("system_write");
+        mSw = (SystemWriteManager) context.getSystemService("system_write");
 
         try {
             // Start the load average overlay, if activated
