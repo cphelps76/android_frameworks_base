@@ -36,10 +36,13 @@ public class HdmiManager {
     public static final String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
     public static final String SCALE_OSD1 = "/sys/class/graphics/fb1/scale";
     public static final String OUTPUT_AXIS = "/sys/class/display/axis";
+    public static final String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
 
     public static final String HDMIONLY_PROP = "ro.platform.hdmionly";
+
     public static final String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
     public static final String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
+    public static final String UBOOT_DIGITAL_AUDIO_OUTPUT = "ubootenv.var.digitaudiooutput";
 
     public static final String UBOOT_480I_OUTPUT_X = "ubootenv.var.480ioutputx";
     public static final String UBOOT_480I_OUTPUT_Y = "ubootenv.var.480ioutputy";
@@ -100,6 +103,10 @@ public class HdmiManager {
         mSystemWriteManager = (SystemWriteManager) context.getSystemService("system_write");
     }
 
+    /**
+     * Method called when HDMI state changes as a result of being unplugged
+     * @see {#HdmiStateChangeReceiver}
+     */
     public void hdmiUnplugged() {
         Log.d(TAG, "HDMI unplugged");
         if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, true)) {
@@ -114,21 +121,17 @@ public class HdmiManager {
         }
     }
 
+    /**
+     * Method called when HDMI state changes as a result of being plugged
+     * Also called on boot when HDMI is detected
+     * If compensation has been adjusted, this is adjusted as well
+     */
     public void hdmiPlugged() {
         Log.d(TAG, "HDMI plugged");
         if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, true)) {
             mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
-            String resolution = getBestResolution(); // default to best resolution
-            boolean autoAdjust = Settings.Secure.getInt(mContext.getContentResolver(),
-                        Settings.Secure.HDMI_AUTO_ADJUST, 0) != 0;
+            String resolution = getRequestedResolution();
 
-            if (!autoAdjust) {
-                // auto adjust not enabled so lets try to read user selected resolution
-                // if not available fall back to 720p
-                String userResolution = Settings.Secure.getString(mContext.getContentResolver(),
-                        Settings.Secure.HDMI_RESOLUTION);
-                resolution = (userResolution != null ? userResolution : "720p");
-            }
             if (isFreescaleClosed()) {
                 Log.d(TAG, "Freescale is closed");
                 setOutputWithoutFreescale(resolution);
@@ -136,10 +139,218 @@ public class HdmiManager {
                 Log.d(TAG, "Freescale is open");
                 setOutputMode(resolution);
             }
+            if (isCompensated()) syncCompensation();
             mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
         }
     }
 
+    /**
+     * Read #DISPLAY_MODE from sysfs and return the current resolution
+     * @return current HDMI resolution
+     */
+    public String getResolution() {
+        Log.d(TAG, "Current resolution is " + mSystemWriteManager.readSysfs(DISPLAY_MODE));
+        return mSystemWriteManager.readSysfs(DISPLAY_MODE);
+    }
+
+    /**
+     ** Read the HDMI_SUPPORT_LIST and provide an array of available resolutions
+     * @return  resolutions   string array of available resolutions
+     */
+    public String[] getAvailableResolutions() {
+        String[] resolutionsToParse = null;
+        ArrayList<String> resolutionsArray = new ArrayList<String>();
+        String rawList = readSupportList(HDMI_SUPPORT_LIST);
+        if (rawList != null) {
+            resolutionsToParse = rawList.split("\\|");
+        }
+        if (resolutionsToParse != null) {
+            for (int i = 0; i < resolutionsToParse.length; i++) {
+                String resolution;
+                if (resolutionsToParse[i].contains("*")) {
+                    String res = resolutionsToParse[i];
+                    resolution = res.substring(0, res.length()-1);
+                } else {
+                    resolution = resolutionsToParse[i];
+                }
+                resolutionsArray.add(resolution);
+            }
+        }
+        String[] resolutions = new String[resolutionsArray.size()];
+        return resolutionsArray.toArray(resolutions);
+    }
+
+    /**
+     * Get the position array of the current resolution
+     * @return display position int array from resolution
+     */
+    public int[] getResolutionPosition() {
+        String resolution = getResolution();
+        int[] position = { 0, 0, 1280, 720};
+        if (resolution.contains("480")) {
+            position[2] = OUTPUT480_FULL_WIDTH;
+            position[3] = OUTPUT480_FULL_HEIGHT;
+        } else if (resolution.contains("576")) {
+            position[2] = OUTPUT576_FULL_WIDTH;
+            position[3] = OUTPUT576_FULL_HEIGHT;
+        } else if (resolution.contains("1080")) {
+            position[2] = OUTPUT1080_FULL_WIDTH;
+            position[3] = OUTPUT1080_FULL_HEIGHT;
+        }
+        return position;
+    }
+
+    /**
+     * Get the requested resolution factoring in auto adjustment
+     * If user enabled auto adjustment, this resolution supercedes the
+     * user selected resolution, as well as the default resolution
+     * @return if (!autoAdjust) return user selected resolution, else return best possible
+     */
+    public String getRequestedResolution() {
+        String resolution = getBestResolution();
+        boolean autoAdjust = Settings.Secure.getInt(mContext.getContentResolver(),
+                        Settings.Secure.HDMI_AUTO_ADJUST, 0) != 0;
+
+        if (!autoAdjust) {
+            // auto adjust not enabled so lets try to read user selected resolution
+            // if not available fall back to 720p
+            String userResolution = Settings.Secure.getString(mContext.getContentResolver(),
+                    Settings.Secure.HDMI_RESOLUTION);
+            resolution = (userResolution != null ? userResolution : "720p");
+        }
+        return resolution;
+    }
+
+    /**
+     * Check Settings.Secure to see if height and width have been compensated
+     * @return true if width != 100 && height  != 100; else false
+     */
+    private boolean isCompensated() {
+        int width = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_WIDTH, 100);
+        int height = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_HEIGHT, 100);
+        boolean widthOffset = width != 100;
+        boolean heightOffset = height != 100;
+
+        if (widthOffset) {
+            Log.d(TAG, "Overscan is compensated for width. Adjusting back to " + width);
+        }
+        if (heightOffset) {
+            Log.d(TAG, "Overscan is compensated for height. Adjusting back to " + height);
+        }
+
+        return (widthOffset || heightOffset) ? true: false;
+    }
+
+    /**
+     * Update position with compensation if isCompensated()
+     */
+    public void syncCompensation() {
+        int [] position = getPosition(getResolution());
+        setPosition(position[0], position[1], position[2], position[3]);
+        savePosition(position[0], position[1], position[2], position[3]);
+    }
+
+    /**
+     * Sets the display position from the provided values and writes them to PPSCALER_RECT
+     * @param left   x value
+     * @param top    y value
+     * @param right  width
+     * @param bottom height
+     */
+    public void setPosition(int left, int top, int right, int bottom) {
+       String position = String.valueOf(left) + " " + String.valueOf(top) + " "
+                       + String.valueOf(right) + " " + String.valueOf(bottom) + " 0";
+       mSystemWriteManager.writeSysfs(PPSCALER_RECT, position);
+    }
+
+    /**
+     * Save the display position handed to the API
+     * to the corresponding resolution uboot props from getResolution()
+     * @param left   x value
+     * @param top    y value
+     * @param right  width
+     * @param bottom height
+     */
+    public void savePosition(int left, int top, int right, int bottom) {
+        String position = getResolution();
+        if (position.equals("480i")) {
+            mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("480p")) {
+            mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("576i")) {
+            mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("576p")) {
+            mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.contains("1080I")) {
+            mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.contains("1080p")) {
+            mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else {
+            mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_HEIGHT, String.valueOf(bottom));
+        }
+    }
+
+    /**
+     * Reset the display position to 100% for the resolution
+     */
+   public void resetPosition() {
+        // reset position to 100% of current resolution
+        int[] position = getResolutionPosition();
+        Settings.Secure.putInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_WIDTH, 100);
+        Settings.Secure.putInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_HEIGHT, 100);
+
+        setPosition(position[0], position[1], position[2], position[3]);
+        savePosition(position[0], position[1], position[2], position[3]);
+    }
+
+    /**
+     * Gets the full width position for the current resolution
+     * @return position[2]  The width position value
+     */
+    public int getFullWidthPosition() {
+        int[] position = getResolutionPosition();
+        return position[2];
+    }
+
+    /**
+     * Gets the full height position for the current resolution
+     * @return position[3]  The height position value
+     */
+    public int getFullHeightPosition() {
+        int[] position = getResolutionPosition();
+        return position[3];
+    }
+
+    /**
+     * Get the display position from the passed resolution mode
+     * @param mode  Desired resolution that a position is requested for
+     * @return      int array position based on resolution passed
+     */
     public static int[] getPosition(String mode) {
         int[] currentPosition = { 0, 0, 1280, 720 };
         int index = 4; // 720p
@@ -216,6 +427,10 @@ public class HdmiManager {
         return currentPosition;
     }
 
+    /**
+     * Sets the desired output mode if freescale is closed
+     * @param newMode Resolution desired
+     */
     public void setOutputWithoutFreescale(String newMode) {
         mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
         mSystemWriteManager.writeSysfs(PPSCALER_RECT, "0");
@@ -244,8 +459,12 @@ public class HdmiManager {
                 + (currentPosition[2] + currentPosition[0] - 1) + " " + (currentPosition[3] + currentPosition[1] - 1));
     }
 
+    /**
+     * Sets the desired output mode if freescale is open
+     * @param newMode desired resolution
+     */
     public void setOutputMode(String newMode) {
-        String currentMode = mSystemWriteManager.readSysfs(DISPLAY_MODE);
+        String currentMode = getResolution();
         if (newMode.equals(currentMode)) {
             // 'tis the same, so go home
             Log.d(TAG, "newMode=" + newMode + " == currentMode=" + currentMode);
@@ -267,6 +486,10 @@ public class HdmiManager {
         mSystemWriteManager.setProperty(UBOOT_COMMONMODE, newMode);
     }
 
+    /**
+     * Reads HDMI_SUPPORT_LIST and returns the best possible resolution
+     * @return best possible resolution the TV allows which is provided from EDID
+     */
     public String getBestResolution() {
         String[] resolutions = null;
         String resolution = "720p";
@@ -290,14 +513,26 @@ public class HdmiManager {
         return resolution;
     }
 
+    /**
+     * Checks if fb0 freescaled is closed
+     * @return true if FREESCALE_FB0 contains 0x0
+     */
     public boolean isFreescaleClosed() {
         return mSystemWriteManager.readSysfs(FREESCALE_FB0).contains("0x0");
     }
 
+    /**
+     * Check if hdmi is currently plugged in
+     * @return true if hpd_state equals 1
+     */
     public static boolean isHdmiPlugged() {
         return mSystemWriteManager.readSysfs("/sys/class/amhdmitx/amhdmitx0/hpd_state").equals("1");
     }
 
+    /**
+     * Set vdac closed dependent on the current mode
+     * @param  mode resolution
+     */
     public void closeVdac(String mode) {
         if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, false)) {
             if (!mode.contains("cvbs")) {
@@ -306,6 +541,23 @@ public class HdmiManager {
         }
     }
 
+    /**
+     * Sets the digital audio value based on the provided value
+     * @param value  the value corresponding to the audio route
+     *               0 - PCM
+     *               1 - RAW/SPDIF passthrough
+     *               2 - HDMI passthrough
+     */
+    public void setDigitalAudioValue(String value) {
+        mSystemWriteManager.setProperty(UBOOT_DIGITAL_AUDIO_OUTPUT, value);
+        mSystemWriteManager.writeSysfs(AUDIODSP_DIGITAL_RAW, value);
+    }
+
+    /**
+     * Reads the HDMI support list
+     * @param path  HDMI support list path
+     * @return      "|" delimited String of supported resolutions
+     */
     private String readSupportList(String path) {
         String str = null;
         StringBuilder builder = new StringBuilder();

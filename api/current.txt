@@ -10150,14 +10150,26 @@ package android.hardware.display {
   public class HdmiManager {
     ctor public HdmiManager(android.content.Context);
     method public void closeVdac(java.lang.String);
+    method public java.lang.String[] getAvailableResolutions();
     method public java.lang.String getBestResolution();
+    method public int getFullHeightPosition();
+    method public int getFullWidthPosition();
     method public static int[] getPosition(java.lang.String);
+    method public java.lang.String getRequestedResolution();
+    method public java.lang.String getResolution();
+    method public int[] getResolutionPosition();
     method public void hdmiPlugged();
     method public void hdmiUnplugged();
     method public boolean isFreescaleClosed();
     method public static boolean isHdmiPlugged();
+    method public void resetPosition();
+    method public void savePosition(int, int, int, int);
+    method public void setDigitalAudioValue(java.lang.String);
     method public void setOutputMode(java.lang.String);
     method public void setOutputWithoutFreescale(java.lang.String);
+    method public void setPosition(int, int, int, int);
+    method public void syncCompensation();
+    field public static final java.lang.String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
     field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
     field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;
     field public static final java.lang.String DISPLAY_MODE = "/sys/class/display/mode";
@@ -10215,6 +10227,7 @@ package android.hardware.display {
     field public static final java.lang.String UBOOT_720P_OUTPUT_Y = "ubootenv.var.720poutputy";
     field public static final java.lang.String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
     field public static final java.lang.String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
+    field public static final java.lang.String UBOOT_DIGITAL_AUDIO_OUTPUT = "ubootenv.var.digitaudiooutput";
     field public static final java.lang.String VIDEO_AXIS = "/sys/class/video/axis";
   }
 
