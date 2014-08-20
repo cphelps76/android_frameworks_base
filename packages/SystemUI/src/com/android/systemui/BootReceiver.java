@@ -66,8 +66,7 @@ public class BootReceiver extends BroadcastReceiver {
         // Lock orientation to landscape
         mSw.setProperty("ubootenv.var.has.accelerometer", "false");
 
-        if (mHdmiManager.isHdmiPlugged()) {
-            mHdmiManager.hdmiPlugged();
-        }
+        // Restore resolution, position, and other display bits
+        mHdmiManager.hdmiPlugged();
     }
 }

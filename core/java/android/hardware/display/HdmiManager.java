@@ -213,10 +213,10 @@ public class HdmiManager {
 
         if (!autoAdjust) {
             // auto adjust not enabled so lets try to read user selected resolution
-            // if not available fall back to 720p
+            // if not available fall back to getResolution() value
             String userResolution = Settings.Secure.getString(mContext.getContentResolver(),
                     Settings.Secure.HDMI_RESOLUTION);
-            resolution = (userResolution != null ? userResolution : "720p");
+            resolution = (userResolution != null ? userResolution : getResolution());
         }
         return resolution;
     }
