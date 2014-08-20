@@ -2,8 +2,13 @@ package android.hardware.display;
 
 import android.app.SystemWriteManager;
 import android.content.Context;
+import android.os.RemoteException;
+import android.os.ServiceManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
+import android.view.IWindowManager;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -24,6 +29,9 @@ public class HdmiManager {
 
     public static final String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
     public static final String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";
+    public static final String FREESCALE_AXIS = "/sys/class/graphics/fb0/free_scale_axis";
+    public static final String FREESCALE_MODE = "/sys/class/graphics/fb0/freescale_mode";
+    public static final String UPDATE_FREESCALE = "/sys/class/graphics/fb0/update_freescale";
     public static final String HDMI_UNPLUGGED = "/sys/class/aml_mod/mod_on";
     public static final String HDMI_PLUGGED = "/sys/class/aml_mod/mod_off";
     public static final String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
@@ -34,14 +42,17 @@ public class HdmiManager {
     public static final String REQUEST_2X_SCALE = "/sys/class/graphics/fb0/request2XScale";
     public static final String SCALE_AXIS_OSD0 = "/sys/class/graphics/fb0/scale_axis";
     public static final String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
+    public static final String WINDOW_AXIS = "/sys/class/graphics/fb0/window_axis";
     public static final String SCALE_OSD1 = "/sys/class/graphics/fb1/scale";
     public static final String OUTPUT_AXIS = "/sys/class/display/axis";
     public static final String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
 
-    public static final String HDMIONLY_PROP = "ro.platform.hdmionly";
+    public static final String HDMIONLY = "ro.platform.hdmionly";
+    public static final String REAL_OUTPUT_MODE = "ro.platform.has.realoutputmode";
 
     public static final String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
-    public static final String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
+    public static final String UBOOT_HDMIMODE = "ubootenv.var.hdmimode";
+    public static final String UBOOT_COMMONMODE = "ubootenv.var.outputmode";
     public static final String UBOOT_DIGITAL_AUDIO_OUTPUT = "ubootenv.var.digitaudiooutput";
 
     public static final String UBOOT_480I_OUTPUT_X = "ubootenv.var.480ioutputx";
@@ -85,15 +96,19 @@ public class HdmiManager {
     // 480p values
     public static final int OUTPUT480_FULL_WIDTH = 720;
     public static final int OUTPUT480_FULL_HEIGHT = 480;
+    public static final String DISPLAY_AXIS_480 = " 720 480 ";
     // 576p values
     public static final int OUTPUT576_FULL_WIDTH = 720;
     public static final int OUTPUT576_FULL_HEIGHT = 576;
+    public static final String DISPLAY_AXIS_576 = " 720 576 ";
     // 720p values
     public static final int OUTPUT720_FULL_WIDTH = 1280;
     public static final int OUTPUT720_FULL_HEIGHT = 720;
+    public static final String DISPLAY_AXIS_720 = " 1280 720 ";
     // 1080p values
     public static final int OUTPUT1080_FULL_WIDTH = 1920;
     public static final int OUTPUT1080_FULL_HEIGHT = 1080;
+    public static final String DISPLAY_AXIS_1080 = " 1920 1080 ";
 
     private Context mContext;
     private static SystemWriteManager mSystemWriteManager;
@@ -109,15 +124,22 @@ public class HdmiManager {
      */
     public void hdmiUnplugged() {
         Log.d(TAG, "HDMI unplugged");
-        if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, true)) {
-            String cvbsMode = mSystemWriteManager.getPropertyString(UBOOT_CVBSMODE, "480cvbs");
-            if (isFreescaleClosed()) {
-                setOutputWithoutFreescale(cvbsMode);
-            } else {
+        String cvbsMode = mSystemWriteManager.getPropertyString(UBOOT_CVBSMODE, "480cvbs");
+        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
+            if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
                 setOutputMode(cvbsMode);
+                mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
             }
-            mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
-            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
+        } else {
+            if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
+                if (isFreescaleClosed()) {
+                    setOutputWithoutFreescale(cvbsMode);
+                } else {
+                    setOutputMode(cvbsMode);
+                }
+                mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
+                mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
+            }
         }
     }
 
@@ -128,7 +150,12 @@ public class HdmiManager {
      */
     public void hdmiPlugged() {
         Log.d(TAG, "HDMI plugged");
-        if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, true)) {
+        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
+            if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
+                mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
+                setOutputMode(getRequestedResolution());
+            }
+        } else if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
             mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
             String resolution = getRequestedResolution();
 
@@ -139,9 +166,9 @@ public class HdmiManager {
                 Log.d(TAG, "Freescale is open");
                 setOutputMode(resolution);
             }
-            if (isCompensated()) syncCompensation();
             mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
         }
+        if (isCompensated()) syncCompensation();
     }
 
     /**
@@ -432,31 +459,53 @@ public class HdmiManager {
      * @param newMode Resolution desired
      */
     public void setOutputWithoutFreescale(String newMode) {
+        if (newMode.contains("cvbs")) {
+            openVdac(newMode);
+        } else {
+            closeVdac(newMode);
+        }
+
         mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
         mSystemWriteManager.writeSysfs(PPSCALER_RECT, "0");
         mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
         mSystemWriteManager.writeSysfs(FREESCALE_FB1, "0");
         mSystemWriteManager.writeSysfs(DISPLAY_MODE, newMode);
         mSystemWriteManager.setProperty(UBOOT_COMMONMODE, newMode);
+        saveNewModeToProp(newMode);
+
         int[] currentPosition = {0, 0, 1280, 720};
-        currentPosition = getPosition(newMode);
-        if ((newMode.equals(COMMON_MODE_VALUE_LIST[5])) || (newMode.equals(COMMON_MODE_VALUE_LIST[6]))
-                || (newMode.equals(COMMON_MODE_VALUE_LIST[8])) || (newMode.equals(COMMON_MODE_VALUE_LIST[9]))) {
-            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, ((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2
-                    + " 1280 720 " + ((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2 + " 18 18");
-            mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD0, "0 0 " + (960 - (int)(currentPosition[0]/2) - 1) + " " + (1080 - (int)(currentPosition[1]/2) - 1));
-            mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, "7 " + ((int)(currentPosition[2]/2)) + " " + ((int)(currentPosition[3]/2))*2);
-            mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, "1280 720 " + ((int)(currentPosition[2]/2))*2 + " " + ((int)(currentPosition[3]/2))*2);
-            mSystemWriteManager.writeSysfs(SCALE_OSD1, "0x10001");
+
+        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
+            setDensity(newMode);
+            if (newMode.contains("1080")) {
+                setDisplaySize(1920, 1080);
+            } else {
+                setDisplaySize(1280, 720);
+            }
+
+            String displayValue = currentPosition[0] + " " + currentPosition[1] + " " +
+                    1920 + " " + 1080 + " " + currentPosition[0] + " " + currentPosition[1] + " " + 18 + " " + 18;
+            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, displayValue);
         } else {
-            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, currentPosition[0] + " " + currentPosition[1]
-                    + " 1280 720 " + currentPosition[0] + " " + currentPosition[1] + " 18 18");
-            mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, "16 " + currentPosition[2] + " "+ currentPosition[3]);
-            mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, "1280 720 " + currentPosition[2] + " " + currentPosition[3]);
-            mSystemWriteManager.writeSysfs(SCALE_OSD1, "0x10001");
+            currentPosition = getPosition(newMode);
+            if ((newMode.equals(COMMON_MODE_VALUE_LIST[5])) || (newMode.equals(COMMON_MODE_VALUE_LIST[6]))
+                    || (newMode.equals(COMMON_MODE_VALUE_LIST[8])) || (newMode.equals(COMMON_MODE_VALUE_LIST[9]))) {
+                mSystemWriteManager.writeSysfs(OUTPUT_AXIS, ((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2
+                        + " 1280 720 " + ((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2 + " 18 18");
+                mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD0, "0 0 " + (960 - (int)(currentPosition[0]/2) - 1) + " " + (1080 - (int)(currentPosition[1]/2) - 1));
+                mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, "7 " + ((int)(currentPosition[2]/2)) + " " + ((int)(currentPosition[3]/2))*2);
+                mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, "1280 720 " + ((int)(currentPosition[2]/2))*2 + " " + ((int)(currentPosition[3]/2))*2);
+                mSystemWriteManager.writeSysfs(SCALE_OSD1, "0x10001");
+            } else {
+                mSystemWriteManager.writeSysfs(OUTPUT_AXIS, currentPosition[0] + " " + currentPosition[1]
+                         + " 1280 720 " + currentPosition[0] + " " + currentPosition[1] + " 18 18");
+                mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, "16 " + currentPosition[2] + " "+ currentPosition[3]);
+                mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, "1280 720 " + currentPosition[2] + " " + currentPosition[3]);
+                mSystemWriteManager.writeSysfs(SCALE_OSD1, "0x10001");
+            }
+            mSystemWriteManager.writeSysfs(VIDEO_AXIS, currentPosition[0] + " " + currentPosition[1] + " "
+                    + (currentPosition[2] + currentPosition[0] - 1) + " " + (currentPosition[3] + currentPosition[1] - 1));
         }
-        mSystemWriteManager.writeSysfs(VIDEO_AXIS, currentPosition[0] + " " + currentPosition[1] + " "
-                + (currentPosition[2] + currentPosition[0] - 1) + " " + (currentPosition[3] + currentPosition[1] - 1));
     }
 
     /**
@@ -470,20 +519,155 @@ public class HdmiManager {
             Log.d(TAG, "newMode=" + newMode + " == currentMode=" + currentMode);
             return;
         }
-        mSystemWriteManager.writeSysfs(DISPLAY_MODE, newMode);
-        int[] currentPosition = getPosition(newMode);
-        String value = currentPosition[0] + " " + currentPosition[1]
-                + " " + (currentPosition[2] + currentPosition[0] - 1)
-                + " " + (currentPosition[3] + currentPosition[1] - 1)
-                + " " + 0;
-        mSystemWriteManager.writeSysfs(PPSCALER_RECT, value);
-        mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
-        mSystemWriteManager.writeSysfs(FREESCALE_FB1, "0");
-        mSystemWriteManager.writeSysfs(FREESCALE_FB0, "1");
-        mSystemWriteManager.writeSysfs(FREESCALE_FB1, "1");
 
-        closeVdac(newMode);
+        if (newMode.contains("cvbs")) {
+            openVdac(newMode);
+        } else {
+            closeVdac(newMode);
+        }
+
+        int[] currentPosition = getPosition(newMode);
+
+        String windowAxis = currentPosition[0] + " " + currentPosition[1]
+                + " " + (currentPosition[2] + currentPosition[0] - 1)
+                + " " + (currentPosition[3] + currentPosition[1] - 1);
+        String videoAxis = currentPosition[0] + " " + currentPosition[1]
+                + " " + (currentPosition[2] + currentPosition[0] - 1)
+                + " " + (currentPosition[3] + currentPosition[1] - 1);
+        String displayAxis = currentPosition[0] + " " + currentPosition[1]
+                + getDisplayAxisByMode(newMode)+ currentPosition[0] + " "
+                + currentPosition[1] + " " + 18 + " " + 18;
+        String ppScalerRect = currentPosition[0] + " " + currentPosition[1]
+                + " " + (currentPosition[2] + currentPosition[0])
+                + " " + (currentPosition[3] + currentPosition[1]) + " " + 0;
+
+        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
+            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
+            // close freescale
+            mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
+            if (newMode.contains("1080")) {
+                setDensity(newMode);
+                setDisplaySize(1920, 1080);
+                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
+                mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1919 1079");
+                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+                if (currentPosition[0] == 0 && currentPosition[1] == 0) {
+                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
+                } else {
+                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+                }
+            } else if (newMode.contains("720")) {
+                setDensity(newMode);
+                setDisplaySize(1280, 720);
+                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
+                mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
+                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+                if (currentPosition[0] == 0 && currentPosition[1] == 0) {
+                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
+                } else {
+                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+                }
+            } else if (newMode.contains("576") || newMode.contains("480")) {
+                setDensity(newMode);
+                setDisplaySize(1280, 720);
+                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
+                if (newMode.equals("576i") || newMode.equals("480i")) {
+                    mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 721");
+                } else {
+                    mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
+                }
+                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+                mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+            }
+
+            mSystemWriteManager.writeSysfs(VIDEO_AXIS, videoAxis);
+            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, displayAxis);
+        } else {
+            setFreescaleAxis(newMode);
+            mSystemWriteManager.writeSysfs(DISPLAY_MODE, newMode);
+            mSystemWriteManager.writeSysfs(PPSCALER_RECT, ppScalerRect);
+            mSystemWriteManager.writeSysfs(UPDATE_FREESCALE, "1");
+            mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+        }
+
         mSystemWriteManager.setProperty(UBOOT_COMMONMODE, newMode);
+        saveNewModeToProp(newMode);
+    }
+
+    public String getDisplayAxisByMode(String newMode) {
+        if (newMode.indexOf("1080") >= 0) {
+            return DISPLAY_AXIS_1080;
+        } else if (newMode.indexOf("720") >= 0) {
+            return DISPLAY_AXIS_720;
+        } else if (newMode.indexOf("576") >= 0) {
+            return DISPLAY_AXIS_576;
+        } else {
+            return DISPLAY_AXIS_480;
+        }
+    }
+
+    public void setFreescaleAxis(String newMode) {
+        if (newMode.contains("720") || newMode.contains("1080")) {
+            mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
+        } else {
+            mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1281 719");
+        }
+        mSystemWriteManager.writeSysfs(FREESCALE_FB0, "1");
+    }
+
+    public void saveNewModeToProp(String newMode) {
+        if (newMode != null) {
+            if (newMode.contains("cvbs")) {
+                mSystemWriteManager.setProperty(UBOOT_CVBSMODE, newMode);
+            } else {
+                mSystemWriteManager.setProperty(UBOOT_HDMIMODE, newMode);
+            }
+        }
+    }
+
+    public void setDensity(String newMode) {
+        int density = 240;
+        if (newMode.contains("720") || newMode.contains("480")
+                || newMode.contains("576")) {
+            density = 160;
+        }
+
+        IWindowManager wm = IWindowManager.Stub.asInterface(ServiceManager.checkService(
+                Context.WINDOW_SERVICE));
+        if (wm != null) {
+            try {
+                if (density > 0) {
+                    wm.setForcedDisplayDensity(Display.DEFAULT_DISPLAY, density);
+                } else {
+                    wm.clearForcedDisplayDensity(Display.DEFAULT_DISPLAY);
+                }
+            } catch (RemoteException ignored) {}
+        } else {
+            Log.d(TAG, "Can't connect to window manager; is the system running?");
+        }
+    }
+
+    public void setDisplaySize(int w, int h) {
+        IWindowManager wm = IWindowManager.Stub.asInterface(ServiceManager.checkService(
+                Context.WINDOW_SERVICE));
+
+        if (wm != null) {
+            try {
+                if (w >= 0 && h >= 0) {
+                    wm.setForcedDisplaySize(Display.DEFAULT_DISPLAY, w, h);
+                } else {
+                    wm.clearForcedDisplaySize(Display.DEFAULT_DISPLAY);
+                }
+            } catch (RemoteException ignored) {}
+        } else {
+            Log.d(TAG, "Can't connect to window manager; is the system running?");
+        }
+    }
+
+    public void setDisplaySize(String width, String height) {
+        int w = Integer.parseInt(width);
+        int h = Integer.parseInt(height);
+        setDisplaySize(w, h);
     }
 
     /**
@@ -534,9 +718,17 @@ public class HdmiManager {
      * @param  mode resolution
      */
     public void closeVdac(String mode) {
-        if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, false)) {
+        if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, false)) {
             if (!mode.contains("cvbs")) {
                 mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
+            }
+        }
+    }
+
+    public static void openVdac(String mode){
+        if(mSystemWriteManager.getPropertyBoolean(HDMIONLY,false)) {
+            if(mode.contains("cvbs")) {
+                mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED,"vdac");
             }
         }
     }

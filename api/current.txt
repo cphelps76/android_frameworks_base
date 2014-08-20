@@ -10928,6 +10928,7 @@ package android.hardware.display {
     method public void closeVdac(java.lang.String);
     method public java.lang.String[] getAvailableResolutions();
     method public java.lang.String getBestResolution();
+    method public java.lang.String getDisplayAxisByMode(java.lang.String);
     method public int getFullHeightPosition();
     method public int getFullWidthPosition();
     method public static int[] getPosition(java.lang.String);
@@ -10938,9 +10939,15 @@ package android.hardware.display {
     method public void hdmiUnplugged();
     method public boolean isFreescaleClosed();
     method public static boolean isHdmiPlugged();
+    method public static void openVdac(java.lang.String);
     method public void resetPosition();
+    method public void saveNewModeToProp(java.lang.String);
     method public void savePosition(int, int, int, int);
+    method public void setDensity(java.lang.String);
     method public void setDigitalAudioValue(java.lang.String);
+    method public void setDisplaySize(int, int);
+    method public void setDisplaySize(java.lang.String, java.lang.String);
+    method public void setFreescaleAxis(java.lang.String);
     method public void setOutputMode(java.lang.String);
     method public void setOutputWithoutFreescale(java.lang.String);
     method public void setPosition(int, int, int, int);
@@ -10948,10 +10955,16 @@ package android.hardware.display {
     field public static final java.lang.String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
     field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
     field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;
+    field public static final java.lang.String DISPLAY_AXIS_1080 = " 1920 1080 ";
+    field public static final java.lang.String DISPLAY_AXIS_480 = " 720 480 ";
+    field public static final java.lang.String DISPLAY_AXIS_576 = " 720 576 ";
+    field public static final java.lang.String DISPLAY_AXIS_720 = " 1280 720 ";
     field public static final java.lang.String DISPLAY_MODE = "/sys/class/display/mode";
+    field public static final java.lang.String FREESCALE_AXIS = "/sys/class/graphics/fb0/free_scale_axis";
     field public static final java.lang.String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
     field public static final java.lang.String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";
-    field public static final java.lang.String HDMIONLY_PROP = "ro.platform.hdmionly";
+    field public static final java.lang.String FREESCALE_MODE = "/sys/class/graphics/fb0/freescale_mode";
+    field public static final java.lang.String HDMIONLY = "ro.platform.hdmionly";
     field public static final java.lang.String HDMI_PLUGGED = "/sys/class/aml_mod/mod_off";
     field public static final java.lang.String HDMI_SUPPORT_LIST = "/sys/class/amhdmitx/amhdmitx0/disp_cap";
     field public static final java.lang.String HDMI_UNPLUGGED = "/sys/class/aml_mod/mod_on";
@@ -10965,6 +10978,7 @@ package android.hardware.display {
     field public static final int OUTPUT720_FULL_WIDTH = 1280; // 0x500
     field public static final java.lang.String OUTPUT_AXIS = "/sys/class/display/axis";
     field public static final java.lang.String PPSCALER_RECT = "/sys/class/ppmgr/ppscaler_rect";
+    field public static final java.lang.String REAL_OUTPUT_MODE = "ro.platform.has.realoutputmode";
     field public static final java.lang.String REQUEST_2X_SCALE = "/sys/class/graphics/fb0/request2XScale";
     field public static final java.lang.String SCALE_AXIS_OSD0 = "/sys/class/graphics/fb0/scale_axis";
     field public static final java.lang.String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
@@ -11001,10 +11015,13 @@ package android.hardware.display {
     field public static final java.lang.String UBOOT_720P_OUTPUT_WIDTH = "ubootenv.var.720poutputwidth";
     field public static final java.lang.String UBOOT_720P_OUTPUT_X = "ubootenv.var.720poutputx";
     field public static final java.lang.String UBOOT_720P_OUTPUT_Y = "ubootenv.var.720poutputy";
-    field public static final java.lang.String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
+    field public static final java.lang.String UBOOT_COMMONMODE = "ubootenv.var.outputmode";
     field public static final java.lang.String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
     field public static final java.lang.String UBOOT_DIGITAL_AUDIO_OUTPUT = "ubootenv.var.digitaudiooutput";
+    field public static final java.lang.String UBOOT_HDMIMODE = "ubootenv.var.hdmimode";
+    field public static final java.lang.String UPDATE_FREESCALE = "/sys/class/graphics/fb0/update_freescale";
     field public static final java.lang.String VIDEO_AXIS = "/sys/class/video/axis";
+    field public static final java.lang.String WINDOW_AXIS = "/sys/class/graphics/fb0/window_axis";
   }
 
   public final class HdmiManagerGlobal {
