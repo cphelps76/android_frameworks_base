@@ -3272,6 +3272,34 @@ public final class Settings {
         public static final String NTP_SERVER_CUSTOM = "ntp_server_custom";
 
         /**
+         * User selected HDMI resolution
+         * Default is 720p 60Hz
+         * @hide
+         */
+        public static final String HDMI_RESOLUTION = "hdmi_resolution";
+
+        /**
+         * User selected HDMI overscan compensation width
+         * Default to 80%
+         * @hide
+         */
+        public static final String HDMI_OVERSCAN_WIDTH = "hdmi_overscan_width";
+
+        /**
+         * User selected HDMI overscan compensation height
+         * Default to 80%
+         * @hide
+         */
+        public static final String HDMI_OVERSCAN_HEIGHT = "hdmi_overscan_height";
+
+        /**
+         * User selected HDMI auto adjust to best possible resolution
+         * Default is false
+         * @hide
+         */
+        public static final String HDMI_AUTO_ADJUST = "hdmi_auto_adjust";
+
+        /**
          * A 64-bit number (as a hex string) that is randomly
          * generated on the device's first boot and should remain
          * constant for the lifetime of the device.  (The value may

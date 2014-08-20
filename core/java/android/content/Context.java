@@ -2428,6 +2428,15 @@ public abstract class Context {
     public static final String DISPLAY_SERVICE = "display";
 
     /**
+     * Use with {@link #getSystemService} to retreive a
+     * (@link android.hardware.display.HdmiManager} for interacting with HDMI devices.
+     *
+     * @see #getSystemService
+     * @see android.hardware.display.HdmiManager
+     */
+    public static final String HDMI_SERVICE = "hdmi";
+
+    /**
      * Use with {@link #getSystemService} to retrieve a
      * {@link android.os.UserManager} for managing users on devices that support multiple users.
      *

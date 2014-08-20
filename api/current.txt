@@ -6023,6 +6023,7 @@ package android.content {
     field public static final java.lang.String DOWNLOAD_SERVICE = "download";
     field public static final java.lang.String DROPBOX_SERVICE = "dropbox";
     field public static final java.lang.String ETH_SERVICE = "ethernet";
+    field public static final java.lang.String HDMI_SERVICE = "hdmi";
     field public static final java.lang.String INPUT_METHOD_SERVICE = "input_method";
     field public static final java.lang.String INPUT_SERVICE = "input";
     field public static final java.lang.String KEYGUARD_SERVICE = "keyguard";
@@ -10920,6 +10921,125 @@ package android.hardware.display {
     method public abstract void onDisplayAdded(int);
     method public abstract void onDisplayChanged(int);
     method public abstract void onDisplayRemoved(int);
+  }
+
+  public class HdmiManager {
+    ctor public HdmiManager(android.content.Context);
+    method public void closeVdac(java.lang.String);
+    method public java.lang.String[] getAvailableResolutions();
+    method public java.lang.String getBestResolution();
+    method public int getFullHeightPosition();
+    method public int getFullWidthPosition();
+    method public static int[] getPosition(java.lang.String);
+    method public java.lang.String getRequestedResolution();
+    method public java.lang.String getResolution();
+    method public int[] getResolutionPosition();
+    method public void hdmiPlugged();
+    method public void hdmiUnplugged();
+    method public boolean isFreescaleClosed();
+    method public static boolean isHdmiPlugged();
+    method public void resetPosition();
+    method public void savePosition(int, int, int, int);
+    method public void setDigitalAudioValue(java.lang.String);
+    method public void setOutputMode(java.lang.String);
+    method public void setOutputWithoutFreescale(java.lang.String);
+    method public void setPosition(int, int, int, int);
+    method public void syncCompensation();
+    field public static final java.lang.String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
+    field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
+    field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;
+    field public static final java.lang.String DISPLAY_MODE = "/sys/class/display/mode";
+    field public static final java.lang.String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
+    field public static final java.lang.String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";
+    field public static final java.lang.String HDMIONLY_PROP = "ro.platform.hdmionly";
+    field public static final java.lang.String HDMI_PLUGGED = "/sys/class/aml_mod/mod_off";
+    field public static final java.lang.String HDMI_SUPPORT_LIST = "/sys/class/amhdmitx/amhdmitx0/disp_cap";
+    field public static final java.lang.String HDMI_UNPLUGGED = "/sys/class/aml_mod/mod_on";
+    field public static final int OUTPUT1080_FULL_HEIGHT = 1080; // 0x438
+    field public static final int OUTPUT1080_FULL_WIDTH = 1920; // 0x780
+    field public static final int OUTPUT480_FULL_HEIGHT = 480; // 0x1e0
+    field public static final int OUTPUT480_FULL_WIDTH = 720; // 0x2d0
+    field public static final int OUTPUT576_FULL_HEIGHT = 576; // 0x240
+    field public static final int OUTPUT576_FULL_WIDTH = 720; // 0x2d0
+    field public static final int OUTPUT720_FULL_HEIGHT = 720; // 0x2d0
+    field public static final int OUTPUT720_FULL_WIDTH = 1280; // 0x500
+    field public static final java.lang.String OUTPUT_AXIS = "/sys/class/display/axis";
+    field public static final java.lang.String PPSCALER_RECT = "/sys/class/ppmgr/ppscaler_rect";
+    field public static final java.lang.String REQUEST_2X_SCALE = "/sys/class/graphics/fb0/request2XScale";
+    field public static final java.lang.String SCALE_AXIS_OSD0 = "/sys/class/graphics/fb0/scale_axis";
+    field public static final java.lang.String SCALE_AXIS_OSD1 = "/sys/class/graphics/fb1/scale_axis";
+    field public static final java.lang.String SCALE_OSD1 = "/sys/class/graphics/fb1/scale";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_HEIGHT = "ubootenv.var.1080ioutputheight";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_WIDTH = "ubootenv.var.1080ioutputwidth";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_X = "ubootenv.var.1080ioutputx";
+    field public static final java.lang.String UBOOT_1080I_OUTPUT_Y = "ubootenv.var.1080ioutputy";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_HEIGHT = "ubootenv.var.1080poutputheight";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_WIDTH = "ubootenv.var.1080poutputwidth";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_X = "ubootenv.var.1080poutputx";
+    field public static final java.lang.String UBOOT_1080P_OUTPUT_Y = "ubootenv.var.1080poutputy";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_HEIGHT = "ubootenv.var.480ioutputheight";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_WIDTH = "ubootenv.var.480ioutputwidth";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_X = "ubootenv.var.480ioutputx";
+    field public static final java.lang.String UBOOT_480I_OUTPUT_Y = "ubootenv.var.480ioutputy";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_HEIGHT = "ubootenv.var.480poutputheight";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_WIDTH = "ubootenv.var.480poutputwidth";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_X = "ubootenv.var.480poutputx";
+    field public static final java.lang.String UBOOT_480P_OUTPUT_Y = "ubootenv.var.480poutputy";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_HEIGHT = "ubootenv.var.576ioutputheight";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_WIDTH = "ubootenv.var.576ioutputwidth";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_X = "ubootenv.var.576ioutputx";
+    field public static final java.lang.String UBOOT_576I_OUTPUT_Y = "ubootenv.var.576ioutputy";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_HEIGHT = "ubootenv.var.576poutputheight";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_WIDTH = "ubootenv.var.576poutputwidth";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_X = "ubootenv.var.576poutputx";
+    field public static final java.lang.String UBOOT_576P_OUTPUT_Y = "ubootenv.var.576poutputy";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_HEIGHT = "ubootenv.var.720ioutputheight";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_WIDTH = "ubootenv.var.720ioutputwidth";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_X = "ubootenv.var.720ioutputx";
+    field public static final java.lang.String UBOOT_720I_OUTPUT_Y = "ubootenv.var.720ioutputy";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_HEIGHT = "ubootenv.var.720poutputheight";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_WIDTH = "ubootenv.var.720poutputwidth";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_X = "ubootenv.var.720poutputx";
+    field public static final java.lang.String UBOOT_720P_OUTPUT_Y = "ubootenv.var.720poutputy";
+    field public static final java.lang.String UBOOT_COMMONMODE = "ubootenv.var.commonmode";
+    field public static final java.lang.String UBOOT_CVBSMODE = "ubootenv.var.cvbsmode";
+    field public static final java.lang.String UBOOT_DIGITAL_AUDIO_OUTPUT = "ubootenv.var.digitaudiooutput";
+    field public static final java.lang.String VIDEO_AXIS = "/sys/class/video/axis";
+  }
+
+  public final class HdmiManagerGlobal {
+    method public static android.hardware.display.HdmiManagerGlobal getInstance();
+  }
+
+  public abstract interface IHdmiManager implements android.os.IInterface {
+    method public abstract void closeVdac(java.lang.String) throws android.os.RemoteException;
+    method public abstract java.lang.String[] getAvailableResolutions() throws android.os.RemoteException;
+    method public abstract java.lang.String getBestResolution() throws android.os.RemoteException;
+    method public abstract int getFullHeightPosition() throws android.os.RemoteException;
+    method public abstract int getFullWidthPosition() throws android.os.RemoteException;
+    method public abstract int[] getPosition(java.lang.String) throws android.os.RemoteException;
+    method public abstract java.lang.String getRequestedResolution() throws android.os.RemoteException;
+    method public abstract java.lang.String getResolution() throws android.os.RemoteException;
+    method public abstract int[] getResolutionPosition() throws android.os.RemoteException;
+    method public abstract void hdmiPlugged() throws android.os.RemoteException;
+    method public abstract void hdmiUnplugged() throws android.os.RemoteException;
+    method public abstract boolean isFreescaleClosed() throws android.os.RemoteException;
+    method public abstract boolean isHdmiPlugged() throws android.os.RemoteException;
+    method public abstract java.lang.String readSupportList(java.lang.String) throws android.os.RemoteException;
+    method public abstract void resetPosition() throws android.os.RemoteException;
+    method public abstract void savePosition(int, int, int, int) throws android.os.RemoteException;
+    method public abstract void setDigitalAudioValue(java.lang.String) throws android.os.RemoteException;
+    method public abstract void setOutputMode(java.lang.String) throws android.os.RemoteException;
+    method public abstract void setOutputWithoutFreescale(java.lang.String) throws android.os.RemoteException;
+    method public abstract void setPosition(int, int, int, int) throws android.os.RemoteException;
+    method public abstract void syncCompensation() throws android.os.RemoteException;
+  }
+
+  public static abstract class IHdmiManager.Stub extends android.os.Binder implements android.hardware.display.IHdmiManager {
+    ctor public IHdmiManager.Stub();
+    method public android.os.IBinder asBinder();
+    method public static android.hardware.display.IHdmiManager asInterface(android.os.IBinder);
+    method public boolean onTransact(int, android.os.Parcel, android.os.Parcel, int) throws android.os.RemoteException;
   }
 
   public final class VirtualDisplay {
@@ -21981,7 +22101,7 @@ package android.renderscript {
   }
 
   public class BaseObj {
-    method public synchronized void destroy();
+    method public void destroy();
     method public java.lang.String getName();
     method public void setName(java.lang.String);
   }

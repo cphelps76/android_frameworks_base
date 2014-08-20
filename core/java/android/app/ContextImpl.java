@@ -53,6 +53,7 @@ import android.hardware.SerialManager;
 import android.hardware.SystemSensorManager;
 import android.hardware.camera2.CameraManager;
 import android.hardware.display.DisplayManager;
+import android.hardware.display.HdmiManager;
 import android.hardware.input.InputManager;
 import android.hardware.usb.IUsbManager;
 import android.hardware.usb.UsbManager;
@@ -428,6 +429,11 @@ class ContextImpl extends Context {
         registerService(INPUT_METHOD_SERVICE, new StaticServiceFetcher() {
                 public Object createStaticService() {
                     return InputMethodManager.getInstance();
+                }});
+
+        registerService(HDMI_SERVICE, new ServiceFetcher() {
+                public Object createService(ContextImpl ctx) {
+                    return new HdmiManager(ctx.getOuterContext());
                 }});
 
         registerService(TEXT_SERVICES_MANAGER_SERVICE, new ServiceFetcher() {
