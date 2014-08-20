@@ -114,6 +114,13 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".HdmiStateChangeReceiver" androidprv:primaryUserOnly="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.HDMI_HW_PLUGGED" />
+            </intent-filter>
+        </receiver>
+
         <activity android:name=".usb.UsbStorageActivity"
                   android:label="@*android:string/usb_storage_activity_title"
                   android:excludeFromRecents="true">

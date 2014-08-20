@@ -21,6 +21,7 @@ import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.display.HdmiManager;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -32,9 +33,11 @@ public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "SystemUIBootReceiver";
 
     private SystemWriteManager mSw;
+    private HdmiManager mHdmiManager;
 
     public void onReceive(final Context context, Intent intent) {
         mSw = (SystemWriteManager) context.getSystemService("system_write");
+        mHdmiManager = (HdmiManager) context.getSystemService(Context.HDMI_SERVICE);
 
         try {
             // Start the load average overlay, if activated
@@ -49,5 +52,8 @@ public class BootReceiver extends BroadcastReceiver {
 
         // Lock orientation to landscape
         mSw.setProperty("ubootenv.var.has.accelerometer", "false");
+
+        // Adjust resolution and position
+        mHdmiManager.hdmiPlugged();
     }
 }
