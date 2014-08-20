@@ -547,7 +547,7 @@ public class HdmiManager {
             mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
             if (newMode.contains("1080")) {
                 setDensity(newMode);
-                setDisplaySize(1920, 1080);
+                etDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
                 mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
                 mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1919 1079");
                 mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
@@ -558,7 +558,7 @@ public class HdmiManager {
                 }
             } else if (newMode.contains("720")) {
                 setDensity(newMode);
-                setDisplaySize(1280, 720);
+                setDisplaySize(OUTPUT720_FULL_WIDTH, OUTPUT720_FULL_HEIGHT);
                 mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
                 mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
                 mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
@@ -569,7 +569,11 @@ public class HdmiManager {
                 }
             } else if (newMode.contains("576") || newMode.contains("480")) {
                 setDensity(newMode);
-                setDisplaySize(1280, 720);
+                if (newMode.contains("576")) {
+                    setDisplaySize(OUTPUT576_FULL_WIDTH, OUTPUT576_FULL_HEIGHT);
+                } else {
+                    setDisplaySize(OUTPUT480_FULL_WIDTH, OUTPUT480_FULL_HEIGHT);
+                }
                 mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
                 if (newMode.equals("576i") || newMode.equals("480i")) {
                     mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 721");
