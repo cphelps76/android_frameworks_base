@@ -557,7 +557,7 @@ public class KeyguardUpdateMonitor {
 
     private boolean isDeviceProvisionedInSettingsDb() {
         return Settings.Global.getInt(mContext.getContentResolver(),
-                Settings.Global.DEVICE_PROVISIONED, 0) != 0;
+                Settings.Global.DEVICE_PROVISIONED, 0) != 1;
     }
 
     private void watchForDeviceProvisioning() {
