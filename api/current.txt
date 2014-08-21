@@ -10938,8 +10938,10 @@ package android.hardware.display {
     method public void hdmiPlugged();
     method public void hdmiUnplugged();
     method public boolean isFreescaleClosed();
+    method public boolean isHdmiOnly();
     method public static boolean isHdmiPlugged();
-    method public static void openVdac(java.lang.String);
+    method public boolean isRealOutputMode();
+    method public void openVdac(java.lang.String);
     method public void resetPosition();
     method public void saveNewModeToProp(java.lang.String);
     method public void savePosition(int, int, int, int);

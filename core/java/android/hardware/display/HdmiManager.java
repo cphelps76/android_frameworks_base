@@ -125,13 +125,13 @@ public class HdmiManager {
     public void hdmiUnplugged() {
         Log.d(TAG, "HDMI unplugged");
         String cvbsMode = mSystemWriteManager.getPropertyString(UBOOT_CVBSMODE, "480cvbs");
-        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
-            if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
+        if (isRealOutputMode()) {
+            if (isHdmiOnly()) {
                 setOutputMode(cvbsMode);
                 mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
             }
         } else {
-            if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
+            if (isHdmiOnly()) {
                 if (isFreescaleClosed()) {
                     setOutputWithoutFreescale(cvbsMode);
                 } else {
@@ -150,12 +150,12 @@ public class HdmiManager {
      */
     public void hdmiPlugged() {
         Log.d(TAG, "HDMI plugged");
-        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
-            if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
+        if (isRealOutputMode()) {
+            if (isHdmiOnly()) {
                 mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
                 setOutputMode(getRequestedResolution());
             }
-        } else if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, true)) {
+        } else if (isHdmiOnly()) {
             mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
             String resolution = getRequestedResolution();
 
@@ -547,7 +547,7 @@ public class HdmiManager {
             mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
             if (newMode.contains("1080")) {
                 setDensity(newMode);
-                etDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
+                setDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
                 mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
                 mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1919 1079");
                 mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
@@ -596,6 +596,14 @@ public class HdmiManager {
 
         mSystemWriteManager.setProperty(UBOOT_COMMONMODE, newMode);
         saveNewModeToProp(newMode);
+    }
+
+    public boolean isRealOutputMode() {
+        return mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false);
+    }
+
+    public boolean isHdmiOnly() {
+        return mSystemWriteManager.getPropertyBoolean(HDMIONLY, true);
     }
 
     public String getDisplayAxisByMode(String newMode) {
@@ -722,15 +730,15 @@ public class HdmiManager {
      * @param  mode resolution
      */
     public void closeVdac(String mode) {
-        if (mSystemWriteManager.getPropertyBoolean(HDMIONLY, false)) {
+        if (isHdmiOnly()) {
             if (!mode.contains("cvbs")) {
                 mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
             }
         }
     }
 
-    public static void openVdac(String mode){
-        if(mSystemWriteManager.getPropertyBoolean(HDMIONLY,false)) {
+    public void openVdac(String mode){
+        if(isHdmiOnly()) {
             if(mode.contains("cvbs")) {
                 mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED,"vdac");
             }
