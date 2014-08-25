@@ -10172,6 +10172,7 @@ package android.hardware.display {
     field public static final java.lang.String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
     field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
     field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;
+    field public static final java.lang.String[] CVBS_SUPPORT_LIST;
     field public static final java.lang.String DISPLAY_MODE = "/sys/class/display/mode";
     field public static final java.lang.String FREESCALE_FB0 = "/sys/class/graphics/fb0/free_scale";
     field public static final java.lang.String FREESCALE_FB1 = "/sys/class/graphics/fb1/free_scale";

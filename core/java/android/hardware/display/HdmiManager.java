@@ -1,3 +1,22 @@
+/*
+ *              Copyright (C) 2014 Matricom
+ * Hardware abstraction layer for the Display of Amlogic STBs
+ *
+ *                     VERSION 2.1
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package android.hardware.display;
 
 import android.app.SystemWriteManager;
@@ -82,6 +101,8 @@ public class HdmiManager {
             "720p50hz", "1080i50hz", "1080p50hz", "480cvbs", "576cvbs"
     };
 
+    public static final String[] CVBS_SUPPORT_LIST = { "480cvbs", "576cvbs" };
+
     // 480p values
     public static final int OUTPUT480_FULL_WIDTH = 720;
     public static final int OUTPUT480_FULL_HEIGHT = 480;
@@ -110,12 +131,13 @@ public class HdmiManager {
     public void hdmiUnplugged() {
         Log.d(TAG, "HDMI unplugged");
         if (mSystemWriteManager.getPropertyBoolean(HDMIONLY_PROP, true)) {
-            String cvbsMode = mSystemWriteManager.getPropertyString(UBOOT_CVBSMODE, "480cvbs");
+            String resolution = getRequestedResolution();
             if (isFreescaleClosed()) {
-                setOutputWithoutFreescale(cvbsMode);
+                setOutputWithoutFreescale(resolution);
             } else {
-                setOutputMode(cvbsMode);
+                setOutputMode(resolution);
             }
+            if (isCompensated()) syncCompensation();
             mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
             mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
         }
@@ -161,6 +183,9 @@ public class HdmiManager {
         String[] resolutionsToParse = null;
         ArrayList<String> resolutionsArray = new ArrayList<String>();
         String rawList = readSupportList(HDMI_SUPPORT_LIST);
+        if (getResolution().contains("cvbs")) {
+            rawList = CVBS_SUPPORT_LIST[0] + "|" + CVBS_SUPPORT_LIST[1];
+        }
         if (rawList != null) {
             resolutionsToParse = rawList.split("\\|");
         }
@@ -178,6 +203,17 @@ public class HdmiManager {
         }
         String[] resolutions = new String[resolutionsArray.size()];
         return resolutionsArray.toArray(resolutions);
+    }
+
+    private boolean isResolutionAvailable(String resolution) {
+        String[] resolutions = getAvailableResolutions();
+
+        for (String res : resolutions) {
+            if (resolution.equals(res)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -216,7 +252,7 @@ public class HdmiManager {
             // if not available fall back to getResolution() value
             String userResolution = Settings.Secure.getString(mContext.getContentResolver(),
                     Settings.Secure.HDMI_RESOLUTION);
-            resolution = (userResolution != null ? userResolution : getResolution());
+            resolution = (isResolutionAvailable(userResolution) ? userResolution : getResolution());
         }
         return resolution;
     }
@@ -226,21 +262,33 @@ public class HdmiManager {
      * @return true if width != 100 && height  != 100; else false
      */
     private boolean isCompensated() {
-        int width = Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_WIDTH, 100);
-        int height = Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_HEIGHT, 100);
-        boolean widthOffset = width != 100;
-        boolean heightOffset = height != 100;
+        int left = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_LEFT, 100);
+        int top = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_LEFT, 100);
+        int right = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_RIGHT, 100);
+        int bottom = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_BOTTOM, 100);
+        boolean leftOffset = left != 100;
+        boolean topOffset = top != 100;
+        boolean rightOffset = right != 100;
+        boolean bottomOffset = bottom != 100;
 
-        if (widthOffset) {
-            Log.d(TAG, "Overscan is compensated for width. Adjusting back to " + width);
+        if (leftOffset) {
+            Log.d(TAG, "Overscan is compensated for left. Adjusting back to " + left);
         }
-        if (heightOffset) {
-            Log.d(TAG, "Overscan is compensated for height. Adjusting back to " + height);
+        if (topOffset) {
+            Log.d(TAG, "Overscan is compensated for top. Adjusting back to " + top);
+        }
+        if (rightOffset) {
+            Log.d(TAG, "Overscan is compensated for right. Adjusting back to " + right);
+        }
+        if (bottomOffset) {
+            Log.d(TAG, "Overscan is compensated for bottom. Adjusting back to " + bottom);
         }
 
-        return (widthOffset || heightOffset) ? true: false;
+        return (leftOffset || topOffset || rightOffset || bottomOffset) ? true: false;
     }
 
     /**
@@ -275,7 +323,7 @@ public class HdmiManager {
      */
     public void savePosition(int left, int top, int right, int bottom) {
         String position = getResolution();
-        if (position.equals("480i")) {
+        if (position.equals("480i") || position.equals("480cvbs")) {
             mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_X, String.valueOf(left));
             mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_WIDTH, String.valueOf(right));
@@ -285,7 +333,7 @@ public class HdmiManager {
             mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_WIDTH, String.valueOf(right));
             mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_HEIGHT, String.valueOf(bottom));
-        } else if (position.equals("576i")) {
+        } else if (position.equals("576i") || position.equals("576cvbs")) {
             mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_X, String.valueOf(left));
             mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_WIDTH, String.valueOf(right));
@@ -320,9 +368,13 @@ public class HdmiManager {
         // reset position to 100% of current resolution
         int[] position = getResolutionPosition();
         Settings.Secure.putInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_WIDTH, 100);
+                Settings.Secure.HDMI_OVERSCAN_LEFT, 100);
         Settings.Secure.putInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_HEIGHT, 100);
+                Settings.Secure.HDMI_OVERSCAN_TOP, 100);
+        Settings.Secure.putInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_RIGHT, 100);
+        Settings.Secure.putInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_BOTTOM, 100);
 
         setPosition(position[0], position[1], position[2], position[3]);
         savePosition(position[0], position[1], position[2], position[3]);
@@ -360,6 +412,7 @@ public class HdmiManager {
         }
         switch (index) {
             case 0:
+            case 10:
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_Y, 0);
                 currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, 720);
@@ -372,6 +425,7 @@ public class HdmiManager {
                 currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_HEIGHT, 480);
                 break;
             case 2:
+            case 11:
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_Y, 0);
                 currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, 720);
@@ -403,18 +457,6 @@ public class HdmiManager {
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_Y, 0);
                 currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_WIDTH, 1920);
                 currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_HEIGHT, 1080);
-                break;
-            case 10:
-                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_X, 0);
-                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_HEIGHT, 480);
-                break;
-            case 11:
-                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_X, 0);
-                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_HEIGHT, 576);
                 break;
             default:
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_X, 0);
@@ -494,18 +536,25 @@ public class HdmiManager {
         String[] resolutions = null;
         String resolution = "720p";
         String rawList = readSupportList(HDMI_SUPPORT_LIST);
+        if (getResolution().contains("cvbs")) {
+            rawList = CVBS_SUPPORT_LIST[0] + "|" + CVBS_SUPPORT_LIST[1];
+        }
         Log.d(TAG, "Raw supported resolutions: " + rawList);
         if (rawList != null) {
             resolutions = rawList.split("\\|");
         }
         if (resolutions != null) {
-            for (int i = 0; i < resolutions.length; i++) {
-                Log.d(TAG, "checking " + resolutions[i]);
-                if (resolutions[i].contains("*")) {
-                    Log.d(TAG, "* found - setting as bestResolution");
-                    // best mode
-                    String res = resolutions[i];
-                    resolution = res.substring(0, res.length()-1);
+            if (getResolution().contains("cvbs")) {
+                resolution = "576cvbs";
+            } else {
+                for (int i = 0; i < resolutions.length; i++) {
+                    Log.d(TAG, "checking " + resolutions[i]);
+                    if (resolutions[i].contains("*")) {
+                        Log.d(TAG, "* found - setting as bestResolution");
+                        // best mode
+                        String res = resolutions[i];
+                        resolution = res.substring(0, res.length()-1);
+                    }
                 }
             }
         }
