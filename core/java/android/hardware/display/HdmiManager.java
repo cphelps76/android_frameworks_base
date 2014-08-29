@@ -1,3 +1,18 @@
+/*
+ *         Copyright (C) 2014 Matricom
+ *
+ * HdmiManager API - used for sysfs interaction to adjust
+ *    the display resolution, position, and digital audio
+ *    for the TV being used.
+ *
+ *                 VERSION 3.1
+ *
+ * * Licensed under the GNU GPLv2 license
+ *
+ * The text of the license can be found in the LICENSE file
+ * or at https://www.gnu.org/licenses/gpl-2.0.txt
+ */
+
 package android.hardware.display;
 
 import android.app.SystemWriteManager;
@@ -87,11 +102,30 @@ public class HdmiManager {
     public static final String UBOOT_1080P_OUTPUT_Y = "ubootenv.var.1080poutputy";
     public static final String UBOOT_1080P_OUTPUT_WIDTH = "ubootenv.var.1080poutputwidth";
     public static final String UBOOT_1080P_OUTPUT_HEIGHT = "ubootenv.var.1080poutputheight";
+    public static final String UBOOT_4K2K24HZ_OUTPUT_X = "ubootenv.var.4k2k24hz_x";
+    public static final String UBOOT_4K2K24HZ_OUTPUT_Y = "ubootenv.var.4k2k24hz_y";
+    public static final String UBOOT_4K2K24HZ_OUTPUT_WIDTH = "ubootenv.var.4k2k24hz_width";
+    public static final String UBOOT_4K2K24HZ_OUTPUT_HEIGHT = "ubootenv.var.4k2k24hz_height";
+    public static final String UBOOT_4K2K25HZ_OUTPUT_X = "ubootenv.var.4k2k25hz_x";
+    public static final String UBOOT_4K2K25HZ_OUTPUT_Y = "ubootenv.var.4k2k25hz_y";
+    public static final String UBOOT_4K2K25HZ_OUTPUT_WIDTH = "ubootenv.var.4k2k25hz_width";
+    public static final String UBOOT_4K2K25HZ_OUTPUT_HEIGHT = "ubootenv.var.4k2k25hz_height";
+    public static final String UBOOT_4K2K30HZ_OUTPUT_X = "ubootenv.var.4k2k30hz_x";
+    public static final String UBOOT_4K2K30HZ_OUTPUT_Y = "ubootenv.var.4k2k30hz_y";
+    public static final String UBOOT_4K2K30HZ_OUTPUT_WIDTH = "ubootenv.var.4k2k30hz_width";
+    public static final String UBOOT_4K2K30HZ_OUTPUT_HEIGHT = "ubootenv.var.4k2k30hz_height";
+    public static final String UBOOT_4K2KSMPTE_OUTPUT_X = "ubootenv.var.4k2ksmpte_x";
+    public static final String UBOOT_4K2KSMPTE_OUTPUT_Y = "ubootenv.var.4k2ksmpte_y";
+    public static final String UBOOT_4K2KSMPTE_OUTPUT_WIDTH = "ubootenv.var.4k2ksmpte_width";
+    public static final String UBOOT_4K2KSMPTE_OUTPUT_HEIGHT = "ubootenv.var.4k2ksmpte_height";
 
     public static final String[] COMMON_MODE_VALUE_LIST =  {
             "480i", "480p", "576i", "576p", "720p", "1080i", "1080p",
-            "720p50hz", "1080i50hz", "1080p50hz", "480cvbs", "576cvbs"
+            "720p50hz", "1080i50hz", "1080p50hz", "480cvbs", "576cvbs",
+            "4k2k24hz", "4k2k25hz", "4k2k30hz", "4k2ksmpte"
     };
+
+    public static final String[] CVBS_SUPPORT_LIST = { "480cvbs", "576cvbs" };
 
     // 480p values
     public static final int OUTPUT480_FULL_WIDTH = 720;
@@ -109,6 +143,12 @@ public class HdmiManager {
     public static final int OUTPUT1080_FULL_WIDTH = 1920;
     public static final int OUTPUT1080_FULL_HEIGHT = 1080;
     public static final String DISPLAY_AXIS_1080 = " 1920 1080 ";
+    // 4k2k values
+    public static final int OUTPUT4K2K_FULL_WIDTH = 3840;
+    public static final int OUTPUT4K2K_FULL_HEIGHT = 2160;
+    //4k2k smpte values
+    public static final int OUTPUT4K2KSMPTE_FULL_WIDTH = 4096;
+    public static final int OUTPUT4K2KSMPTE_FULL_HEIGHT = 2160;
 
     private Context mContext;
     private static SystemWriteManager mSystemWriteManager;
@@ -188,6 +228,9 @@ public class HdmiManager {
         String[] resolutionsToParse = null;
         ArrayList<String> resolutionsArray = new ArrayList<String>();
         String rawList = readSupportList(HDMI_SUPPORT_LIST);
+        if (getResolution().contains("cvbs")) {
+            rawList = CVBS_SUPPORT_LIST[0] + "|" + CVBS_SUPPORT_LIST[1];
+        }
         if (rawList != null) {
             resolutionsToParse = rawList.split("\\|");
         }
@@ -223,6 +266,14 @@ public class HdmiManager {
         } else if (resolution.contains("1080")) {
             position[2] = OUTPUT1080_FULL_WIDTH;
             position[3] = OUTPUT1080_FULL_HEIGHT;
+        } else if (resolution.contains("4k2k")) {
+            if (resolution.contains("smpte")) {
+                position[2] = OUTPUT4K2KSMPTE_FULL_WIDTH;
+                position[3] = OUTPUT4K2KSMPTE_FULL_HEIGHT;
+            } else {
+                position[2] = OUTPUT4K2K_FULL_WIDTH;
+                position[3] = OUTPUT4K2K_FULL_HEIGHT;
+            }
         }
         return position;
     }
@@ -287,9 +338,17 @@ public class HdmiManager {
      * @param bottom height
      */
     public void setPosition(int left, int top, int right, int bottom) {
-       String position = String.valueOf(left) + " " + String.valueOf(top) + " "
-                       + String.valueOf(right) + " " + String.valueOf(bottom) + " 0";
-       mSystemWriteManager.writeSysfs(PPSCALER_RECT, position);
+        String position = String.valueOf(left) + " " + String.valueOf(top) + " "
+                        + String.valueOf(right) + " " + String.valueOf(bottom) + " 0";
+        String windowAxis = String.valueOf(left) + " " + String.valueOf(top) + " "
+                        + (right - 1) + " " +(bottom - 1);
+        if (isRealOutputMode()) {
+            mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+            mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+        } else {
+            mSystemWriteManager.writeSysfs(PPSCALER_RECT, position);
+            mSystemWriteManager.writeSysfs(UPDATE_FREESCALE, "1");
+        }
     }
 
     /**
@@ -302,7 +361,7 @@ public class HdmiManager {
      */
     public void savePosition(int left, int top, int right, int bottom) {
         String position = getResolution();
-        if (position.equals("480i")) {
+        if (position.equals("480i") || position.equals("480cvbs")) {
             mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_X, String.valueOf(left));
             mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_480I_OUTPUT_WIDTH, String.valueOf(right));
@@ -312,7 +371,7 @@ public class HdmiManager {
             mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_WIDTH, String.valueOf(right));
             mSystemWriteManager.setProperty(UBOOT_480P_OUTPUT_HEIGHT, String.valueOf(bottom));
-        } else if (position.equals("576i")) {
+        } else if (position.equals("576i") || position.equals("576cvbs")) {
             mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_X, String.valueOf(left));
             mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_576I_OUTPUT_WIDTH, String.valueOf(right));
@@ -322,7 +381,7 @@ public class HdmiManager {
             mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_WIDTH, String.valueOf(right));
             mSystemWriteManager.setProperty(UBOOT_576P_OUTPUT_HEIGHT, String.valueOf(bottom));
-        } else if (position.contains("1080I")) {
+        } else if (position.contains("1080i")) {
             mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_X, String.valueOf(left));
             mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_1080I_OUTPUT_WIDTH, String.valueOf(right));
@@ -332,11 +391,47 @@ public class HdmiManager {
             mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_WIDTH, String.valueOf(right));
             mSystemWriteManager.setProperty(UBOOT_1080P_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("4k2k24hz")) {
+            mSystemWriteManager.setProperty(UBOOT_4K2K24HZ_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_4K2K24HZ_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_4K2K24HZ_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_4K2K24HZ_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("4k2k25hz")) {
+            mSystemWriteManager.setProperty(UBOOT_4K2K25HZ_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_4K2K25HZ_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_4K2K25HZ_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_4K2K25HZ_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("4k2k30hz")) {
+            mSystemWriteManager.setProperty(UBOOT_4K2K30HZ_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_4K2K30HZ_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_4K2K30HZ_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_4K2K30HZ_OUTPUT_HEIGHT, String.valueOf(bottom));
+        } else if (position.equals("4k2ksmpte")) {
+            mSystemWriteManager.setProperty(UBOOT_4K2KSMPTE_OUTPUT_X, String.valueOf(left));
+            mSystemWriteManager.setProperty(UBOOT_4K2KSMPTE_OUTPUT_Y, String.valueOf(top));
+            mSystemWriteManager.setProperty(UBOOT_4K2KSMPTE_OUTPUT_WIDTH, String.valueOf(right));
+            mSystemWriteManager.setProperty(UBOOT_4K2KSMPTE_OUTPUT_HEIGHT, String.valueOf(bottom));
         } else {
             mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_X, String.valueOf(left));
             mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_Y, String.valueOf(top));
             mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_WIDTH, String.valueOf(right));
             mSystemWriteManager.setProperty(UBOOT_720P_OUTPUT_HEIGHT, String.valueOf(bottom));
+        }
+
+        if (isRealOutputMode()) {
+            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
+            if ((position.contains("720") || position.contains("1080"))
+                    && left == 0 && top == 0) {
+                mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x0");
+            }
+
+            String output = String.valueOf(left) + " " + String.valueOf(top) + getDisplayAxisByMode(position)
+                    + String.valueOf(left) + " " + String.valueOf(top) + " " + 18 + " " + 18;
+            String video = String.valueOf(left) + " " + String.valueOf(left) + " " + (left + right - 1)
+                    + " " + (top + bottom -1);
+            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, output);
+            mSystemWriteManager.writeSysfs(VIDEO_AXIS, video);
+            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
         }
     }
 
@@ -386,68 +481,91 @@ public class HdmiManager {
                 index = i;
         }
         switch (index) {
-            case 0:
+            case 0: // 480i
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_HEIGHT, 480);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, OUTPUT480_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_HEIGHT, OUTPUT480_FULL_HEIGHT);
                 break;
-            case 1:
+            case 1: // 480p
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_HEIGHT, 480);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_WIDTH, OUTPUT480_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_HEIGHT, OUTPUT480_FULL_HEIGHT);
                 break;
-            case 2:
+            case 2: // 576i
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_HEIGHT, 576);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, OUTPUT576_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_HEIGHT, OUTPUT576_FULL_HEIGHT);
                 break;
-            case 3:
+            case 3: // 576p
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576P_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576P_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576P_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576P_OUTPUT_HEIGHT, 576);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576P_OUTPUT_WIDTH, OUTPUT576_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576P_OUTPUT_HEIGHT, OUTPUT576_FULL_HEIGHT);
                 break;
-            case 4:
-            case 7:
+            case 4: // 720p
+            case 7: // 720p 50Hz
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_WIDTH, 1280);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_HEIGHT, 720);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_WIDTH, OUTPUT720_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_HEIGHT, OUTPUT720_FULL_HEIGHT);
                 break;
-            case 5:
-            case 8:
+            case 5: // 1080i
+            case 8: // 1080i 50Hz
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_1080I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_1080I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_1080I_OUTPUT_WIDTH, 1920);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_1080I_OUTPUT_HEIGHT, 1080);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_1080I_OUTPUT_WIDTH, OUTPUT1080_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_1080I_OUTPUT_HEIGHT, OUTPUT1080_FULL_HEIGHT);
                 break;
-            case 6:
-            case 9:
+            case 6: // 1080p
+            case 9: // 1080p 50Hz
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_WIDTH, 1920);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_HEIGHT, 1080);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_WIDTH, OUTPUT1080_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_HEIGHT, OUTPUT1080_FULL_HEIGHT);
                 break;
-            case 10:
+            case 10: // 480cvbs
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_HEIGHT, 480);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, OUTPUT480_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_HEIGHT, OUTPUT480_FULL_HEIGHT);
                 break;
-            case 11:
+            case 11: // 576cvbs
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, 720);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_HEIGHT, 576);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, OUTPUT576_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_HEIGHT, OUTPUT576_FULL_HEIGHT);
                 break;
+            case 12: // 4k2k 24Hz
+                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K24HZ_OUTPUT_X, 0);
+                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K24HZ_OUTPUT_Y, 0);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K24HZ_OUTPUT_WIDTH, OUTPUT4K2K_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K24HZ_OUTPUT_HEIGHT, OUTPUT4K2K_FULL_HEIGHT);
+                break;
+            case 13: // 4k2k 25Hz
+                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K25HZ_OUTPUT_X, 0);
+                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K25HZ_OUTPUT_Y, 0);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K25HZ_OUTPUT_WIDTH, OUTPUT4K2K_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K25HZ_OUTPUT_HEIGHT, OUTPUT4K2K_FULL_HEIGHT);
+                break;
+            case 14: // 4k2k 30Hz
+                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K30HZ_OUTPUT_X, 0);
+                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K30HZ_OUTPUT_Y, 0);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K30HZ_OUTPUT_WIDTH, OUTPUT4K2K_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K30HZ_OUTPUT_HEIGHT, OUTPUT4K2K_FULL_HEIGHT);
+                break;
+            case 15: // 4k2k smpte
+                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_4K2KSMPTE_OUTPUT_X, 0);
+                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_4K2KSMPTE_OUTPUT_Y, 0);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_4K2KSMPTE_OUTPUT_WIDTH, OUTPUT4K2KSMPTE_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_4K2KSMPTE_OUTPUT_HEIGHT, OUTPUT4K2KSMPTE_FULL_HEIGHT);
             default:
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_WIDTH, 1280);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_HEIGHT, 720);
+                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_WIDTH, OUTPUT720_FULL_WIDTH);
+                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_HEIGHT, OUTPUT720_FULL_HEIGHT);
                 break;
         }
         Log.d(TAG, "getPosition says position is " + currentPosition[0] + " " + currentPosition[1] + " " + currentPosition[2] + " " + currentPosition[3]);
@@ -459,6 +577,7 @@ public class HdmiManager {
      * @param newMode Resolution desired
      */
     public void setOutputWithoutFreescale(String newMode) {
+        Log.d(TAG, "Setting " + newMode + " as output without freescale");
         if (newMode.contains("cvbs")) {
             openVdac(newMode);
         } else {
@@ -477,7 +596,7 @@ public class HdmiManager {
 
         if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
             setDensity(newMode);
-            if (newMode.contains("1080")) {
+            if (newMode.contains("1080") || newMode.contains("4k2k")) {
                 setDisplaySize(1920, 1080);
             } else {
                 setDisplaySize(1280, 720);
@@ -519,6 +638,7 @@ public class HdmiManager {
             Log.d(TAG, "newMode=" + newMode + " == currentMode=" + currentMode);
             return;
         }
+        Log.d(TAG, "Setting " + newMode + " as output");
 
         if (newMode.contains("cvbs")) {
             openVdac(newMode);
@@ -545,7 +665,17 @@ public class HdmiManager {
             mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
             // close freescale
             mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
-            if (newMode.contains("1080")) {
+            if (newMode.contains("4k2k")) {
+                // set to 1080p as base
+                setDensity(newMode);
+                setDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
+
+                // open freescale and scale up to 4k
+                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
+                mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1919 1079");
+                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+                mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+            } else if (newMode.contains("1080")) {
                 setDensity(newMode);
                 setDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
                 mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
@@ -599,11 +729,15 @@ public class HdmiManager {
     }
 
     public boolean isRealOutputMode() {
-        return mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false);
+        boolean isReal = mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false);
+        Log.d(TAG, "isRealOutputMode=" + isReal);
+        return isReal;
     }
 
     public boolean isHdmiOnly() {
-        return mSystemWriteManager.getPropertyBoolean(HDMIONLY, true);
+        boolean isHdmiOnly = mSystemWriteManager.getPropertyBoolean(HDMIONLY, true);
+        Log.d(TAG, "isHdmiOnly=" + isHdmiOnly);
+        return isHdmiOnly;
     }
 
     public String getDisplayAxisByMode(String newMode) {
@@ -690,18 +824,25 @@ public class HdmiManager {
         String[] resolutions = null;
         String resolution = "720p";
         String rawList = readSupportList(HDMI_SUPPORT_LIST);
+        if (getResolution().contains("cvbs")) {
+            rawList = CVBS_SUPPORT_LIST[0] + "|" + CVBS_SUPPORT_LIST[1];
+        }
         Log.d(TAG, "Raw supported resolutions: " + rawList);
         if (rawList != null) {
             resolutions = rawList.split("\\|");
         }
         if (resolutions != null) {
-            for (int i = 0; i < resolutions.length; i++) {
-                Log.d(TAG, "checking " + resolutions[i]);
-                if (resolutions[i].contains("*")) {
-                    Log.d(TAG, "* found - setting as bestResolution");
-                    // best mode
-                    String res = resolutions[i];
-                    resolution = res.substring(0, res.length()-1);
+            if (getResolution().contains("cvbs")) {
+                resolution = resolutions[resolutions.length-1]; // 576cvbs
+            } else {
+                for (int i = 0; i < resolutions.length; i++) {
+                    Log.d(TAG, "checking " + resolutions[i]);
+                    if (resolutions[i].contains("*")) {
+                        Log.d(TAG, "* found - setting as bestResolution");
+                        // best mode
+                        String res = resolutions[i];
+                        resolution = res.substring(0, res.length()-1);
+                    }
                 }
             }
         }

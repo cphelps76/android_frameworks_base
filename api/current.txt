@@ -10957,6 +10957,7 @@ package android.hardware.display {
     field public static final java.lang.String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
     field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
     field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;
+    field public static final java.lang.String[] CVBS_SUPPORT_LIST;
     field public static final java.lang.String DISPLAY_AXIS_1080 = " 1920 1080 ";
     field public static final java.lang.String DISPLAY_AXIS_480 = " 720 480 ";
     field public static final java.lang.String DISPLAY_AXIS_576 = " 720 576 ";
@@ -10974,6 +10975,10 @@ package android.hardware.display {
     field public static final int OUTPUT1080_FULL_WIDTH = 1920; // 0x780
     field public static final int OUTPUT480_FULL_HEIGHT = 480; // 0x1e0
     field public static final int OUTPUT480_FULL_WIDTH = 720; // 0x2d0
+    field public static final int OUTPUT4K2KSMPTE_FULL_HEIGHT = 2160; // 0x870
+    field public static final int OUTPUT4K2KSMPTE_FULL_WIDTH = 4096; // 0x1000
+    field public static final int OUTPUT4K2K_FULL_HEIGHT = 2160; // 0x870
+    field public static final int OUTPUT4K2K_FULL_WIDTH = 3840; // 0xf00
     field public static final int OUTPUT576_FULL_HEIGHT = 576; // 0x240
     field public static final int OUTPUT576_FULL_WIDTH = 720; // 0x2d0
     field public static final int OUTPUT720_FULL_HEIGHT = 720; // 0x2d0
@@ -11001,6 +11006,22 @@ package android.hardware.display {
     field public static final java.lang.String UBOOT_480P_OUTPUT_WIDTH = "ubootenv.var.480poutputwidth";
     field public static final java.lang.String UBOOT_480P_OUTPUT_X = "ubootenv.var.480poutputx";
     field public static final java.lang.String UBOOT_480P_OUTPUT_Y = "ubootenv.var.480poutputy";
+    field public static final java.lang.String UBOOT_4K2K24HZ_OUTPUT_HEIGHT = "ubootenv.var.4k2k24hz_height";
+    field public static final java.lang.String UBOOT_4K2K24HZ_OUTPUT_WIDTH = "ubootenv.var.4k2k24hz_width";
+    field public static final java.lang.String UBOOT_4K2K24HZ_OUTPUT_X = "ubootenv.var.4k2k24hz_x";
+    field public static final java.lang.String UBOOT_4K2K24HZ_OUTPUT_Y = "ubootenv.var.4k2k24hz_y";
+    field public static final java.lang.String UBOOT_4K2K25HZ_OUTPUT_HEIGHT = "ubootenv.var.4k2k25hz_height";
+    field public static final java.lang.String UBOOT_4K2K25HZ_OUTPUT_WIDTH = "ubootenv.var.4k2k25hz_width";
+    field public static final java.lang.String UBOOT_4K2K25HZ_OUTPUT_X = "ubootenv.var.4k2k25hz_x";
+    field public static final java.lang.String UBOOT_4K2K25HZ_OUTPUT_Y = "ubootenv.var.4k2k25hz_y";
+    field public static final java.lang.String UBOOT_4K2K30HZ_OUTPUT_HEIGHT = "ubootenv.var.4k2k30hz_height";
+    field public static final java.lang.String UBOOT_4K2K30HZ_OUTPUT_WIDTH = "ubootenv.var.4k2k30hz_width";
+    field public static final java.lang.String UBOOT_4K2K30HZ_OUTPUT_X = "ubootenv.var.4k2k30hz_x";
+    field public static final java.lang.String UBOOT_4K2K30HZ_OUTPUT_Y = "ubootenv.var.4k2k30hz_y";
+    field public static final java.lang.String UBOOT_4K2KSMPTE_OUTPUT_HEIGHT = "ubootenv.var.4k2ksmpte_height";
+    field public static final java.lang.String UBOOT_4K2KSMPTE_OUTPUT_WIDTH = "ubootenv.var.4k2ksmpte_width";
+    field public static final java.lang.String UBOOT_4K2KSMPTE_OUTPUT_X = "ubootenv.var.4k2ksmpte_x";
+    field public static final java.lang.String UBOOT_4K2KSMPTE_OUTPUT_Y = "ubootenv.var.4k2ksmpte_y";
     field public static final java.lang.String UBOOT_576I_OUTPUT_HEIGHT = "ubootenv.var.576ioutputheight";
     field public static final java.lang.String UBOOT_576I_OUTPUT_WIDTH = "ubootenv.var.576ioutputwidth";
     field public static final java.lang.String UBOOT_576I_OUTPUT_X = "ubootenv.var.576ioutputx";
