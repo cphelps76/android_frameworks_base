@@ -35,6 +35,9 @@
          shown again. [CHAR LIMIT=25] -->
     <string name="status_bar_please_disturb_button">Show notifications</string>
 
+    <!-- Title shown in recents popup for killing an application from the list -->
+    <string name="status_bar_recent_kill_item_title">Kill app</string>
+
     <!-- Title shown in recents popup for removing an application from the list -->
     <string name="status_bar_recent_remove_item_title">Remove from list</string>
 

@@ -24,32 +24,37 @@
     android:id="@+id/recents_root"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
+    android:focusable="true"
+    android:background="@android:color/background_dark"
     systemui:recentItemLayout="@layout/status_bar_recent_item"
     >
     <FrameLayout
         android:id="@+id/recents_bg_protect"
-        android:background="@drawable/status_bar_recents_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
         android:clipToPadding="false"
         android:clipChildren="false">
 
-        <com.android.systemui.recent.RecentsHorizontalScrollView android:id="@+id/recents_container"
-            android:layout_width="wrap_content"
+        <com.android.systemui.recent.RecentsVerticalScrollView android:id="@+id/recents_container"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginLeft="100dp"
+            android:layout_marginRight="100dp"
             android:fadingEdge="horizontal"
-            android:scrollbars="none"
-            android:layout_gravity="right"
+            android:scrollbars="vertical"
+            android:scrollbarStyle="insideInset"
+            android:layout_gravity="center_horizontal"
             android:fadingEdgeLength="@dimen/status_bar_recents_scroll_fading_edge_length">
 
-            <LinearLayout android:id="@+id/recents_linear_layout"
+            <GridLayout android:id="@+id/recents_grid_layout"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:columnCount="3"
                 android:orientation="horizontal">
-            </LinearLayout>
+            </GridLayout>
 
-        </com.android.systemui.recent.RecentsHorizontalScrollView>
+        </com.android.systemui.recent.RecentsVerticalScrollView>
 
     </FrameLayout>
 

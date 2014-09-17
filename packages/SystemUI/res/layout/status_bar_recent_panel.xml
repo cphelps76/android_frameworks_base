@@ -47,7 +47,7 @@
             android:clipToPadding="false"
             android:clipChildren="false">
 
-            <LinearLayout android:id="@+id/recents_linear_layout"
+            <LinearLayout android:id="@+id/recents_grid_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"

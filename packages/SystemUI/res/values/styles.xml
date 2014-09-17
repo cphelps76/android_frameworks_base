@@ -16,7 +16,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <style name="RecentsStyle" parent="@android:style/Theme.Holo.Wallpaper.NoTitleBar">
+    <style name="RecentsStyle" parent="@android:style/Theme.NoTitleBar.Fullscreen">
         <item name="android:windowAnimationStyle">@style/Animation.RecentsActivity</item>
     </style>
 

@@ -26,7 +26,7 @@ import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewConfiguration;
-import android.widget.LinearLayout;
+import android.widget.GridLayout;
 
 import com.android.systemui.R;
 
@@ -60,7 +60,7 @@ public class RecentsScrollViewPerformanceHelper {
     }
 
     public void onAttachedToWindowCallback(
-            RecentsCallback callback, LinearLayout layout, boolean hardwareAccelerated) {
+            RecentsCallback callback, GridLayout layout, boolean hardwareAccelerated) {
         mSoftwareRendered = !hardwareAccelerated;
         if ((mSoftwareRendered && OPTIMIZE_SW_RENDERED_RECENTS)
                 || USE_DARK_FADE_IN_HW_ACCELERATED_MODE) {
@@ -69,10 +69,10 @@ public class RecentsScrollViewPerformanceHelper {
         }
     }
 
-    public void addViewCallback(View newLinearLayoutChild) {
+    public void addViewCallback(View newGridLayoutChild) {
         if (mSoftwareRendered && OPTIMIZE_SW_RENDERED_RECENTS) {
             final RecentsPanelView.ViewHolder holder =
-                    (RecentsPanelView.ViewHolder) newLinearLayoutChild.getTag();
+                    (RecentsPanelView.ViewHolder) newGridLayoutChild.getTag();
             holder.labelView.setDrawingCacheEnabled(true);
             holder.labelView.buildDrawingCache();
         }

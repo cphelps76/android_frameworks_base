@@ -56,19 +56,19 @@
     <dimen name="status_bar_recents_app_icon_max_height">64dp</dimen>
 
     <!-- Size of application icon -->
-    <dimen name="status_bar_recents_thumbnail_width">208dp</dimen>
-    <dimen name="status_bar_recents_thumbnail_height">130dp</dimen>
+    <dimen name="status_bar_recents_thumbnail_width">304dp</dimen>
+    <dimen name="status_bar_recents_thumbnail_height">190dp</dimen>
 
     <!-- Width of recents panel -->
-    <dimen name="status_bar_recents_width">600dp</dimen>
+    <dimen name="status_bar_recents_width">680dp</dimen>
     <!-- Padding for text descriptions -->
     <dimen name="status_bar_recents_text_description_padding">8dp</dimen>
     <!-- Size of application label text -->
-    <dimen name="status_bar_recents_app_label_text_size">18dip</dimen>
+    <dimen name="status_bar_recents_app_label_text_size">28dip</dimen>
     <!-- Size of application description text -->
     <dimen name="status_bar_recents_app_description_text_size">18dip</dimen>
     <!-- Width of application label text -->
-    <dimen name="status_bar_recents_app_label_width">97dip</dimen>
+    <dimen name="status_bar_recents_app_label_width">280dp</dimen>
     <!-- Left margin for application label -->
     <dimen name="status_bar_recents_app_label_left_margin">16dip</dimen>
     <!-- Size of fading edge for text -->

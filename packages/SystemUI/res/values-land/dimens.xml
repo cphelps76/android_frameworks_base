@@ -23,7 +23,7 @@
     <!-- How far the thumbnail for a recent app appears from left edge -->
     <dimen name="status_bar_recents_thumbnail_left_margin">0dp</dimen>
     <!-- How far the thumbnail for a recent app appears from top edge -->
-    <dimen name="status_bar_recents_thumbnail_top_margin">28dp</dimen>
+    <dimen name="status_bar_recents_thumbnail_top_margin">10dp</dimen>
     <!-- Padding for text descriptions -->
     <dimen name="status_bar_recents_text_description_padding">8dp</dimen>
     <!-- Width of application label text -->

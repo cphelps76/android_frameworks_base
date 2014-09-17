@@ -30,7 +30,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
-import android.widget.LinearLayout;
+import android.widget.GridLayout;
 import android.widget.ScrollView;
 
 import com.android.systemui.R;
@@ -44,7 +44,7 @@ public class RecentsVerticalScrollView extends ScrollView
         implements SwipeHelper.Callback, RecentsPanelView.RecentsScrollView {
     private static final String TAG = RecentsPanelView.TAG;
     private static final boolean DEBUG = RecentsPanelView.DEBUG;
-    private LinearLayout mLinearLayout;
+    private GridLayout mGridLayout;
     private TaskDescriptionAdapter mAdapter;
     private RecentsCallback mCallback;
     protected int mLastScrollPosition;
@@ -68,7 +68,7 @@ public class RecentsVerticalScrollView extends ScrollView
     }
 
     private int scrollPositionOfMostRecent() {
-        return mLinearLayout.getHeight() - getHeight();
+        return mGridLayout.getHeight() - getHeight();
     }
 
     private void addToRecycledViews(View v) {
@@ -78,8 +78,8 @@ public class RecentsVerticalScrollView extends ScrollView
     }
 
     public View findViewForTask(int persistentTaskId) {
-        for (int i = 0; i < mLinearLayout.getChildCount(); i++) {
-            View v = mLinearLayout.getChildAt(i);
+        for (int i = 0; i < mGridLayout.getChildCount(); i++) {
+            View v = mGridLayout.getChildAt(i);
             RecentsPanelView.ViewHolder holder = (RecentsPanelView.ViewHolder) v.getTag();
             if (holder.taskDescription.persistentTaskId == persistentTaskId) {
                 return v;
@@ -89,15 +89,15 @@ public class RecentsVerticalScrollView extends ScrollView
     }
 
     private void update() {
-        for (int i = 0; i < mLinearLayout.getChildCount(); i++) {
-            View v = mLinearLayout.getChildAt(i);
+        for (int i = 0; i < mGridLayout.getChildCount(); i++) {
+            View v = mGridLayout.getChildAt(i);
             addToRecycledViews(v);
             mAdapter.recycleView(v);
         }
         LayoutTransition transitioner = getLayoutTransition();
         setLayoutTransition(null);
 
-        mLinearLayout.removeAllViews();
+        mGridLayout.removeAllViews();
 
         // Once we can clear the data associated with individual item views,
         // we can get rid of the removeAllViews() and the code below will
@@ -110,7 +110,7 @@ public class RecentsVerticalScrollView extends ScrollView
                 recycledViews.remove();
                 old.setVisibility(VISIBLE);
             }
-            final View view = mAdapter.getView(i, old, mLinearLayout);
+            final View view = mAdapter.getView(i, old, mGridLayout);
 
             if (mPerformanceHelper != null) {
                 mPerformanceHelper.addViewCallback(view);
@@ -161,7 +161,7 @@ public class RecentsVerticalScrollView extends ScrollView
                 calloutLine.setOnTouchListener(noOpListener);
             }
 
-            mLinearLayout.addView(view);
+            mGridLayout.addView(view);
         }
         setLayoutTransition(transitioner);
 
@@ -206,7 +206,7 @@ public class RecentsVerticalScrollView extends ScrollView
 
     public void onChildDismissed(View v) {
         addToRecycledViews(v);
-        mLinearLayout.removeView(v);
+        mGridLayout.removeView(v);
         mCallback.handleSwipe(v);
         // Restore the alpha/translation parameters to what they were before swiping
         // (for when these items are recycled)
@@ -227,8 +227,8 @@ public class RecentsVerticalScrollView extends ScrollView
     public View getChildAtPosition(MotionEvent ev) {
         final float x = ev.getX() + getScrollX();
         final float y = ev.getY() + getScrollY();
-        for (int i = 0; i < mLinearLayout.getChildCount(); i++) {
-            View item = mLinearLayout.getChildAt(i);
+        for (int i = 0; i < mGridLayout.getChildCount(); i++) {
+            View item = mGridLayout.getChildAt(i);
             if (item.getVisibility() == View.VISIBLE
                     && x >= item.getLeft() && x < item.getRight()
                     && y >= item.getTop() && y < item.getBottom()) {
@@ -291,7 +291,7 @@ public class RecentsVerticalScrollView extends ScrollView
     protected void onFinishInflate() {
         super.onFinishInflate();
         setScrollbarFadingEnabled(true);
-        mLinearLayout = (LinearLayout) findViewById(R.id.recents_linear_layout);
+        mGridLayout = (GridLayout) findViewById(R.id.recents_grid_layout);
         final int leftPadding = mContext.getResources()
             .getDimensionPixelOffset(R.dimen.status_bar_recents_thumbnail_left_margin);
         setOverScrollEffectPadding(leftPadding, 0);
@@ -301,7 +301,7 @@ public class RecentsVerticalScrollView extends ScrollView
     public void onAttachedToWindow() {
         if (mPerformanceHelper != null) {
             mPerformanceHelper.onAttachedToWindowCallback(
-                    mCallback, mLinearLayout, isHardwareAccelerated());
+                    mCallback, mGridLayout, isHardwareAccelerated());
         }
     }
 
@@ -324,7 +324,7 @@ public class RecentsVerticalScrollView extends ScrollView
 
         // Skip this work if a transition is running; it sets the scroll values independently
         // and should not have those animated values clobbered by this logic
-        LayoutTransition transition = mLinearLayout.getLayoutTransition();
+        LayoutTransition transition = mGridLayout.getLayoutTransition();
         if (transition != null && transition.isRunning()) {
             return;
         }
@@ -337,7 +337,7 @@ public class RecentsVerticalScrollView extends ScrollView
             public void run() {
                 // Make sure we're still not clobbering the transition-set values, since this
                 // runnable launches asynchronously
-                LayoutTransition transition = mLinearLayout.getLayoutTransition();
+                LayoutTransition transition = mGridLayout.getLayoutTransition();
                 if (transition == null || !transition.isRunning()) {
                     scrollTo(0, mLastScrollPosition);
                 }
@@ -362,14 +362,14 @@ public class RecentsVerticalScrollView extends ScrollView
                 MeasureSpec.makeMeasureSpec(dm.widthPixels, MeasureSpec.AT_MOST);
         int childheightMeasureSpec =
                 MeasureSpec.makeMeasureSpec(dm.heightPixels, MeasureSpec.AT_MOST);
-        View child = mAdapter.createView(mLinearLayout);
+        View child = mAdapter.createView(mGridLayout);
         child.measure(childWidthMeasureSpec, childheightMeasureSpec);
         mNumItemsInOneScreenful =
                 (int) FloatMath.ceil(dm.heightPixels / (float) child.getMeasuredHeight());
         addToRecycledViews(child);
 
         for (int i = 0; i < mNumItemsInOneScreenful - 1; i++) {
-            addToRecycledViews(mAdapter.createView(mLinearLayout));
+            addToRecycledViews(mAdapter.createView(mGridLayout));
         }
     }
 
@@ -379,8 +379,8 @@ public class RecentsVerticalScrollView extends ScrollView
 
     @Override
     public void setLayoutTransition(LayoutTransition transition) {
-        // The layout transition applies to our embedded LinearLayout
-        mLinearLayout.setLayoutTransition(transition);
+        // The layout transition applies to our embedded GridLayout
+        mGridLayout.setLayoutTransition(transition);
     }
 
     public void setCallback(RecentsCallback callback) {

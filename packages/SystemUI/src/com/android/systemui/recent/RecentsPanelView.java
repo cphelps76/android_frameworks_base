@@ -65,8 +65,8 @@ import com.android.systemui.statusbar.tablet.TabletStatusBar;
 
 import java.util.ArrayList;
 
-public class RecentsPanelView extends FrameLayout implements OnItemClickListener, RecentsCallback,
-        StatusBarPanel, Animator.AnimatorListener {
+public class RecentsPanelView extends FrameLayout implements OnItemClickListener,
+        RecentsCallback, StatusBarPanel, Animator.AnimatorListener {
     static final String TAG = "RecentsPanelView";
     static final boolean DEBUG = TabletStatusBar.DEBUG || PhoneStatusBar.DEBUG || false;
     private PopupMenu mPopup;
@@ -349,6 +349,10 @@ public class RecentsPanelView extends FrameLayout implements OnItemClickListener
             if (mPopup != null) {
                 mPopup.dismiss();
             }
+            onAnimationEnd(null);
+            setFocusable(true);
+            setFocusableInTouchMode(true);
+            requestFocus();
         }
     }
 
@@ -487,8 +491,8 @@ public class RecentsPanelView extends FrameLayout implements OnItemClickListener
             // That can't be done until the anim is complete though.
             h.thumbnailViewImage.setImageBitmap(thumbnail);
 
-            // scale the image to fill the full width of the ImageView. do this only if
-            // we haven't set a bitmap before, or if the bitmap size has changed
+            // scale the image to fill the full width of the ImageView. do this only
+            // if we haven't set a bitmap before, or if the bitmap size has changed
             if (h.thumbnailViewImageBitmap == null ||
                 h.thumbnailViewImageBitmap.getWidth() != thumbnail.getWidth() ||
                 h.thumbnailViewImageBitmap.getHeight() != thumbnail.getHeight()) {
@@ -519,7 +523,7 @@ public class RecentsPanelView extends FrameLayout implements OnItemClickListener
                 ViewGroup container = mRecentsContainer;
                 if (container instanceof RecentsScrollView) {
                     container = (ViewGroup) container.findViewById(
-                            R.id.recents_linear_layout);
+                            R.id.recents_grid_layout);
                 }
                 // Look for a view showing this thumbnail, to update.
                 for (int i=0; i < container.getChildCount(); i++) {
@@ -763,6 +767,31 @@ public class RecentsPanelView extends FrameLayout implements OnItemClickListener
                         show(false);
                     } else {
                         throw new IllegalStateException("Oops, no tag on view " + selectedView);
+                    }
+                } else if (item.getItemId() == R.id.recent_kill_item) {
+                    ViewHolder viewHolder = (ViewHolder) selectedView.getTag();
+                    final TaskDescription ad = viewHolder.taskDescription;
+                    final ActivityManager am = (ActivityManager)
+                            mContext.getSystemService(Context.ACTIVITY_SERVICE);
+
+                    mRecentTaskDescriptions.remove(ad);
+                    mRecentTasksLoader.remove(ad);
+
+                    // Handled by widget containers to enable LayoutTransitions properly
+                    mListAdapter.notifyDataSetChanged();
+
+                    if (mRecentTaskDescriptions.size() == 0) {
+                        dismissAndGoBack();
+                    }
+
+                    if (am != null) {
+                        am.removeTask(ad.persistentTaskId, ActivityManager.REMOVE_TASK_KILL_PROCESS);
+
+                        // Accessibility feedback
+                        setContentDescription(
+                                mContext.getString(R.string.accessibility_recents_item_dismissed, ad.getLabel()));
+                        sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_SELECTED);
+                        setContentDescription(null);
                     }
                 } else {
                     return false;
