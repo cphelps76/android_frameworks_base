@@ -67,10 +67,14 @@ public class BootReceiver extends BroadcastReceiver {
         mSw.setProperty("ubootenv.var.has.accelerometer", "false");
 
         // Restore resolution, position, and other display bits
-        if (mHdmiManager.isHdmiPlugged()) {
-            mHdmiManager.hdmiPlugged();
-        } else {
-            mHdmiManager.hdmiUnplugged();
+        try {
+            if (mHdmiManager.isHdmiPlugged()) {
+                mHdmiManager.hdmiPlugged();
+            } else {
+                mHdmiManager.hdmiUnplugged();
+            }
+        } catch (Exception e) {
+            Slog.e(TAG, "HDMI eats burgers");
         }
     }
 }
