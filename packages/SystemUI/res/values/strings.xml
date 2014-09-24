@@ -544,7 +544,6 @@
     <string name="anonymous_notification_desc">Enable or Disable Matricom Statistics</string>
 
     <!-- Quick Settings -->
-    <string name="quick_settings_gps">GPS</string>
     <string name="quick_settings_ringer_on">Sound on</string>
     <string name="quick_settings_ringer_off">Sound off</string>
     <string name="quick_settings_label_enabled">On</string>
