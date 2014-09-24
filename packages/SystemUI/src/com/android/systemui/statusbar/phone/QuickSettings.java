@@ -20,23 +20,17 @@ import com.android.internal.view.RotationPolicy;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.systemui.R;
 
-import com.android.systemui.statusbar.phone.QuickSettingsModel.BluetoothState;
 import com.android.systemui.statusbar.phone.QuickSettingsModel.RSSIState;
 import com.android.systemui.statusbar.phone.QuickSettingsModel.State;
 import com.android.systemui.statusbar.phone.QuickSettingsModel.UserState;
 import com.android.systemui.statusbar.phone.QuickSettingsModel.WifiState;
-import com.android.systemui.statusbar.policy.BatteryController;
-import com.android.systemui.statusbar.policy.BluetoothController;
-import com.android.systemui.statusbar.policy.BrightnessController;
 import com.android.systemui.statusbar.policy.LocationController;
-import com.android.systemui.statusbar.policy.NetworkController;
 import com.android.systemui.statusbar.policy.ToggleSlider;
 
 import android.app.ActivityManagerNative;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -97,25 +91,11 @@ class QuickSettings {
     private DisplayManager mDisplayManager;
     private WifiDisplayStatus mWifiDisplayStatus;
     private PhoneStatusBar mStatusBarService;
-    private BluetoothState mBluetoothState;
-    private BluetoothAdapter mBluetoothAdapter;
     private WifiManager mWifiManager;
-
-    private BrightnessController mBrightnessController;
-    private BluetoothController mBluetoothController;
-
-    private Dialog mBrightnessDialog;
-    private int mBrightnessDialogShortTimeout;
-    private int mBrightnessDialogLongTimeout;
 
     private AsyncTask<Void, Void, Pair<String, Drawable>> mUserInfoTask;
 
-    private LevelListDrawable mBatteryLevels;
-    private LevelListDrawable mChargingBatteryLevels;
-
     boolean mTilesSetUp = false;
-    private final boolean isSupportAirPlaneMode = false ;
-    private boolean mDeviceHasBrokenBluetooth;
     private Handler mHandler;
 
     // The set of QuickSettingsTiles that have dynamic spans (and need to be updated on
@@ -123,41 +103,18 @@ class QuickSettings {
     private final ArrayList<QuickSettingsTileView> mDynamicSpannedTiles =
             new ArrayList<QuickSettingsTileView>();
 
-    private final RotationPolicy.RotationPolicyListener mRotationPolicyListener =
-            new RotationPolicy.RotationPolicyListener() {
-        @Override
-        public void onChange() {
-            mModel.onRotationLockChanged();
-        }
-    };
-
     public QuickSettings(Context context, QuickSettingsContainerView container) {
         mDisplayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
         mContext = context;
         mContainerView = container;
         mModel = new QuickSettingsModel(context);
         mWifiDisplayStatus = new WifiDisplayStatus();
-        mBluetoothState = new QuickSettingsModel.BluetoothState();
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+         mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
         mHandler = new Handler();
 
-        Resources r = mContext.getResources();
-        mBatteryLevels = (LevelListDrawable) r.getDrawable(R.drawable.qs_sys_battery);
-        mChargingBatteryLevels =
-                (LevelListDrawable) r.getDrawable(R.drawable.qs_sys_battery_charging);
-        mBrightnessDialogLongTimeout =
-                r.getInteger(R.integer.quick_settings_brightness_dialog_long_timeout);
-        mBrightnessDialogShortTimeout =
-                r.getInteger(R.integer.quick_settings_brightness_dialog_short_timeout);
-
-        mDeviceHasBrokenBluetooth = r.getBoolean(R.bool.config_deviceHasBrokenBluetooth);
-
         IntentFilter filter = new IntentFilter();
         filter.addAction(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED);
-        filter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
-        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.addAction(Intent.ACTION_USER_SWITCHED);
         mContext.registerReceiver(mReceiver, filter);
 
@@ -182,22 +139,6 @@ class QuickSettings {
 
     public void setImeWindowStatus(boolean visible) {
         mModel.onImeWindowStatusChanged(visible);
-    }
-
-    void setup(NetworkController networkController, BluetoothController bluetoothController,
-            BatteryController batteryController, LocationController locationController) {
-        mBluetoothController = bluetoothController;
-
-        setupQuickSettings();
-        updateWifiDisplayStatus();
-        updateResources();
-
-        networkController.addNetworkSignalChangedCallback(mModel);
-        bluetoothController.addStateChangedCallback(mModel);
-        batteryController.addStateChangedCallback(mModel);
-        locationController.addStateChangedCallback(mModel);
-        RotationPolicy.registerRotationPolicyListener(mContext, mRotationPolicyListener,
-                UserHandle.USER_ALL);
     }
 
     private void queryForUserInformation() {
@@ -338,31 +279,6 @@ class QuickSettings {
             mDynamicSpannedTiles.add(userTile);
         }
 
-        // Brightness
-        QuickSettingsTileView brightnessTile = (QuickSettingsTileView)
-                inflater.inflate(R.layout.quick_settings_tile, parent, false);
-        brightnessTile.setContent(R.layout.quick_settings_tile_brightness, inflater);
-        brightnessTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mBar.collapseAllPanels(true);
-                showBrightnessDialog();
-            }
-        });
-        mModel.addBrightnessTile(brightnessTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView view, State state) {
-                TextView tv = (TextView) view.findViewById(R.id.brightness_textview);
-                tv.setCompoundDrawablesWithIntrinsicBounds(0, state.iconId, 0, 0);
-                tv.setText(state.label);
-                dismissBrightnessDialog(mBrightnessDialogShortTimeout);
-            }
-        });
-        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))){
-            parent.addView(brightnessTile);
-            mDynamicSpannedTiles.add(brightnessTile);
-        }
-
         // Time tile
         /*
         QuickSettingsTileView timeTile = (QuickSettingsTileView)
@@ -495,153 +411,6 @@ class QuickSettings {
                 parent.addView(rssiTile);
             }
         }
-
-        // Rotation Lock
-        if (mContext.getResources().getBoolean(R.bool.quick_settings_show_rotation_lock)) {
-            QuickSettingsTileView rotationLockTile = (QuickSettingsTileView)
-                    inflater.inflate(R.layout.quick_settings_tile, parent, false);
-            rotationLockTile.setContent(R.layout.quick_settings_tile_rotation_lock, inflater);
-            rotationLockTile.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean locked = RotationPolicy.isRotationLocked(mContext);
-                    RotationPolicy.setRotationLock(mContext, !locked);
-                }
-            });
-            mModel.addRotationLockTile(rotationLockTile, new QuickSettingsModel.RefreshCallback() {
-                @Override
-                public void refreshView(QuickSettingsTileView view, State state) {
-                    TextView tv = (TextView) view.findViewById(R.id.rotation_lock_textview);
-                    tv.setCompoundDrawablesWithIntrinsicBounds(0, state.iconId, 0, 0);
-                    tv.setText(state.label);
-                }
-            });
-            
-            if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))){
-                parent.addView(rotationLockTile);
-            }
-        }
-
-        // Battery
-        QuickSettingsTileView batteryTile = (QuickSettingsTileView)
-                inflater.inflate(R.layout.quick_settings_tile, parent, false);
-        batteryTile.setContent(R.layout.quick_settings_tile_battery, inflater);
-        batteryTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startSettingsActivity(Intent.ACTION_POWER_USAGE_SUMMARY);
-            }
-        });
-        mModel.addBatteryTile(batteryTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView view, State state) {
-                QuickSettingsModel.BatteryState batteryState =
-                        (QuickSettingsModel.BatteryState) state;
-                TextView tv = (TextView) view.findViewById(R.id.battery_textview);
-                ImageView iv = (ImageView) view.findViewById(R.id.battery_image);
-                Drawable d = batteryState.pluggedIn
-                        ? mChargingBatteryLevels
-                        : mBatteryLevels;
-                String t;
-                if (batteryState.batteryLevel == 100) {
-                    t = mContext.getString(R.string.quick_settings_battery_charged_label);
-                } else {
-                    t = batteryState.pluggedIn
-                        ? mContext.getString(R.string.quick_settings_battery_charging_label,
-                                batteryState.batteryLevel)
-                        : mContext.getString(R.string.status_bar_settings_battery_meter_format,
-                                batteryState.batteryLevel);
-                }
-                iv.setImageDrawable(d);
-                iv.setImageLevel(batteryState.batteryLevel);
-                tv.setText(t);
-                view.setContentDescription(
-                        mContext.getString(R.string.accessibility_quick_settings_battery, t));
-            }
-        });
-        
-        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false"))){
-            parent.addView(batteryTile);
-        }
-
-        // Airplane Mode
-        QuickSettingsTileView airplaneTile = (QuickSettingsTileView)
-                inflater.inflate(R.layout.quick_settings_tile, parent, false);
-        airplaneTile.setContent(R.layout.quick_settings_tile_airplane, inflater);
-        mModel.addAirplaneModeTile(airplaneTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView view, State state) {
-                TextView tv = (TextView) view.findViewById(R.id.airplane_mode_textview);
-                tv.setCompoundDrawablesWithIntrinsicBounds(0, state.iconId, 0, 0);
-
-                String airplaneState = mContext.getString(
-                        (state.enabled) ? R.string.accessibility_desc_on
-                                : R.string.accessibility_desc_off);
-                view.setContentDescription(
-                        mContext.getString(R.string.accessibility_quick_settings_airplane, airplaneState));
-                tv.setText(state.label);
-            }
-        });
-
-        if(!Boolean.parseBoolean(SystemProperties.get("ro.platform.has.mbxuimode", "false")) && isSupportAirPlaneMode){
-            parent.addView(airplaneTile);
-        }
-
-        // Bluetooth
-        if (mModel.deviceSupportsBluetooth() && !mDeviceHasBrokenBluetooth) {
-            final QuickSettingsTileView bluetoothTile = (QuickSettingsTileView)
-                    inflater.inflate(R.layout.quick_settings_tile, parent, false);
-            bluetoothTile.setContent(R.layout.quick_settings_tile_bluetooth, inflater);
-            bluetoothTile.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    startSettingsActivity(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-                }
-            });
-            if (LONG_PRESS_TOGGLES) {
-                bluetoothTile.setOnLongClickListener(new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(View v) {
-                        if (mBluetoothAdapter.isEnabled()) {
-                            mBluetoothAdapter.disable();
-                        } else {
-                            mBluetoothAdapter.enable();
-                        }
-                        bluetoothTile.setPressed(false);
-                        return true;
-                    }});
-            }
-            mModel.addBluetoothTile(bluetoothTile, new QuickSettingsModel.RefreshCallback() {
-                @Override
-                public void refreshView(QuickSettingsTileView view, State state) {
-                    BluetoothState bluetoothState = (BluetoothState) state;
-                    TextView tv = (TextView) view.findViewById(R.id.bluetooth_textview);
-                    tv.setCompoundDrawablesWithIntrinsicBounds(0, state.iconId, 0, 0);
-
-                    Resources r = mContext.getResources();
-                    String label = state.label;
-                    /*
-                    //TODO: Show connected bluetooth device label
-                    Set<BluetoothDevice> btDevices =
-                            mBluetoothController.getBondedBluetoothDevices();
-                    if (btDevices.size() == 1) {
-                        // Show the name of the bluetooth device you are connected to
-                        label = btDevices.iterator().next().getName();
-                    } else if (btDevices.size() > 1) {
-                        // Show a generic label about the number of bluetooth devices
-                        label = r.getString(R.string.quick_settings_bluetooth_multiple_devices_label,
-                                btDevices.size());
-                    }
-                    */
-                    view.setContentDescription(mContext.getString(
-                            R.string.accessibility_quick_settings_bluetooth,
-                            bluetoothState.stateContentDescription));
-                    tv.setText(label);
-                }
-            });
-            parent.addView(bluetoothTile);
-        }
-
     }
 
     private void addTemporaryTiles(final ViewGroup parent, final LayoutInflater inflater) {
@@ -791,72 +560,6 @@ class QuickSettings {
         }
         ((QuickSettingsContainerView)mContainerView).updateResources();
         mContainerView.requestLayout();
-
-        // Reset the dialog
-        boolean isBrightnessDialogVisible = false;
-        if (mBrightnessDialog != null) {
-            removeAllBrightnessDialogCallbacks();
-
-            isBrightnessDialogVisible = mBrightnessDialog.isShowing();
-            mBrightnessDialog.dismiss();
-        }
-        mBrightnessDialog = null;
-        if (isBrightnessDialogVisible) {
-            showBrightnessDialog();
-        }
-    }
-
-    private void removeAllBrightnessDialogCallbacks() {
-        mHandler.removeCallbacks(mDismissBrightnessDialogRunnable);
-    }
-
-    private Runnable mDismissBrightnessDialogRunnable = new Runnable() {
-        public void run() {
-            if (mBrightnessDialog != null && mBrightnessDialog.isShowing()) {
-                mBrightnessDialog.dismiss();
-            }
-            removeAllBrightnessDialogCallbacks();
-        };
-    };
-
-    private void showBrightnessDialog() {
-        if (mBrightnessDialog == null) {
-            mBrightnessDialog = new Dialog(mContext);
-            mBrightnessDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            mBrightnessDialog.setContentView(R.layout.quick_settings_brightness_dialog);
-            mBrightnessDialog.setCanceledOnTouchOutside(true);
-
-            mBrightnessController = new BrightnessController(mContext,
-                    (ImageView) mBrightnessDialog.findViewById(R.id.brightness_icon),
-                    (ToggleSlider) mBrightnessDialog.findViewById(R.id.brightness_slider));
-            mBrightnessController.addStateChangedCallback(mModel);
-            mBrightnessDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                @Override
-                public void onDismiss(DialogInterface dialog) {
-                    mBrightnessController = null;
-                }
-            });
-
-            mBrightnessDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-            mBrightnessDialog.getWindow().getAttributes().privateFlags |=
-                    WindowManager.LayoutParams.PRIVATE_FLAG_SHOW_FOR_ALL_USERS;
-            mBrightnessDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        }
-        if (!mBrightnessDialog.isShowing()) {
-            try {
-                WindowManagerGlobal.getWindowManagerService().dismissKeyguard();
-            } catch (RemoteException e) {
-            }
-            mBrightnessDialog.show();
-            dismissBrightnessDialog(mBrightnessDialogLongTimeout);
-        }
-    }
-
-    private void dismissBrightnessDialog(int timeout) {
-        removeAllBrightnessDialogCallbacks();
-        if (mBrightnessDialog != null) {
-            mHandler.postDelayed(mDismissBrightnessDialogRunnable, timeout);
-        }
     }
 
     private void showBugreportDialog() {
@@ -901,10 +604,6 @@ class QuickSettings {
         mModel.onWifiDisplayStateChanged(mWifiDisplayStatus);
     }
 
-    private void applyBluetoothStatus() {
-        mModel.onBluetoothStateChange(mBluetoothState);
-    }
-
     void reloadUserInfo() {
         if (mUserInfoTask != null) {
             mUserInfoTask.cancel(false);
@@ -924,16 +623,6 @@ class QuickSettings {
                         DisplayManager.EXTRA_WIFI_DISPLAY_STATUS);
                 mWifiDisplayStatus = status;
                 applyWifiDisplayStatus();
-            } else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
-                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR);
-                mBluetoothState.enabled = (state == BluetoothAdapter.STATE_ON);
-                applyBluetoothStatus();
-            } else if (BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED.equals(action)) {
-                int status = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
-                        BluetoothAdapter.STATE_DISCONNECTED);
-                mBluetoothState.connected = (status == BluetoothAdapter.STATE_CONNECTED);
-                applyBluetoothStatus();
             } else if (Intent.ACTION_USER_SWITCHED.equals(action)) {
                 reloadUserInfo();
             }

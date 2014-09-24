@@ -16,9 +16,8 @@
 
 package com.android.systemui.statusbar.phone;
 
-import android.app.ActivityManager;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothAdapter.BluetoothStateChangeCallback;
+import java.util.List;
+
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -40,22 +39,11 @@ import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 
-import com.android.internal.view.RotationPolicy;
 import com.android.systemui.R;
-import com.android.systemui.statusbar.policy.BatteryController.BatteryStateChangeCallback;
-import com.android.systemui.statusbar.policy.BrightnessController.BrightnessStateChangeCallback;
 import com.android.systemui.statusbar.policy.CurrentUserTracker;
 import com.android.systemui.statusbar.policy.LocationController.LocationGpsStateChangeCallback;
-import com.android.systemui.statusbar.policy.NetworkController.NetworkSignalChangedCallback;
 
-import java.util.List;
-
-
-class QuickSettingsModel implements BluetoothStateChangeCallback,
-        NetworkSignalChangedCallback,
-        BatteryStateChangeCallback,
-        LocationGpsStateChangeCallback,
-        BrightnessStateChangeCallback {
+class QuickSettingsModel implements LocationGpsStateChangeCallback {
 
     // Sett InputMethoManagerService
     private static final String TAG_TRY_SUPPRESSING_IME_SWITCHER = "TrySuppressingImeSwitcher";
@@ -65,10 +53,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         int iconId;
         String label;
         boolean enabled = false;
-    }
-    static class BatteryState extends State {
-        int batteryLevel;
-        boolean pluggedIn;
     }
     static class RSSIState extends State {
         int signalIconId;
@@ -84,13 +68,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     }
     static class UserState extends State {
         Drawable avatar;
-    }
-    static class BrightnessState extends State {
-        boolean autoBrightness;
-    }
-    public static class BluetoothState extends State {
-        boolean connected = false;
-        String stateContentDescription;
     }
 
     /** The callback to update a given tile. */
@@ -145,35 +122,11 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         }
     }
 
-    /** ContentObserver to watch brightness **/
-    private class BrightnessObserver extends ContentObserver {
-        public BrightnessObserver(Handler handler) {
-            super(handler);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            onBrightnessLevelChanged();
-        }
-
-        public void startObserving() {
-            final ContentResolver cr = mContext.getContentResolver();
-            cr.unregisterContentObserver(this);
-            cr.registerContentObserver(
-                    Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE),
-                    false, this, mUserTracker.getCurrentUserId());
-            cr.registerContentObserver(
-                    Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS),
-                    false, this, mUserTracker.getCurrentUserId());
-        }
-    }
-
     private final Context mContext;
     private final Handler mHandler;
     private final CurrentUserTracker mUserTracker;
     private final NextAlarmObserver mNextAlarmObserver;
     private final BugreportObserver mBugreportObserver;
-    private final BrightnessObserver mBrightnessObserver;
 
     private final boolean mHasMobileData;
 
@@ -189,10 +142,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mAlarmCallback;
     private State mAlarmState = new State();
 
-    private QuickSettingsTileView mAirplaneModeTile;
-    private RefreshCallback mAirplaneModeCallback;
-    private State mAirplaneModeState = new State();
-
     private QuickSettingsTileView mWifiTile;
     private RefreshCallback mWifiCallback;
     private WifiState mWifiState = new WifiState();
@@ -205,14 +154,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mRSSICallback;
     private RSSIState mRSSIState = new RSSIState();
 
-    private QuickSettingsTileView mBluetoothTile;
-    private RefreshCallback mBluetoothCallback;
-    private BluetoothState mBluetoothState = new BluetoothState();
-
-    private QuickSettingsTileView mBatteryTile;
-    private RefreshCallback mBatteryCallback;
-    private BatteryState mBatteryState = new BatteryState();
-
     private QuickSettingsTileView mLocationTile;
     private RefreshCallback mLocationCallback;
     private State mLocationState = new State();
@@ -220,14 +161,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private QuickSettingsTileView mImeTile;
     private RefreshCallback mImeCallback = null;
     private State mImeState = new State();
-
-    private QuickSettingsTileView mRotationLockTile;
-    private RefreshCallback mRotationLockCallback;
-    private State mRotationLockState = new State();
-
-    private QuickSettingsTileView mBrightnessTile;
-    private RefreshCallback mBrightnessCallback;
-    private BrightnessState mBrightnessState = new BrightnessState();
 
     private QuickSettingsTileView mBugreportTile;
     private RefreshCallback mBugreportCallback;
@@ -252,9 +185,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         mNextAlarmObserver.startObserving();
         mBugreportObserver = new BugreportObserver(mHandler);
         mBugreportObserver.startObserving();
-        mBrightnessObserver = new BrightnessObserver(mHandler);
-        mBrightnessObserver.startObserving();
-
+ 
         ConnectivityManager cm = (ConnectivityManager)
                 context.getSystemService(Context.CONNECTIVITY_SERVICE);
         mHasMobileData = cm.isNetworkSupported(ConnectivityManager.TYPE_MOBILE);
@@ -267,12 +198,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     void updateResources() {
         refreshWifiSignalTitle();
         refreshRSSITitle();
-        refreshAirPlaneTitle();
         refreshSettingsTile();
-        refreshBatteryTile();
-        refreshBluetoothTile();
-        refreshBrightnessTile();
-        refreshRotationLockTile();
     }
 
     // Settings
@@ -329,49 +255,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         mAlarmCallback.refreshView(mAlarmTile, mAlarmState);
     }
 
-    // Airplane Mode
-    void addAirplaneModeTile(QuickSettingsTileView view, RefreshCallback cb) {
-        mAirplaneModeTile = view;
-        mAirplaneModeTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mAirplaneModeState.enabled) {
-                    setAirplaneModeState(false);
-                } else {
-                    setAirplaneModeState(true);
-                }
-            }
-        });
-        mAirplaneModeCallback = cb;
-        int airplaneMode = Settings.Global.getInt(mContext.getContentResolver(),
-                Settings.Global.AIRPLANE_MODE_ON, 0);
-        onAirplaneModeChanged(airplaneMode != 0);
-    }
-    private void setAirplaneModeState(boolean enabled) {
-        // TODO: Sets the view to be "awaiting" if not already awaiting
-
-        // Change the system setting
-        Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON,
-                                enabled ? 1 : 0);
-
-        // Post the intent
-        Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
-        intent.putExtra("state", enabled);
-        mContext.sendBroadcast(intent);
-    }
-    // NetworkSignalChanged callback
-    @Override
-    public void onAirplaneModeChanged(boolean enabled) {
-        // TODO: If view is in awaiting state, disable
-        Resources r = mContext.getResources();
-        mAirplaneModeState.enabled = enabled;
-        mAirplaneModeState.iconId = (enabled ?
-                R.drawable.ic_qs_airplane_on :
-                R.drawable.ic_qs_airplane_off);
-        mAirplaneModeState.label = r.getString(R.string.quick_settings_airplane_mode_label);
-        mAirplaneModeCallback.refreshView(mAirplaneModeTile, mAirplaneModeState);
-    }
-
     // Wifi
     void addWifiTile(QuickSettingsTileView view, RefreshCallback cb) {
         mWifiTile = view;
@@ -397,7 +280,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         return string;
     }
     // NetworkSignalChanged callback
-    @Override
     public void onWifiSignalChanged(boolean enabled, int wifiSignalIconId,
             String wifiSignalContentDescription, String enabledDesc) {
         // TODO: If view is in awaiting state, disable
@@ -432,98 +314,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         mRSSITile = view;
         mRSSICallback = cb;
         mRSSICallback.refreshView(mRSSITile, mRSSIState);
-    }
-    // NetworkSignalChanged callback
-    @Override
-    public void onMobileDataSignalChanged(
-            boolean enabled, int mobileSignalIconId, String signalContentDescription,
-            int dataTypeIconId, String dataContentDescription, String enabledDesc) {
-        if (deviceHasMobileData()) {
-            // TODO: If view is in awaiting state, disable
-            Resources r = mContext.getResources();
-            mRSSIState.originEnable = enabled;
-            mRSSIState.originDescription = enabledDesc;
-            mRSSIState.signalIconId = enabled && (mobileSignalIconId > 0)
-                    ? mobileSignalIconId
-                    : R.drawable.ic_qs_signal_no_signal;
-            mRSSIState.signalContentDescription = enabled && (mobileSignalIconId > 0)
-                    ? signalContentDescription
-                    : r.getString(R.string.accessibility_no_signal);
-            mRSSIState.dataTypeIconId = enabled && (dataTypeIconId > 0) && !mWifiState.enabled
-                    ? dataTypeIconId
-                    : 0;
-            mRSSIState.dataContentDescription = enabled && (dataTypeIconId > 0) && !mWifiState.enabled
-                    ? dataContentDescription
-                    : r.getString(R.string.accessibility_no_data);
-            mRSSIState.label = enabled
-                    ? removeTrailingPeriod(enabledDesc)
-                    : r.getString(R.string.quick_settings_rssi_emergency_only);
-            mRSSICallback.refreshView(mRSSITile, mRSSIState);
-        }
-    }
-
-    // Bluetooth
-    void addBluetoothTile(QuickSettingsTileView view, RefreshCallback cb) {
-        mBluetoothTile = view;
-        mBluetoothCallback = cb;
-
-        final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothState.enabled = adapter.isEnabled();
-        mBluetoothState.connected =
-                (adapter.getConnectionState() == BluetoothAdapter.STATE_CONNECTED);
-        onBluetoothStateChange(mBluetoothState);
-    }
-    boolean deviceSupportsBluetooth() {
-        return (BluetoothAdapter.getDefaultAdapter() != null);
-    }
-    // BluetoothController callback
-    @Override
-    public void onBluetoothStateChange(boolean on) {
-        mBluetoothState.enabled = on;
-        onBluetoothStateChange(mBluetoothState);
-    }
-    public void onBluetoothStateChange(BluetoothState bluetoothStateIn) {
-        // TODO: If view is in awaiting state, disable
-        Resources r = mContext.getResources();
-        mBluetoothState.enabled = bluetoothStateIn.enabled;
-        mBluetoothState.connected = bluetoothStateIn.connected;
-        if (mBluetoothState.enabled) {
-            if (mBluetoothState.connected) {
-                mBluetoothState.iconId = R.drawable.ic_qs_bluetooth_on;
-                mBluetoothState.stateContentDescription = r.getString(R.string.accessibility_desc_connected);
-            } else {
-                mBluetoothState.iconId = R.drawable.ic_qs_bluetooth_not_connected;
-                mBluetoothState.stateContentDescription = r.getString(R.string.accessibility_desc_on);
-            }
-            mBluetoothState.label = r.getString(R.string.quick_settings_bluetooth_label);
-        } else {
-            mBluetoothState.iconId = R.drawable.ic_qs_bluetooth_off;
-            mBluetoothState.label = r.getString(R.string.quick_settings_bluetooth_off_label);
-            mBluetoothState.stateContentDescription = r.getString(R.string.accessibility_desc_off);
-        }
-        mBluetoothCallback.refreshView(mBluetoothTile, mBluetoothState);
-    }
-    void refreshBluetoothTile() {
-        if (mBluetoothTile != null) {
-            onBluetoothStateChange(mBluetoothState.enabled);
-        }
-    }
-
-    // Battery
-    void addBatteryTile(QuickSettingsTileView view, RefreshCallback cb) {
-        mBatteryTile = view;
-        mBatteryCallback = cb;
-        mBatteryCallback.refreshView(mBatteryTile, mBatteryState);
-    }
-    // BatteryController callback
-    @Override
-    public void onBatteryLevelChanged(int level, boolean pluggedIn) {
-        mBatteryState.batteryLevel = level;
-        mBatteryState.pluggedIn = pluggedIn;
-        mBatteryCallback.refreshView(mBatteryTile, mBatteryState);
-    }
-    void refreshBatteryTile() {
-        mBatteryCallback.refreshView(mBatteryTile, mBatteryState);
     }
 
     // Location
@@ -661,71 +451,10 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         return null;
     }
 
-    // Rotation lock
-    void addRotationLockTile(QuickSettingsTileView view, RefreshCallback cb) {
-        mRotationLockTile = view;
-        mRotationLockCallback = cb;
-        onRotationLockChanged();
-    }
-    void onRotationLockChanged() {
-        boolean locked = RotationPolicy.isRotationLocked(mContext);
-        mRotationLockState.enabled = locked;
-        mRotationLockState.iconId = locked
-                ? R.drawable.ic_qs_rotation_locked
-                : R.drawable.ic_qs_auto_rotate;
-        mRotationLockState.label = locked
-                ? mContext.getString(R.string.quick_settings_rotation_locked_label)
-                : mContext.getString(R.string.quick_settings_rotation_unlocked_label);
-
-        // may be called before addRotationLockTile due to RotationPolicyListener in QuickSettings
-        if (mRotationLockTile != null && mRotationLockCallback != null) {
-            mRotationLockCallback.refreshView(mRotationLockTile, mRotationLockState);
-        }
-    }
-    void refreshRotationLockTile() {
-        if (mRotationLockTile != null) {
-            onRotationLockChanged();
-        }
-    }
-
-    // Brightness
-    void addBrightnessTile(QuickSettingsTileView view, RefreshCallback cb) {
-        mBrightnessTile = view;
-        mBrightnessCallback = cb;
-        onBrightnessLevelChanged();
-    }
-    @Override
-    public void onBrightnessLevelChanged() {
-        Resources r = mContext.getResources();
-        int mode = Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
-                mUserTracker.getCurrentUserId());
-        mBrightnessState.autoBrightness =
-                (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
-        mBrightnessState.iconId = mBrightnessState.autoBrightness
-                ? R.drawable.ic_qs_brightness_auto_on
-                : R.drawable.ic_qs_brightness_auto_off;
-        mBrightnessState.label = r.getString(R.string.quick_settings_brightness_label);
-        mBrightnessCallback.refreshView(mBrightnessTile, mBrightnessState);
-    }
-    void refreshBrightnessTile() {
-        onBrightnessLevelChanged();
-    }
-
     // User switch: need to update visuals of all tiles known to have per-user state
     void onUserSwitched() {
-        mBrightnessObserver.startObserving();
-        onRotationLockChanged();
-        onBrightnessLevelChanged();
         onNextAlarmChanged();
         onBugreportChanged();
-    }
-
-    void refreshAirPlaneTitle() {
-        int airplaneMode = Settings.Global.getInt(mContext.getContentResolver(),
-                Settings.Global.AIRPLANE_MODE_ON, 0);
-        onAirplaneModeChanged(airplaneMode!=0);
     }
 
     void refreshRSSITitle() {
