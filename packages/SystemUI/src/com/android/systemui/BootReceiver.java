@@ -54,6 +54,14 @@ public class BootReceiver extends BroadcastReceiver {
         mSw.setProperty("ubootenv.var.has.accelerometer", "false");
 
         // Adjust resolution and position
-        mHdmiManager.hdmiPlugged();
+        try {
+            if (mHdmiManager.isHdmiPlugged()) {
+                mHdmiManager.hdmiPlugged();
+            } else {
+                mHdmiManager.hdmiUnplugged();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "HDMI ate a burger");
+        }
     }
 }
