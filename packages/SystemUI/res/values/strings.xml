@@ -539,5 +539,6 @@
     <string name="quick_settings_label_disabled">Off</string>
     <string name="quick_settings_ringer_normal">Sound</string>
     <string name="quick_settings_report_bug">Report Bug</string>
+    <string name="quick_settings_reboot">Reboot</string>
 
 </resources>
