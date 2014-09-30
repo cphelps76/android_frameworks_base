@@ -16,6 +16,7 @@ import com.android.systemui.quicksettings.PreferencesTile;
 import com.android.systemui.quicksettings.QuickSettingsTile;
 import com.android.systemui.quicksettings.RebootTile;
 import com.android.systemui.quicksettings.RingerModeTile;
+import com.android.systemui.quicksettings.ScreenshotTile;
 import com.android.systemui.quicksettings.UserTile;
 import com.android.systemui.quicksettings.WiFiDisplayTile;
 import com.android.systemui.quicksettings.WiFiTile;
@@ -36,10 +37,11 @@ public class QuickSettingsController {
     public static final int SOUND_TILE = 2;
     public static final int GPS_TILE = 3;
     public static final int REBOOT_TILE = 4;
-    public static final int IME_TILE = 5;
-    public static final int ALARM_TILE = 6;
-    public static final int BUG_REPORT_TILE = 7;
-    public static final int WIFI_DISPLAY_TILE = 8;
+    public static final int SCREENSHOT_TILE = 5;
+    public static final int IME_TILE = 6;
+    public static final int ALARM_TILE = 7;
+    public static final int BUG_REPORT_TILE = 8;
+    public static final int WIFI_DISPLAY_TILE = 9;
 
     public static final int USER_TILE = 99;
 
@@ -56,6 +58,7 @@ public class QuickSettingsController {
         quicksettings.add(SOUND_TILE);
         quicksettings.add(GPS_TILE);
         quicksettings.add(REBOOT_TILE);
+        quicksettings.add(SCREENSHOT_TILE);
 
         // Temporary tiles. These toggles must be the last ones added to the view, as they will show only when they are needed
         quicksettings.add(ALARM_TILE);
@@ -101,6 +104,9 @@ public class QuickSettingsController {
                 break;
             case REBOOT_TILE:
                 qs = new RebootTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this, mHandler);
+                break;
+            case SCREENSHOT_TILE:
+                qs = new ScreenshotTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this, mHandler);
                 break;
             case IME_TILE:
                 IMETile = new InputMethodTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);
