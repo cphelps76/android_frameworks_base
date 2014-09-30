@@ -3279,18 +3279,28 @@ public final class Settings {
         public static final String HDMI_RESOLUTION = "hdmi_resolution";
 
         /**
-         * User selected HDMI overscan compensation width
-         * Default to 80%
+         * User selected HDMI overscan compensation (left side)
          * @hide
          */
-        public static final String HDMI_OVERSCAN_WIDTH = "hdmi_overscan_width";
+        public static final String HDMI_OVERSCAN_LEFT = "hdmi_overscan_left";
 
         /**
-         * User selected HDMI overscan compensation height
-         * Default to 80%
+         * User selected HDMI overscan compensation (top side)
          * @hide
          */
-        public static final String HDMI_OVERSCAN_HEIGHT = "hdmi_overscan_height";
+        public static final String HDMI_OVERSCAN_TOP = "hdmi_overscan_top";
+
+        /**
+         * User selected HDMI overscan compensation (right side)
+         * @hide
+         */
+        public static final String HDMI_OVERSCAN_RIGHT = "hdmi_overscan_right";
+
+        /**
+         * User selected HDMI overscan compensation (bottom side)
+         * @hide
+         */
+        public static final String HDMI_OVERSCAN_BOTTOM = "hdmi_overscan_bottom";
 
         /**
          * User selected HDMI auto adjust to best possible resolution
