@@ -55,10 +55,10 @@ public class QuickSettingsController {
         mHandler = new Handler();
         quicksettings = new ArrayList<Integer>();
         quicksettings.add(USER_TILE);
-        quicksettings.add(SOUND_TILE);
         quicksettings.add(WIFI_TILE);
-        quicksettings.add(BLUETOOTH_TILE);
         quicksettings.add(PREFERENCES_TILE);
+        quicksettings.add(SOUND_TILE);
+        quicksettings.add(BLUETOOTH_TILE);
         quicksettings.add(GPS_TILE);
 
         // Temporary tiles. These toggles must be the last ones added to the view, as they will show only when they are needed
