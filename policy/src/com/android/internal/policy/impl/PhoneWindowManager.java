@@ -4676,18 +4676,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 } else {
                     mPowerKeyTriggered = false;
                     cancelPendingScreenshotChordAction();
-                    if (interceptPowerKeyUp(mHdmiPlugged || canceled || mPendingPowerKeyUpCanceled)) {
-                        result = (result & ~ACTION_WAKE_UP) | ACTION_GO_TO_SLEEP;
-						//add for video player to get power key pushed 
-						Intent vPlayerPowerKey=new Intent("com.amlogic.vplayer.powerkey");
-        				mContext.sendBroadcast(vPlayerPowerKey);
-                    } else {
-                        if (mHdmiPlugged && !mPowerKeyHandled) {
-                            sendKeyEvent(KeyEvent.KEYCODE_BACK);
-                        }
-                    }
-
                     mPendingPowerKeyUpCanceled = false;
+                    Intent intent = new Intent(Intent.ACTION_POWERMENU);
+                    mContext.sendBroadcastAsUser(intent, UserHandle.CURRENT_OR_SELF);
                 }
                 break;
             }
