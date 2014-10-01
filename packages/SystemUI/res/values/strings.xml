@@ -553,5 +553,7 @@
     <string name="quick_settings_report_bug">Report Bug</string>
     <string name="quick_settings_reboot">Reboot</string>
     <string name="quick_settings_screenshot">Screenshot</string>
+    <string name="quick_settings_music_play">Play</string>
+    <string name="quick_settings_music_pause">Pause</string>
 
 </resources>

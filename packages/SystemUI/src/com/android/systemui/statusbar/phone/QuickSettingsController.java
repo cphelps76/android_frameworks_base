@@ -17,6 +17,7 @@ import com.android.systemui.quicksettings.QuickSettingsTile;
 import com.android.systemui.quicksettings.RebootTile;
 import com.android.systemui.quicksettings.RingerModeTile;
 import com.android.systemui.quicksettings.ScreenshotTile;
+import com.android.systemui.quicksettings.MusicTile;
 import com.android.systemui.quicksettings.UserTile;
 import com.android.systemui.quicksettings.WiFiDisplayTile;
 import com.android.systemui.quicksettings.WiFiTile;
@@ -35,13 +36,14 @@ public class QuickSettingsController {
     public static final int WIFI_TILE = 0;
     public static final int PREFERENCES_TILE = 1;
     public static final int SOUND_TILE = 2;
-    public static final int GPS_TILE = 3;
-    public static final int REBOOT_TILE = 4;
-    public static final int SCREENSHOT_TILE = 5;
-    public static final int IME_TILE = 6;
-    public static final int ALARM_TILE = 7;
-    public static final int BUG_REPORT_TILE = 8;
-    public static final int WIFI_DISPLAY_TILE = 9;
+        public static final int MUSIC_TILE = 3;
+    public static final int GPS_TILE = 4;
+    public static final int REBOOT_TILE = 5;
+    public static final int SCREENSHOT_TILE = 6;
+    public static final int IME_TILE = 7;
+    public static final int ALARM_TILE = 8;
+    public static final int BUG_REPORT_TILE = 9;
+    public static final int WIFI_DISPLAY_TILE = 10;
 
     public static final int USER_TILE = 99;
 
@@ -56,6 +58,7 @@ public class QuickSettingsController {
         quicksettings.add(WIFI_TILE);
         quicksettings.add(PREFERENCES_TILE);
         quicksettings.add(SOUND_TILE);
+        quicksettings.add(MUSIC_TILE);
         quicksettings.add(GPS_TILE);
         quicksettings.add(REBOOT_TILE);
         quicksettings.add(SCREENSHOT_TILE);
@@ -107,6 +110,9 @@ public class QuickSettingsController {
                 break;
             case SCREENSHOT_TILE:
                 qs = new ScreenshotTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this, mHandler);
+                break;
+            case MUSIC_TILE:
+                qs = new MusicTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this, mHandler);
                 break;
             case IME_TILE:
                 IMETile = new InputMethodTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);
