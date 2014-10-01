@@ -5,7 +5,7 @@
  *    the display resolution, position, and digital audio
  *    for the TV being used.
  *
- *                 VERSION 3.1
+ *                 VERSION 3.2
  *
  * * Licensed under the GNU GPLv2 license
  *
@@ -37,6 +37,8 @@ import java.util.ArrayList;
 public class HdmiManager {
 
     private static final String TAG = HdmiManager.class.getSimpleName();
+
+    private static final boolean DEBUG = true;
 
     private static final String ACTION_OUTPUTMODE_CHANGE = "android.intent.action.OUTPUTMODE_CHANGE";
     private static final String ACTION_OUTPUTMODE_SAVE = "android.intent.action.OUTPUTMODE_SAVE";
@@ -164,22 +166,16 @@ public class HdmiManager {
      */
     public void hdmiUnplugged() {
         Log.d(TAG, "HDMI unplugged");
-        String cvbsMode = mSystemWriteManager.getPropertyString(UBOOT_CVBSMODE, "480cvbs");
-        if (isRealOutputMode()) {
-            if (isHdmiOnly()) {
-                setOutputMode(cvbsMode);
-                mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
+        String resolution = getRequestedResolution();
+        if (isHdmiOnly()) {
+            if (isFreescaleClosed()) {
+                setOutputWithoutFreescale(resolution);
+            } else {
+                setOutputMode(resolution);
             }
-        } else {
-            if (isHdmiOnly()) {
-                if (isFreescaleClosed()) {
-                    setOutputWithoutFreescale(cvbsMode);
-                } else {
-                    setOutputMode(cvbsMode);
-                }
-                mSystemWriteManager.writeSysfs(HDMI_UNPLUGGED, "vdac"); //open vdac
-                mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
-            }
+            if (isCompensated()) syncCompensation();
+            openVdac(resolution);
+            blankDisplay(false);            
         }
     }
 
@@ -190,23 +186,19 @@ public class HdmiManager {
      */
     public void hdmiPlugged() {
         Log.d(TAG, "HDMI plugged");
-        if (isRealOutputMode()) {
-            if (isHdmiOnly()) {
-                mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
-                setOutputMode(getRequestedResolution());
-            }
-        } else if (isHdmiOnly()) {
-            mSystemWriteManager.writeSysfs(HDMI_PLUGGED, "vdac");
+        if (isHdmiOnly()) {
             String resolution = getRequestedResolution();
 
+            closeVdac(resolution);
+
             if (isFreescaleClosed()) {
-                Log.d(TAG, "Freescale is closed");
+                if (DEBUG) Log.d(TAG, "Freescale is closed");
                 setOutputWithoutFreescale(resolution);
             } else {
-                Log.d(TAG, "Freescale is open");
+                if (DEBUG) Log.d(TAG, "Freescale is open");
                 setOutputMode(resolution);
             }
-            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
+            blankDisplay(false);
         }
         if (isCompensated()) syncCompensation();
     }
@@ -216,7 +208,7 @@ public class HdmiManager {
      * @return current HDMI resolution
      */
     public String getResolution() {
-        Log.d(TAG, "Current resolution is " + mSystemWriteManager.readSysfs(DISPLAY_MODE));
+        if (DEBUG) Log.d(TAG, "Current resolution is " + mSystemWriteManager.readSysfs(DISPLAY_MODE));
         return mSystemWriteManager.readSysfs(DISPLAY_MODE);
     }
 
@@ -278,6 +270,16 @@ public class HdmiManager {
         return position;
     }
 
+    private boolean isResolutionAvailable(String resolution) {
+        String[] resolutions = getAvailableResolutions();
+        for (String res : resolutions) {
+            if (resolution.equals(res)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Get the requested resolution factoring in auto adjustment
      * If user enabled auto adjustment, this resolution supercedes the
@@ -294,31 +296,44 @@ public class HdmiManager {
             // if not available fall back to 720p
             String userResolution = Settings.Secure.getString(mContext.getContentResolver(),
                     Settings.Secure.HDMI_RESOLUTION);
-            resolution = (userResolution != null ? userResolution : "720p");
+            resolution = (isResolutionAvailable(userResolution) ? userResolution : "720p");
         }
         return resolution;
     }
 
     /**
      * Check Settings.Secure to see if height and width have been compensated
-     * @return true if width != 100 && height  != 100; else false
+     * @return true if any side has a compensation adjustment; false otherwise
      */
     private boolean isCompensated() {
-        int width = Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_WIDTH, 100);
-        int height = Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_HEIGHT, 100);
-        boolean widthOffset = width != 100;
-        boolean heightOffset = height != 100;
+        int left = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_LEFT, 100);
+        int top = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_LEFT, 100);
+        int right = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_RIGHT, 100);
+        int bottom = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_BOTTOM, 100);
+        boolean leftOffset = left != 100;
+        boolean topOffset = top != 100;
+        boolean rightOffset = right != 100;
+        boolean bottomOffset = bottom != 100;
 
-        if (widthOffset) {
-            Log.d(TAG, "Overscan is compensated for width. Adjusting back to " + width);
+        if (leftOffset) {
+            Log.d(TAG, "Overscan is compensated for left. Adjusting back to " + left);
         }
-        if (heightOffset) {
-            Log.d(TAG, "Overscan is compensated for height. Adjusting back to " + height);
+        if (topOffset) {
+            Log.d(TAG, "Overscan is compensated for top. Adjusting back to " + top);
         }
 
-        return (widthOffset || heightOffset) ? true: false;
+        if (rightOffset) {
+            Log.d(TAG, "Overscan is compensated for right. Adjusting back to " + right);
+        }
+        if (bottomOffset) {
+            Log.d(TAG, "Overscan is compensated for bottom. Adjusting back to " + bottom);
+         }
+
+        return (leftOffset || topOffset || rightOffset || bottomOffset) ? true: false;
     }
 
     /**
@@ -343,11 +358,11 @@ public class HdmiManager {
         String windowAxis = String.valueOf(left) + " " + String.valueOf(top) + " "
                         + (right - 1) + " " +(bottom - 1);
         if (isRealOutputMode()) {
-            mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
-            mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+            setWindowAxis(windowAxis);
+            setFreescaleFb0("0x10001");
         } else {
-            mSystemWriteManager.writeSysfs(PPSCALER_RECT, position);
-            mSystemWriteManager.writeSysfs(UPDATE_FREESCALE, "1");
+            setPpscalerRect(position);
+            updateFreescale("1");
         }
     }
 
@@ -419,21 +434,21 @@ public class HdmiManager {
         }
 
         if (isRealOutputMode()) {
-            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
+            blankDisplay(true);
             if ((position.contains("720") || position.contains("1080"))
                     && left == 0 && top == 0) {
-                mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x0");
+                setFreescaleFb0("0x0");
             }
 
             String output = String.valueOf(left) + " " + String.valueOf(top) + getDisplayAxisByMode(position)
                     + String.valueOf(left) + " " + String.valueOf(top) + " " + 18 + " " + 18;
             String video = String.valueOf(left) + " " + String.valueOf(left) + " " + (left + right - 1)
                     + " " + (top + bottom -1);
-            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, output);
-            mSystemWriteManager.writeSysfs(VIDEO_AXIS, video);
-            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
+            setOutputAxis(output);
+            setVideoAxis(video);
+            blankDisplay(false);
         }
-    }
+    }    
 
     /**
      * Reset the display position to 100% for the resolution
@@ -442,9 +457,13 @@ public class HdmiManager {
         // reset position to 100% of current resolution
         int[] position = getResolutionPosition();
         Settings.Secure.putInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_WIDTH, 100);
+                Settings.Secure.HDMI_OVERSCAN_LEFT, 100);
         Settings.Secure.putInt(mContext.getContentResolver(),
-                Settings.Secure.HDMI_OVERSCAN_HEIGHT, 100);
+                Settings.Secure.HDMI_OVERSCAN_TOP, 100);
+        Settings.Secure.putInt(mContext.getContentResolver(),
+            Settings.Secure.HDMI_OVERSCAN_RIGHT, 100);
+        Settings.Secure.putInt(mContext.getContentResolver(),
+                Settings.Secure.HDMI_OVERSCAN_BOTTOM, 100);
 
         setPosition(position[0], position[1], position[2], position[3]);
         savePosition(position[0], position[1], position[2], position[3]);
@@ -482,6 +501,7 @@ public class HdmiManager {
         }
         switch (index) {
             case 0: // 480i
+            case 10:
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_Y, 0);
                 currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, OUTPUT480_FULL_WIDTH);
@@ -494,6 +514,7 @@ public class HdmiManager {
                 currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480P_OUTPUT_HEIGHT, OUTPUT480_FULL_HEIGHT);
                 break;
             case 2: // 576i
+            case 11:
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_Y, 0);
                 currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, OUTPUT576_FULL_WIDTH);
@@ -525,19 +546,7 @@ public class HdmiManager {
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_Y, 0);
                 currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_WIDTH, OUTPUT1080_FULL_WIDTH);
                 currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_1080P_OUTPUT_HEIGHT, OUTPUT1080_FULL_HEIGHT);
-                break;
-            case 10: // 480cvbs
-                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_X, 0);
-                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_WIDTH, OUTPUT480_FULL_WIDTH);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_480I_OUTPUT_HEIGHT, OUTPUT480_FULL_HEIGHT);
-                break;
-            case 11: // 576cvbs
-                currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_X, 0);
-                currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_Y, 0);
-                currentPosition[2] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_WIDTH, OUTPUT576_FULL_WIDTH);
-                currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_576I_OUTPUT_HEIGHT, OUTPUT576_FULL_HEIGHT);
-                break;
+                break;            
             case 12: // 4k2k 24Hz
                 currentPosition[0] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K24HZ_OUTPUT_X, 0);
                 currentPosition[1] = mSystemWriteManager.getPropertyInt(UBOOT_4K2K24HZ_OUTPUT_Y, 0);
@@ -568,7 +577,7 @@ public class HdmiManager {
                 currentPosition[3] = mSystemWriteManager.getPropertyInt(UBOOT_720P_OUTPUT_HEIGHT, OUTPUT720_FULL_HEIGHT);
                 break;
         }
-        Log.d(TAG, "getPosition says position is " + currentPosition[0] + " " + currentPosition[1] + " " + currentPosition[2] + " " + currentPosition[3]);
+        if (DEBUG) Log.d(TAG, "getPosition says position is " + currentPosition[0] + " " + currentPosition[1] + " " + currentPosition[2] + " " + currentPosition[3]);
         return currentPosition;
     }
 
@@ -577,24 +586,24 @@ public class HdmiManager {
      * @param newMode Resolution desired
      */
     public void setOutputWithoutFreescale(String newMode) {
-        Log.d(TAG, "Setting " + newMode + " as output without freescale");
+        if (DEBUG) Log.d(TAG, "Setting " + newMode + " as output without freescale");
         if (newMode.contains("cvbs")) {
             openVdac(newMode);
         } else {
             closeVdac(newMode);
-        }
+        }        
 
-        mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
-        mSystemWriteManager.writeSysfs(PPSCALER_RECT, "0");
-        mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
-        mSystemWriteManager.writeSysfs(FREESCALE_FB1, "0");
-        mSystemWriteManager.writeSysfs(DISPLAY_MODE, newMode);
-        mSystemWriteManager.setProperty(UBOOT_COMMONMODE, newMode);
+        blankDisplay(true);
+        setPpscalerRect("0");
+        setFreescaleFb0("0");
+        setFreescaleFb1("0");
+        setDisplayMode(newMode);
+        setCommonMode(newMode);
         saveNewModeToProp(newMode);
 
         int[] currentPosition = {0, 0, 1280, 720};
 
-        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
+        if (isRealOutputMode()) {
             setDensity(newMode);
             if (newMode.contains("1080") || newMode.contains("4k2k")) {
                 setDisplaySize(1920, 1080);
@@ -604,28 +613,28 @@ public class HdmiManager {
 
             String displayValue = currentPosition[0] + " " + currentPosition[1] + " " +
                     1920 + " " + 1080 + " " + currentPosition[0] + " " + currentPosition[1] + " " + 18 + " " + 18;
-            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, displayValue);
+            setOutputAxis(displayValue);
         } else {
             currentPosition = getPosition(newMode);
             if ((newMode.equals(COMMON_MODE_VALUE_LIST[5])) || (newMode.equals(COMMON_MODE_VALUE_LIST[6]))
                     || (newMode.equals(COMMON_MODE_VALUE_LIST[8])) || (newMode.equals(COMMON_MODE_VALUE_LIST[9]))) {
-                mSystemWriteManager.writeSysfs(OUTPUT_AXIS, ((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2
+                setOutputAxis(((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2
                         + " 1280 720 " + ((int)(currentPosition[0]/2))*2 + " " + ((int)(currentPosition[1]/2))*2 + " 18 18");
-                mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD0, "0 0 " + (960 - (int)(currentPosition[0]/2) - 1) + " " + (1080 - (int)(currentPosition[1]/2) - 1));
-                mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, "7 " + ((int)(currentPosition[2]/2)) + " " + ((int)(currentPosition[3]/2))*2);
-                mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, "1280 720 " + ((int)(currentPosition[2]/2))*2 + " " + ((int)(currentPosition[3]/2))*2);
-                mSystemWriteManager.writeSysfs(SCALE_OSD1, "0x10001");
+                setOSD0ScaleAxis("0 0 " + (960 - (int)(currentPosition[0]/2) - 1) + " " + (1080 - (int)(currentPosition[1]/2) - 1));
+                setRequestScale("7 " + ((int)(currentPosition[2]/2)) + " " + ((int)(currentPosition[3]/2))*2);
+                setOSD1ScaleAxis("1280 720 " + ((int)(currentPosition[2]/2))*2 + " " + ((int)(currentPosition[3]/2))*2);
+                setOSD1Scale("0x10001");
             } else {
-                mSystemWriteManager.writeSysfs(OUTPUT_AXIS, currentPosition[0] + " " + currentPosition[1]
+                setOutputAxis(currentPosition[0] + " " + currentPosition[1]
                          + " 1280 720 " + currentPosition[0] + " " + currentPosition[1] + " 18 18");
-                mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, "16 " + currentPosition[2] + " "+ currentPosition[3]);
-                mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, "1280 720 " + currentPosition[2] + " " + currentPosition[3]);
-                mSystemWriteManager.writeSysfs(SCALE_OSD1, "0x10001");
+                setRequestScale("16 " + currentPosition[2] + " "+ currentPosition[3]);
+                setOSD1ScaleAxis("1280 720 " + currentPosition[2] + " " + currentPosition[3]);
+                setOSD1Scale("0x10001");
             }
-            mSystemWriteManager.writeSysfs(VIDEO_AXIS, currentPosition[0] + " " + currentPosition[1] + " "
+            setVideoAxis(currentPosition[0] + " " + currentPosition[1] + " "
                     + (currentPosition[2] + currentPosition[0] - 1) + " " + (currentPosition[3] + currentPosition[1] - 1));
         }
-    }
+    }    
 
     /**
      * Sets the desired output mode if freescale is open
@@ -635,7 +644,7 @@ public class HdmiManager {
         String currentMode = getResolution();
         if (newMode.equals(currentMode)) {
             // 'tis the same, so go home
-            Log.d(TAG, "newMode=" + newMode + " == currentMode=" + currentMode);
+            if (DEBUG) Log.d(TAG, "newMode=" + newMode + " == currentMode=" + currentMode);
             return;
         }
         Log.d(TAG, "Setting " + newMode + " as output");
@@ -661,41 +670,42 @@ public class HdmiManager {
                 + " " + (currentPosition[2] + currentPosition[0])
                 + " " + (currentPosition[3] + currentPosition[1]) + " " + 0;
 
-        if (mSystemWriteManager.getPropertyBoolean(REAL_OUTPUT_MODE, false)) {
-            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
+
+        if (isRealOutputMode()) {
+            blankDisplay(true);
             // close freescale
-            mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
+            setFreescaleFb0("0");
             if (newMode.contains("4k2k")) {
                 // set to 1080p as base
                 setDensity(newMode);
                 setDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
 
                 // open freescale and scale up to 4k
-                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
-                mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1919 1079");
-                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
-                mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+                setFreescaleMode("1");
+                setFreescaleAxis(newMode);
+                setWindowAxis(windowAxis);
+                setFreescaleFb0("0x10001");
             } else if (newMode.contains("1080")) {
                 setDensity(newMode);
                 setDisplaySize(OUTPUT1080_FULL_WIDTH, OUTPUT1080_FULL_HEIGHT);
-                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
-                mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1919 1079");
-                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+                setFreescaleMode("1");
+                setFreescaleAxis(newMode);
+                setWindowAxis(windowAxis);
                 if (currentPosition[0] == 0 && currentPosition[1] == 0) {
-                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
+                    setFreescaleFb0("0");
                 } else {
-                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+                    setFreescaleFb0("0x10001");
                 }
             } else if (newMode.contains("720")) {
                 setDensity(newMode);
                 setDisplaySize(OUTPUT720_FULL_WIDTH, OUTPUT720_FULL_HEIGHT);
-                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
-                mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
-                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+                setFreescaleMode("1");
+                setFreescaleAxis(newMode);
+                setWindowAxis(windowAxis);
                 if (currentPosition[0] == 0 && currentPosition[1] == 0) {
-                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0");
+                    setFreescaleFb0("0");
                 } else {
-                    mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+                    setFreescaleFb0("0x10001");
                 }
             } else if (newMode.contains("576") || newMode.contains("480")) {
                 setDensity(newMode);
@@ -704,27 +714,23 @@ public class HdmiManager {
                 } else {
                     setDisplaySize(OUTPUT480_FULL_WIDTH, OUTPUT480_FULL_HEIGHT);
                 }
-                mSystemWriteManager.writeSysfs(FREESCALE_MODE, "1");
-                if (newMode.equals("576i") || newMode.equals("480i")) {
-                    mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 721");
-                } else {
-                    mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
-                }
-                mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
-                mSystemWriteManager.writeSysfs(FREESCALE_FB0, "0x10001");
+                setFreescaleMode("1");
+                setFreescaleAxis(newMode);
+                setWindowAxis(windowAxis);
+                setFreescaleFb0("0x10001");
             }
 
-            mSystemWriteManager.writeSysfs(VIDEO_AXIS, videoAxis);
-            mSystemWriteManager.writeSysfs(OUTPUT_AXIS, displayAxis);
+            setVideoAxis(videoAxis);
+            setOutputAxis(displayAxis);
         } else {
             setFreescaleAxis(newMode);
-            mSystemWriteManager.writeSysfs(DISPLAY_MODE, newMode);
-            mSystemWriteManager.writeSysfs(PPSCALER_RECT, ppScalerRect);
-            mSystemWriteManager.writeSysfs(UPDATE_FREESCALE, "1");
-            mSystemWriteManager.writeSysfs(WINDOW_AXIS, windowAxis);
+            setDisplayMode(newMode);
+            setPpscalerRect(ppScalerRect);
+            updateFreescale("1");
+            setWindowAxis(windowAxis);
         }
 
-        mSystemWriteManager.setProperty(UBOOT_COMMONMODE, newMode);
+        setCommonMode(newMode);
         saveNewModeToProp(newMode);
     }
 
@@ -740,6 +746,72 @@ public class HdmiManager {
         return isHdmiOnly;
     }
 
+    public void blankDisplay(boolean blank) {
+        if (blank) {
+            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "1");
+        } else {
+            mSystemWriteManager.writeSysfs(BLANK_DISPLAY, "0");
+        }
+    }
+
+    public void setFreescaleFb0(String bit) {
+        mSystemWriteManager.writeSysfs(FREESCALE_FB0, bit);
+    }
+
+    public void setFreescaleFb1(String bit) {
+            mSystemWriteManager.writeSysfs(FREESCALE_FB1, bit);
+        }
+
+    public void setFreescaleMode(String mode) {
+        mSystemWriteManager.writeSysfs(FREESCALE_MODE, mode);
+    }
+
+    public void setCommonMode(String mode) {
+        mSystemWriteManager.setProperty(UBOOT_COMMONMODE, mode);
+    }
+
+    public void setOutputAxis(String output) {
+        mSystemWriteManager.writeSysfs(OUTPUT_AXIS, output);
+    }
+    public void setVideoAxis(String video) {
+        mSystemWriteManager.writeSysfs(VIDEO_AXIS, video);
+    }
+
+    public void setDisplayMode(String mode) {
+        mSystemWriteManager.writeSysfs(DISPLAY_MODE, mode);
+    }
+
+    public void setPpscalerRect(String rect) {
+        mSystemWriteManager.writeSysfs(PPSCALER_RECT, rect);
+    }
+    public void updateFreescale(String value) {
+        mSystemWriteManager.writeSysfs(UPDATE_FREESCALE, value);
+    }
+    public void setWindowAxis(String window) {
+        mSystemWriteManager.writeSysfs(WINDOW_AXIS, window);
+    }
+
+    public void setOSD0ScaleAxis(String axis) {
+        mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD0, axis);
+    }
+    public void setOSD1ScaleAxis(String axis) {
+        mSystemWriteManager.writeSysfs(SCALE_AXIS_OSD1, axis);
+    }
+    public void setRequestScale(String scale) {
+        mSystemWriteManager.writeSysfs(REQUEST_2X_SCALE, scale);
+    }
+    public void setOSD1Scale(String scale) {
+        mSystemWriteManager.writeSysfs(SCALE_OSD1, scale);
+    }
+
+    public void setCvbsMode(String mode) {
+        mSystemWriteManager.setProperty(UBOOT_CVBSMODE, mode);
+    }
+
+    public void setHdmiMode(String mode) {
+        mSystemWriteManager.setProperty(UBOOT_HDMIMODE, mode);
+    }
+
     public String getDisplayAxisByMode(String newMode) {
         if (newMode.indexOf("1080") >= 0) {
             return DISPLAY_AXIS_1080;
@@ -753,20 +825,22 @@ public class HdmiManager {
     }
 
     public void setFreescaleAxis(String newMode) {
-        if (newMode.contains("720") || newMode.contains("1080")) {
-            mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1279 719");
-        } else {
-            mSystemWriteManager.writeSysfs(FREESCALE_AXIS, "0 0 1281 719");
-        }
-        mSystemWriteManager.writeSysfs(FREESCALE_FB0, "1");
+        String axis = "0 0 1279 719";
+        if (newMode.contains("4k2k") || newMode.contains("1080")) {
+            axis = "0 0 1919 1079";
+        } else if (newMode.equals("576i") || newMode.equals("480i")) {
+            axis = "0 0 1279 721";
+        }    
+        mSystemWriteManager.writeSysfs(FREESCALE_AXIS, axis);
+        setFreescaleFb0("1");
     }
 
     public void saveNewModeToProp(String newMode) {
         if (newMode != null) {
             if (newMode.contains("cvbs")) {
-                mSystemWriteManager.setProperty(UBOOT_CVBSMODE, newMode);
+                setCvbsMode(newMode);
             } else {
-                mSystemWriteManager.setProperty(UBOOT_HDMIMODE, newMode);
+                setHdmiMode(newMode);
             }
         }
     }
@@ -827,7 +901,7 @@ public class HdmiManager {
         if (getResolution().contains("cvbs")) {
             rawList = CVBS_SUPPORT_LIST[0] + "|" + CVBS_SUPPORT_LIST[1];
         }
-        Log.d(TAG, "Raw supported resolutions: " + rawList);
+        if (DEBUG) Log.d(TAG, "Raw supported resolutions: " + rawList);
         if (rawList != null) {
             resolutions = rawList.split("\\|");
         }
@@ -836,9 +910,9 @@ public class HdmiManager {
                 resolution = resolutions[resolutions.length-1]; // 576cvbs
             } else {
                 for (int i = 0; i < resolutions.length; i++) {
-                    Log.d(TAG, "checking " + resolutions[i]);
+                    if (DEBUG) Log.d(TAG, "checking " + resolutions[i]);
                     if (resolutions[i].contains("*")) {
-                        Log.d(TAG, "* found - setting as bestResolution");
+                        if (DEBUG) Log.d(TAG, "* found - setting as bestResolution");
                         // best mode
                         String res = resolutions[i];
                         resolution = res.substring(0, res.length()-1);
@@ -851,7 +925,7 @@ public class HdmiManager {
     }
 
     /**
-     * Checks if fb0 freescaled is closed
+     * Checks if fb0 freescale is closed
      * @return true if FREESCALE_FB0 contains 0x0
      */
     public boolean isFreescaleClosed() {

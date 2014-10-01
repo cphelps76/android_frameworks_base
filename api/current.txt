@@ -10931,6 +10931,7 @@ package android.hardware.display {
 
   public class HdmiManager {
     ctor public HdmiManager(android.content.Context);
+    method public void blankDisplay(boolean);
     method public void closeVdac(java.lang.String);
     method public java.lang.String[] getAvailableResolutions();
     method public java.lang.String getBestResolution();
@@ -10951,15 +10952,31 @@ package android.hardware.display {
     method public void resetPosition();
     method public void saveNewModeToProp(java.lang.String);
     method public void savePosition(int, int, int, int);
+    method public void setCommonMode(java.lang.String);
+    method public void setCvbsMode(java.lang.String);
     method public void setDensity(java.lang.String);
     method public void setDigitalAudioValue(java.lang.String);
+    method public void setDisplayMode(java.lang.String);
     method public void setDisplaySize(int, int);
     method public void setDisplaySize(java.lang.String, java.lang.String);
     method public void setFreescaleAxis(java.lang.String);
+    method public void setFreescaleFb0(java.lang.String);
+    method public void setFreescaleFb1(java.lang.String);
+    method public void setFreescaleMode(java.lang.String);
+    method public void setHdmiMode(java.lang.String);
+    method public void setOSD0ScaleAxis(java.lang.String);
+    method public void setOSD1Scale(java.lang.String);
+    method public void setOSD1ScaleAxis(java.lang.String);
+    method public void setOutputAxis(java.lang.String);
     method public void setOutputMode(java.lang.String);
     method public void setOutputWithoutFreescale(java.lang.String);
     method public void setPosition(int, int, int, int);
+    method public void setPpscalerRect(java.lang.String);
+    method public void setRequestScale(java.lang.String);
+    method public void setVideoAxis(java.lang.String);
+    method public void setWindowAxis(java.lang.String);
     method public void syncCompensation();
+    method public void updateFreescale(java.lang.String);
     field public static final java.lang.String AUDIODSP_DIGITAL_RAW = "/sys/class/audiodsp/digital_raw";
     field public static final java.lang.String BLANK_DISPLAY = "/sys/class/graphics/fb0/blank";
     field public static final java.lang.String[] COMMON_MODE_VALUE_LIST;

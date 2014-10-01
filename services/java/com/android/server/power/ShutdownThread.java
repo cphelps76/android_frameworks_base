@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
- 
 package com.android.server.power;
 
 import android.app.ActivityManagerNative;
@@ -44,10 +43,8 @@ import android.os.storage.IMountService;
 import android.os.storage.IMountShutdownObserver;
 
 import com.android.internal.telephony.ITelephony;
-import java.io.File;
 import android.util.Log;
 import android.view.WindowManager;
-import android.content.DialogInterface.OnDismissListener;
 
 public final class ShutdownThread extends Thread {
     // constants
@@ -60,11 +57,11 @@ public final class ShutdownThread extends Thread {
 
     // length of vibration before shutting down
     private static final int SHUTDOWN_VIBRATE_MS = 500;
-    
+
     // state tracking
     private static Object sIsStartedGuard = new Object();
     private static boolean sIsStarted = false;
-    
+
     private static boolean mReboot;
     private static boolean mRebootSafeMode;
     private static String mRebootReason;
@@ -77,7 +74,7 @@ public final class ShutdownThread extends Thread {
 
     // static instance of this thread
     private static final ShutdownThread sInstance = new ShutdownThread();
-    
+
     private final Object mActionDoneSync = new Object();
     private boolean mActionDone;
     private Context mContext;
@@ -87,10 +84,10 @@ public final class ShutdownThread extends Thread {
     private Handler mHandler;
 
     private static AlertDialog sConfirmDialog;
-    
+
     private ShutdownThread() {
     }
- 
+
     /**
      * Request a clean shutdown, waiting for subsystems to clean up their
      * state etc.  Must be called from a Looper thread in which its UI
@@ -117,15 +114,11 @@ public final class ShutdownThread extends Thread {
 
         final int longPressBehavior = context.getResources().getInteger(
                         com.android.internal.R.integer.config_longPressOnPowerBehavior);
-        /*final*/ int resourceId = mRebootSafeMode
+        final int resourceId = mRebootSafeMode
                 ? com.android.internal.R.string.reboot_safemode_confirm
                 : (longPressBehavior == 2
                         ? com.android.internal.R.string.shutdown_confirm_question
                         : com.android.internal.R.string.shutdown_confirm);
-
-        if(android.os.SystemProperties.getBoolean("sys.chiptemp.enable", false))
-            resourceId = com.android.internal.R.string.shutdown_confirm_question_chiptemp_hot;
-        
 
         Log.d(TAG, "Notifying thread to start shutdown longPressBehavior=" + longPressBehavior);
 
@@ -151,11 +144,6 @@ public final class ShutdownThread extends Thread {
             sConfirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
             sConfirmDialog.show();
 
-            sConfirmDialog.setOnDismissListener(new OnDismissListener(){
-    			public void onDismiss(DialogInterface dialog) {
-                    SystemProperties.set("sys.chiptemp.enable", "false");
-    			}
-    		});
         } else {
             beginShutdownSequence(context);
         }
@@ -220,12 +208,7 @@ public final class ShutdownThread extends Thread {
             }
             sIsStarted = true;
         }
-				boolean showShutdownAnim = new File("/system/media/shutdownanimation.zip").exists();
-    if (showShutdownAnim) {
-        Log.d(TAG, "shutdownanim");
-         android.os.SystemProperties.set("service.bootanim.exit", "0");
-        android.os.SystemProperties.set("ctl.start", "shutdownanim");
-    } else {
+
         // throw up an indeterminate system dialog to indicate radio is
         // shutting down.
         ProgressDialog pd = new ProgressDialog(context);
@@ -236,7 +219,6 @@ public final class ShutdownThread extends Thread {
         pd.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
 
         pd.show();
-			}		
 
         sInstance.mContext = context;
         sInstance.mPowerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
@@ -291,12 +273,6 @@ public final class ShutdownThread extends Thread {
                 actionDone();
             }
         };
-        if(new File("/system/media/shutdownanimation.zip").exists()){
-        try{
-					  Thread.sleep(5000);					       
-					}catch(InterruptedException ex){
-				}	
-			}	
 
         /*
          * Write a system property in case the system_server reboots before we
@@ -317,14 +293,14 @@ public final class ShutdownThread extends Thread {
         }
 
         Log.i(TAG, "Sending shutdown broadcast...");
-        
+
         // First send the high-level shut down broadcast.
         mActionDone = false;
         Intent intent = new Intent(Intent.ACTION_SHUTDOWN);
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         mContext.sendOrderedBroadcastAsUser(intent,
                 UserHandle.ALL, null, br, mHandler, 0, null, null);
-        
+
         final long endTime = SystemClock.elapsedRealtime() + MAX_BROADCAST_TIME;
         synchronized (mActionDoneSync) {
             while (!mActionDone) {
@@ -339,9 +315,9 @@ public final class ShutdownThread extends Thread {
                 }
             }
         }
-        
+
         Log.i(TAG, "Shutting down activity manager...");
-        
+
         final IActivityManager am =
             ActivityManagerNative.asInterface(ServiceManager.checkService("activity"));
         if (am != null) {
@@ -444,10 +420,8 @@ public final class ShutdownThread extends Thread {
                         phone.setRadio(false);
                     }
 
-					//workround for when phone unavailable, the phone state is not off
-					radioOff = true;
                 } catch (RemoteException ex) {
-                    Log.e(TAG, "RemoteException during radio shutdown", ex);
+                    Log.e(TAG, "Set top box do not contain radio. Letting system know its off");
                     radioOff = true;
                 }
 
