@@ -191,13 +191,13 @@ public class EthernetStateTracker implements NetworkStateTracker {
         } else {
             int event;
             mDhcpInfoInternal.ipAddress = info.getIpAddress();
-            mDhcpInfoInternal.addRoute(new RouteInfo(NetworkUtils.numericToInetAddress(info.getRouteAddr())));
+            mDhcpInfoInternal.addRoute(new RouteInfo(NetworkUtils.numericToInetAddress(info.getRouteAddress())));
 
             InetAddress ia = NetworkUtils.numericToInetAddress(info.getNetMask());
             mDhcpInfoInternal.prefixLength = NetworkUtils.netmaskIntToPrefixLength(
                     NetworkUtils.inetAddressToInt((Inet4Address)ia));
 
-            mDhcpInfoInternal.dns1 = info.getDnsAddr();
+            mDhcpInfoInternal.dns1 = info.getDnsAddress();
             Slog.i(TAG, "set ip manually " + mDhcpInfoInternal.toString());
             if (info.getIfName() != null)
                 NetworkUtils.resetConnections(info.getIfName(), NetworkUtils.RESET_ALL_ADDRESSES);
