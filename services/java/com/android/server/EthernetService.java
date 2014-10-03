@@ -266,6 +266,7 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub{
 				mEthStateHandler.removeMessages(EthernetManager.ETH_STATE_ENABLED);
 				mEthStateHandler.sendEmptyMessage(state);
             } else {
+                enforceConnectivityInternalPermission();
                 persistEthEnabled(true);
                 if (!isEthConfigured()) {
                     // If user did not configure any interfaces yet, pick the first one
@@ -335,5 +336,11 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub{
 
     public DhcpInfo getDhcpInfo() {
         return mTracker.getDhcpInfo();
+    }
+
+    private void enforceConnectivityInternalPermission() {
+        mContext.enforceCallingOrSelfPermission(
+                android.Manifest.permission.CONNECTIVITY_INTERNAL,
+                "ConnectivityService");
     }
 }
