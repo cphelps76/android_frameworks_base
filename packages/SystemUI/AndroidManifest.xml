@@ -80,6 +80,15 @@
     <!-- Reboot -->
     <uses-permission android:name="android.permission.REBOOT" />
 
+    <!-- Secure Screenshot -->
+    <protected-broadcast android:name="android.permission.SCREENSHOT" />
+    <protected-broadcast android:name="android.intent.action.SCREENSHOT" />
+
+    <permission android:name="android.permission.SCREENSHOT"
+                android:protectionLevel="signatureOrSystem"
+                android:description="@string/permdesc_screenshot"
+                android:label="@string/permlab_screenshot" />
+
     <application
         android:persistent="true"
         android:allowClearUserData="false"
@@ -98,10 +107,10 @@
             android:exported="true"
             />
 
-        <!-- started from PhoneWindowManager
-             TODO: Should have an android:permission attribute -->
+        <!-- started from PhoneWindowManager -->
         <service android:name=".screenshot.TakeScreenshotService"
             android:process=":screenshot"
+            android:permission="android.permission.SCREENSHOT"
             android:exported="false" />
 
         <service android:name=".LoadAverageService"
