@@ -308,6 +308,11 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             addUsersToMenu(mItems);
         }
 
+        // last: silent mode
+        if (SHOW_SILENT_TOGGLE) {
+            mItems.add(mSilentModeAction);
+        }
+
         mAdapter = new MyAdapter();
 
         AlertParams params = new AlertParams(mContext);
