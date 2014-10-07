@@ -106,7 +106,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
     private boolean mIsWaitingForEcmExit = false;
     private boolean mHasTelephony;
     private boolean mHasVibrator;
-    private final boolean mShowSilentToggle;
     private static int rebootIndex = 0;
 
     /**
@@ -138,9 +137,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 mAirplaneModeObserver);
         Vibrator vibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
         mHasVibrator = vibrator != null && vibrator.hasVibrator();
-
-        mShowSilentToggle = SHOW_SILENT_TOGGLE && !mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_useFixedVolume);
     }
 
     /**
@@ -312,6 +308,11 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             addUsersToMenu(mItems);
         }
 
+        // last: silent mode
+        if (SHOW_SILENT_TOGGLE) {
+            mItems.add(mSilentModeAction);
+        }
+
         mAdapter = new MyAdapter();
 
         AlertParams params = new AlertParams(mContext);
@@ -474,7 +475,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         mAirplaneModeOn.updateState(mAirplaneState);
         mAdapter.notifyDataSetChanged();
         mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-        if (mShowSilentToggle) {
+        if (SHOW_SILENT_TOGGLE) {
             IntentFilter filter = new IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION);
             mContext.registerReceiver(mRingerModeReceiver, filter);
         }
@@ -491,7 +492,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     /** {@inheritDoc} */
     public void onDismiss(DialogInterface dialog) {
-        if (mShowSilentToggle) {
+        if (SHOW_SILENT_TOGGLE) {
             try {
                 mContext.unregisterReceiver(mRingerModeReceiver);
             } catch (IllegalArgumentException ie) {
