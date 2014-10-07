@@ -33,23 +33,25 @@ import com.android.systemui.statusbar.phone.QuickSettingsContainerView;
 
 public class RebootTile extends QuickSettingsTile {
 
+    private Handler mHandler;
+
     public RebootTile(Context context, LayoutInflater inflater,
             QuickSettingsContainerView container,
             QuickSettingsController qsc, Handler handler) {
         super(context, inflater, container, qsc);
 
+        mHandler = handler;
         mLabel = mContext.getString(R.string.quick_settings_reboot);
         mDrawable = R.drawable.ic_qs_reboot;
 
         onClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                pm.reboot("");
                 mQsc.mBar.collapseAllPanels(true);
+                mHandler.postDelayed(mRunnable, 500);
             }
         };
-       onLongClick = new View.OnLongClickListener() {
+        onLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_POWERMENU);
@@ -59,4 +61,11 @@ public class RebootTile extends QuickSettingsTile {
             }
         };
     }
+
+    private Runnable mRunnable = new Runnable() {
+        public void run() {
+            PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+            pm.reboot("");
+        }
+    };
 }
