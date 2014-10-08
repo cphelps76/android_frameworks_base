@@ -233,16 +233,14 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         mItems = new ArrayList<Action>();
 
         // first: power off
-        // TODO: Reword to 'sleep' and turn off LED in 1.2.1
-        /*mItems.add(
+        mItems.add(
             new SinglePressAction(
                     com.android.internal.R.drawable.ic_lock_power_off,
                     R.string.global_action_power_off) {
 
                 public void onPress() {
                     // shutdown by making sure radio and power are handled accordingly.
-                    // MBX devices can't shut down cleanly, sleep instead
-                    mWindowManagerFuncs.sleep(true);
+                    mWindowManagerFuncs.shutdown(true);
                 }
 
                 public boolean onLongPress() {
@@ -257,7 +255,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 public boolean showBeforeProvisioning() {
                     return true;
                 }
-            });*/
+            });
 
         // next: reboot
         mItems.add(
