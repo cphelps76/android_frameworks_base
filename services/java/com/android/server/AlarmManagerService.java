@@ -935,7 +935,6 @@ class AlarmManagerService extends IAlarmManager.Stub {
                         TAG, "Checking for alarms... rtc=" + nowRTC
                         + ", elapsed=" + nowELAPSED);
 
-<<<<<<< HEAD
                     if ((result & RTC_WAKEUP_MASK) != 0)
                         triggerAlarmsLocked(mRtcWakeupAlarms, triggerList, nowRTC);
                     
