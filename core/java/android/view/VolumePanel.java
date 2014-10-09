@@ -56,8 +56,8 @@ import java.util.HashMap;
  *
  * @hide
  */
-public class VolumePanel extends Handler implements OnSeekBarChangeListener, View.OnClickListener,
-        VolumeController
+public class VolumePanel extends Handler implements OnSeekBarChangeListener,
+        View.OnClickListener, VolumeController
 {
     private static final String TAG = "VolumePanel";
     private static boolean LOGD = false;
@@ -302,12 +302,9 @@ public class VolumePanel extends Handler implements OnSeekBarChangeListener, Vie
         });
         // Change some window properties
         Window window = mDialog.getWindow();
-        window.setGravity(Gravity.TOP);
+        window.setGravity(Gravity.BOTTOM);
         LayoutParams lp = window.getAttributes();
         lp.token = null;
-        // Offset from the top
-        lp.y = mContext.getResources().getDimensionPixelOffset(
-                com.android.internal.R.dimen.volume_panel_top);
         lp.type = LayoutParams.TYPE_VOLUME_OVERLAY;
         lp.width = LayoutParams.WRAP_CONTENT;
         lp.height = LayoutParams.WRAP_CONTENT;
