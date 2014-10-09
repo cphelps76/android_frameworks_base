@@ -72,7 +72,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // database gets upgraded properly. At a minimum, please confirm that 'upgradeVersion'
     // is properly propagated through your change.  Not doing so will result in a loss of user
     // settings.
-    private static final int DATABASE_VERSION = 99;
+    private static final int DATABASE_VERSION = 98;
 
     private Context mContext;
     private int mUserHandle;
@@ -1570,47 +1570,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             upgradeVersion = 98;
         }
 
-        if (upgradeVersion == 98) {
-            upgradeVersion = 99;
-        }
-
         // *** Remember to update DATABASE_VERSION above!
 
         if (upgradeVersion != currentVersion) {
             Log.w(TAG, "Got stuck trying to upgrade from version " + upgradeVersion
                     + ", must wipe the settings provider");
-            wipeDB(db, oldVersion, upgradeVersion, currentVersion);
+            db.execSQL("DROP TABLE IF EXISTS global");
+            db.execSQL("DROP TABLE IF EXISTS globalIndex1");
+            db.execSQL("DROP TABLE IF EXISTS system");
+            db.execSQL("DROP INDEX IF EXISTS systemIndex1");
+            db.execSQL("DROP TABLE IF EXISTS secure");
+            db.execSQL("DROP INDEX IF EXISTS secureIndex1");
+            db.execSQL("DROP TABLE IF EXISTS gservices");
+            db.execSQL("DROP INDEX IF EXISTS gservicesIndex1");
+            db.execSQL("DROP TABLE IF EXISTS bluetooth_devices");
+            db.execSQL("DROP TABLE IF EXISTS bookmarks");
+            db.execSQL("DROP INDEX IF EXISTS bookmarksIndex1");
+            db.execSQL("DROP INDEX IF EXISTS bookmarksIndex2");
+            db.execSQL("DROP TABLE IF EXISTS favorites");
+            onCreate(db);
+
+            // Added for diagnosing settings.db wipes after the fact
+            String wipeReason = oldVersion + "/" + upgradeVersion + "/" + currentVersion;
+            db.execSQL("INSERT INTO secure(name,value) values('" +
+                    "wiped_db_reason" + "','" + wipeReason + "');");
         }
-    }
-
-    private void wipeDB(SQLiteDatabase db, int oldVersion, int upgradeVersion,
-     int currentVersion) {
-        db.execSQL("DROP TABLE IF EXISTS global");
-        db.execSQL("DROP TABLE IF EXISTS globalIndex1");
-        db.execSQL("DROP TABLE IF EXISTS system");
-        db.execSQL("DROP INDEX IF EXISTS systemIndex1");
-        db.execSQL("DROP TABLE IF EXISTS secure");
-        db.execSQL("DROP INDEX IF EXISTS secureIndex1");
-        db.execSQL("DROP TABLE IF EXISTS gservices");
-        db.execSQL("DROP INDEX IF EXISTS gservicesIndex1");
-        db.execSQL("DROP TABLE IF EXISTS bluetooth_devices");
-        db.execSQL("DROP TABLE IF EXISTS bookmarks");
-        db.execSQL("DROP INDEX IF EXISTS bookmarksIndex1");
-        db.execSQL("DROP INDEX IF EXISTS bookmarksIndex2");
-        db.execSQL("DROP TABLE IF EXISTS favorites");
-        onCreate(db);
-
-        // Added for diagnosing settings.db wipes after the fact
-        String wipeReason = oldVersion + "/" + upgradeVersion + "/" + currentVersion;
-        db.execSQL("INSERT INTO secure(name,value) values('" +
-                "wiped_db_reason" + "','" + wipeReason + "');");
-    }
-
-    @Override
-    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Not much can be done here - wipe database completely and create anew
-        // otherwise an exception will be thrown on boot preventing startup.
-        wipeDB(db, oldVersion, newVersion, oldVersion);
     }
 
     private String[] hashsetToStringArray(HashSet<String> set) {
@@ -2227,10 +2211,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     R.bool.def_bluetooth_on);
 
             loadSetting(stmt, Settings.Secure.ETH_ON, 
-                    "true".equalsIgnoreCase(SystemProperties.get("ro.ethernet.default_on",
-                    "false")) ? 2 : 1);
+            				"true".equalsIgnoreCase(
+            								SystemProperties.get("ro.ethernet.default_on",
+            								"false")) ? 2 : 1);
 
-            // Enable or disable Cell Broadcast SMS
+			// Enable or disable Cell Broadcast SMS
             loadSetting(stmt, Settings.Global.CDMA_CELL_BROADCAST_SMS,
                     RILConstants.CDMA_CELL_BROADCAST_SMS_DISABLED);
 
@@ -2298,6 +2283,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     R.string.def_car_undock_sound);
             loadStringSetting(stmt, Settings.Global.WIRELESS_CHARGING_STARTED_SOUND,
                     R.string.def_wireless_charging_started_sound);
+
             loadIntegerSetting(stmt, Settings.Global.DOCK_AUDIO_MEDIA_ENABLED,
                     R.integer.def_dock_audio_media_enabled);
 
