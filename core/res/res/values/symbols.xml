@@ -341,7 +341,6 @@
   <java-symbol type="dimen" name="search_view_preferred_width" />
   <java-symbol type="dimen" name="textview_error_popup_default_width" />
   <java-symbol type="dimen" name="toast_y_offset" />
-  <java-symbol type="dimen" name="volume_panel_top" />
   <java-symbol type="dimen" name="action_bar_stacked_max_height" />
   <java-symbol type="dimen" name="action_bar_stacked_tab_max_width" />
   <java-symbol type="dimen" name="notification_text_size" />
@@ -1789,12 +1788,6 @@
   <java-symbol type="attr" name="actionModeWebSearchDrawable" />
   <java-symbol type="string" name="websearch" />
   <java-symbol type="drawable" name="ic_media_video_poster" />
-
-  <!-- Matricom Symbols -->
-  <java-symbol type="drawable" name="ic_lock_reboot" />
-  <java-symbol type="string" name="reboot" />
-  <java-symbol type="array" name="reboot_options" />
-  <java-symbol type="array" name="reboot_values" />
 
   <!-- From SubtitleView -->
   <java-symbol type="dimen" name="subtitle_corner_radius" />

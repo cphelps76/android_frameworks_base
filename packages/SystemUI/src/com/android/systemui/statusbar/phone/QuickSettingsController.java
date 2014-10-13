@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import com.android.systemui.quicksettings.AlarmTile;
 import com.android.systemui.quicksettings.BluetoothTile;
 import com.android.systemui.quicksettings.BugReportTile;
+import com.android.systemui.quicksettings.EthernetTile;
 import com.android.systemui.quicksettings.GPSTile;
 import com.android.systemui.quicksettings.InputMethodTile;
 import com.android.systemui.quicksettings.PreferencesTile;
@@ -49,6 +50,7 @@ public class QuickSettingsController {
     public static final int ALARM_TILE = 11;
     public static final int BUG_REPORT_TILE = 12;
     public static final int WIFI_DISPLAY_TILE = 13;
+    public static final int ETHERNET_TILE = 14;
 
     public static final int USER_TILE = 99;
 
@@ -65,8 +67,9 @@ public class QuickSettingsController {
         quicksettings.add(SOUND_TILE);
         quicksettings.add(MUSIC_TILE);
         quicksettings.add(BLUETOOTH_TILE);
-        quicksettings.add(GPS_TILE);
+        quicksettings.add(ETHERNET_TILE);
         quicksettings.add(REBOOT_TILE);
+        quicksettings.add(GPS_TILE);
         quicksettings.add(SCREENSHOT_TILE);
 
         // Temporary tiles. These toggles must be the last ones added to the view, as they will show only when they are needed
@@ -127,6 +130,9 @@ public class QuickSettingsController {
                 break;
             case MUSIC_TILE:
                 qs = new MusicTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this, mHandler);
+                break;
+            case ETHERNET_TILE:
+                qs = new EthernetTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);
                 break;
             case IME_TILE:
                 IMETile = new InputMethodTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);

@@ -30,10 +30,13 @@ public class HdmiStateChangeReceiver extends BroadcastReceiver {
 
     private void handleHdmiAdjustment(boolean plugged) {
         Log.d(TAG, "Handling HDMI state change");
-        if (plugged) {
-            mHdmiManager.hdmiPlugged();
-        } else {
-            mHdmiManager.hdmiUnplugged();
-        }
+        try {
+            if (plugged) {
+                mHdmiManager.hdmiPlugged();
+            } else {
+                mHdmiManager.hdmiUnplugged();
+            }
+        } catch (Exception e) {
+        } // Shhhhh! we know...we know...
     }
 }

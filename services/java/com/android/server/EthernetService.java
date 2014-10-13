@@ -90,9 +90,9 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub{
             info.setConnectMode(Settings.Secure.getString(cr, Settings.Secure.ETH_MODE));
             info.setIfName(Settings.Secure.getString(cr, Settings.Secure.ETH_IFNAME));
             info.setIpAddress(Settings.Secure.getString(cr, Settings.Secure.ETH_IP));
-            info.setDnsAddr(Settings.Secure.getString(cr, Settings.Secure.ETH_DNS));
+            info.setDnsAddress(Settings.Secure.getString(cr, Settings.Secure.ETH_DNS));
             info.setNetMask(Settings.Secure.getString(cr, Settings.Secure.ETH_MASK));
-            info.setRouteAddr(Settings.Secure.getString(cr, Settings.Secure.ETH_ROUTE));
+            info.setRouteAddress(Settings.Secure.getString(cr, Settings.Secure.ETH_ROUTE));
 
             final String host = Settings.Secure.getString(cr, Settings.Secure.ETH_PROXY_HOST);
             if (host != null && host.length() != 0) {
@@ -122,8 +122,8 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub{
         Settings.Secure.putString(cr, Settings.Secure.ETH_IFNAME, info.getIfName());
         Settings.Secure.putString(cr, Settings.Secure.ETH_IP, info.getIpAddress());
         Settings.Secure.putString(cr, Settings.Secure.ETH_MODE, info.getConnectMode());
-        Settings.Secure.putString(cr, Settings.Secure.ETH_DNS, info.getDnsAddr());
-        Settings.Secure.putString(cr, Settings.Secure.ETH_ROUTE, info.getRouteAddr());
+        Settings.Secure.putString(cr, Settings.Secure.ETH_DNS, info.getDnsAddress());
+        Settings.Secure.putString(cr, Settings.Secure.ETH_ROUTE, info.getRouteAddress());
         Settings.Secure.putString(cr, Settings.Secure.ETH_MASK,info.getNetMask());
 
         if (info.hasProxy()) {
@@ -266,6 +266,7 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub{
 				mEthStateHandler.removeMessages(EthernetManager.ETH_STATE_ENABLED);
 				mEthStateHandler.sendEmptyMessage(state);
             } else {
+                enforceConnectivityInternalPermission();
                 persistEthEnabled(true);
                 if (!isEthConfigured()) {
                     // If user did not configure any interfaces yet, pick the first one
@@ -335,5 +336,11 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub{
 
     public DhcpInfo getDhcpInfo() {
         return mTracker.getDhcpInfo();
+    }
+
+    private void enforceConnectivityInternalPermission() {
+        mContext.enforceCallingOrSelfPermission(
+                android.Manifest.permission.CONNECTIVITY_INTERNAL,
+                "ConnectivityService");
     }
 }

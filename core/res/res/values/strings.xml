@@ -326,7 +326,7 @@
     <string name="shutdown_confirm" product="tablet">Your tablet will shut down.</string>
     <!-- Shutdown Confirmation Dialog.  When the user chooses to power off the phone, there will
          be a confirmation dialog.  This is the message. -->
-    <string name="shutdown_confirm" product="default">Your G-Box will shut down.</string>
+    <string name="shutdown_confirm" product="default">Your phone will shut down.</string>
 
     <!-- Shutdown Confirmation Dialog.  When the user chooses to power off the phone, it asks
          the user if they'd like to shut down.  This is the message.  This is used instead of
@@ -2570,16 +2570,6 @@
         FACTORY_TEST action.</string>
     <!-- Button to restart the device after the factory test. -->
     <string name="factorytest_reboot">Reboot</string>
-
-    <!-- Reboot -->
-    <string name="reboot">Reboot</string>
-
-    <!-- Reboot recovery option -->
-    <string name="reboot_recovery">Recovery</string>
-
-    <!-- Rebooting message -->
-    <string name="reboot_progress">Your device is rebooting</string>
-
 
     <!-- Do not translate.  WebView User Agent string -->
     <string name="web_user_agent" translatable="false">Mozilla/5.0 (Linux; U; <xliff:g id="x">Android %s</xliff:g>)

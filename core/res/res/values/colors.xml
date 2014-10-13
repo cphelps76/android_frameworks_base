@@ -61,6 +61,7 @@
     <color name="link_text_dark">#5c5cff</color>
     <color name="link_text_light">#0000ee</color>
     <color name="suggestion_highlight_text">#177bbd</color>
+    <color name="volume_panel_bg">#AA000000</color>
 
     <drawable name="stat_notify_sync_noanim">@drawable/stat_notify_sync_anim0</drawable>
     <drawable name="stat_sys_download_done">@drawable/stat_sys_download_done_static</drawable>
@@ -92,7 +93,7 @@
     <color name="perms_dangerous_perm_color">#33b5e5</color>
     <color name="shadow">#cc222222</color>
     <color name="perms_costs_money">#ffffbb33</color>
-    
+
     <!-- For search-related UIs -->
     <color name="search_url_text_normal">#7fa87f</color>
     <color name="search_url_text_selected">@android:color/black</color>

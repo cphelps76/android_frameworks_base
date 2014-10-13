@@ -531,17 +531,4 @@
     <!-- Anonymous Statistics - Notification -->
     <string name="anonymous_notification_desc">Enable or Disable Matricom Statistics</string>
 
-    <!-- Quicksettings -->
-    <string name="quick_settings_gps">Location</string>
-    <string name="quick_settings_ringer_on">Sound on</string>
-    <string name="quick_settings_ringer_off">Sound off</string>
-    <string name="quick_settings_label_enabled">On</string>
-    <string name="quick_settings_label_disabled">Off</string>
-    <string name="quick_settings_ringer_normal">Sound</string>
-    <string name="quick_settings_report_bug">Report Bug</string>
-    <string name="quick_settings_reboot">Reboot</string>
-    <string name="quick_settings_screenshot">Screenshot</string>
-    <string name="quick_settings_music_play">Play</string>
-    <string name="quick_settings_music_pause">Pause</string>
-
 </resources>

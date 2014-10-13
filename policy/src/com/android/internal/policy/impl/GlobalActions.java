@@ -26,18 +26,22 @@ import android.app.ActivityManagerNative;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.UserInfo;
+import android.content.ServiceConnection;
 import android.database.ContentObserver;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemClock;
@@ -102,7 +106,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
     private boolean mIsWaitingForEcmExit = false;
     private boolean mHasTelephony;
     private boolean mHasVibrator;
-    private final boolean mShowSilentToggle;
     private static int rebootIndex = 0;
 
     /**
@@ -134,9 +137,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 mAirplaneModeObserver);
         Vibrator vibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
         mHasVibrator = vibrator != null && vibrator.hasVibrator();
-
-        mShowSilentToggle = SHOW_SILENT_TOGGLE && !mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_useFixedVolume);
     }
 
     /**
@@ -283,9 +283,34 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                     }
                 });
 
+        // next: screenshot
+        mItems.add(
+            new SinglePressAction(
+                    R.drawable.ic_lock_screenshot,
+                    R.string.global_action_screenshot) {
+
+                    @Override
+                    public void onPress() {
+                        takeScreenshot();
+                    }
+
+                    public boolean showDuringKeyguard() {
+                        return false;
+                    }
+
+                    public boolean showBeforeProvisioning() {
+                        return true;
+                    }
+             });
+
         // one more thing: optionally add a list of users to switch to
         if (SystemProperties.getBoolean("fw.power_user_switcher", false)) {
             addUsersToMenu(mItems);
+        }
+
+        // last: silent mode
+        if (SHOW_SILENT_TOGGLE) {
+            mItems.add(mSilentModeAction);
         }
 
         mAdapter = new MyAdapter();
@@ -363,12 +388,94 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         }
     }
 
+    /**
+     * functions needed for taking screenhots.
+     * This leverages the built in ICS screenshot functionality
+     */
+    final Object mScreenshotLock = new Object();
+    ServiceConnection mScreenshotConnection = null;
+
+    final Runnable mScreenshotTimeout = new Runnable() {
+        @Override public void run() {
+            synchronized (mScreenshotLock) {
+                if (mScreenshotConnection != null) {
+                    mContext.unbindService(mScreenshotConnection);
+                    mScreenshotConnection = null;
+                }
+            }
+        }
+    };
+
+    private void takeScreenshot() {
+        synchronized (mScreenshotLock) {
+            if (mScreenshotConnection != null) {
+                return;
+            }
+            ComponentName cn = new ComponentName("com.android.systemui",
+                    "com.android.systemui.screenshot.TakeScreenshotService");
+            Intent intent = new Intent();
+            intent.setComponent(cn);
+            ServiceConnection conn = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    synchronized (mScreenshotLock) {
+                        if (mScreenshotConnection != this) {
+                            return;
+                        }
+                        Messenger messenger = new Messenger(service);
+                        Message msg = Message.obtain(null, 1);
+                        final ServiceConnection myConn = this;
+                        Handler h = new Handler(mHandler.getLooper()) {
+                            @Override
+                            public void handleMessage(Message msg) {
+                                synchronized (mScreenshotLock) {
+                                    if (mScreenshotConnection == myConn) {
+                                        mContext.unbindService(mScreenshotConnection);
+                                        mScreenshotConnection = null;
+                                        mHandler.removeCallbacks(mScreenshotTimeout);
+                                    }
+                                }
+                            }
+                        };
+                        msg.replyTo = new Messenger(h);
+                        msg.arg1 = msg.arg2 = 0;
+
+                        /*  remove for the time being
+                        if (mStatusBar != null && mStatusBar.isVisibleLw())
+                            msg.arg1 = 1;
+                        if (mNavigationBar != null && mNavigationBar.isVisibleLw())
+                            msg.arg2 = 1;
+                         */
+
+                        /* wait for the dialog box to close */
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ie) {
+                        }
+
+                        /* take the screenshot */
+                        try {
+                            messenger.send(msg);
+                        } catch (RemoteException e) {
+                        }
+                    }
+                }
+                @Override
+                public void onServiceDisconnected(ComponentName name) {}
+            };
+            if (mContext.bindService(intent, conn, Context.BIND_AUTO_CREATE)) {
+                mScreenshotConnection = conn;
+                mHandler.postDelayed(mScreenshotTimeout, 10000);
+            }
+        }
+    }
+
     private void prepareDialog() {
         refreshSilentMode();
         mAirplaneModeOn.updateState(mAirplaneState);
         mAdapter.notifyDataSetChanged();
         mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-        if (mShowSilentToggle) {
+        if (SHOW_SILENT_TOGGLE) {
             IntentFilter filter = new IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION);
             mContext.registerReceiver(mRingerModeReceiver, filter);
         }
@@ -385,7 +492,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     /** {@inheritDoc} */
     public void onDismiss(DialogInterface dialog) {
-        if (mShowSilentToggle) {
+        if (SHOW_SILENT_TOGGLE) {
             try {
                 mContext.unregisterReceiver(mRingerModeReceiver);
             } catch (IllegalArgumentException ie) {
