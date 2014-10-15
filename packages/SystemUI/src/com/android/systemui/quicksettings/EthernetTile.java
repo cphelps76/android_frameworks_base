@@ -18,10 +18,12 @@ package com.android.systemui.quicksettings;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ethernet.EthernetManager;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -98,6 +100,8 @@ public class EthernetTile extends QuickSettingsTile {
     }
 
     public void updateResources() {
+        ContentResolver resolver = mContext.getContentResolver();
+        Settings.System.putBoolean(resolver, Settings.System.ETHERNET_STATE, isEthEnabled());
         updateTile();
         updateQuickSettings();
     }
