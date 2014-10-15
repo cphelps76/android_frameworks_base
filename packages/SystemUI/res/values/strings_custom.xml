@@ -36,5 +36,6 @@
     <string name="quick_settings_music_pause">Pause</string>
     <string name="quick_settings_ethernet_on">Ethernet on</string>
     <string name="quick_settings_ethernet">Ethernet</string>
-
+    <string name="quick_settings_headsup_on">HeadsUp on</string>
+    <string name="quick_settings_headsup_off">HeadsUp off</string>
 </resources>

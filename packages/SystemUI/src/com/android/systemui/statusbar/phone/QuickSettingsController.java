@@ -13,6 +13,7 @@ import com.android.systemui.quicksettings.BluetoothTile;
 import com.android.systemui.quicksettings.BugReportTile;
 import com.android.systemui.quicksettings.EthernetTile;
 import com.android.systemui.quicksettings.GPSTile;
+import com.android.systemui.quicksettings.HeadsUpTile;
 import com.android.systemui.quicksettings.InputMethodTile;
 import com.android.systemui.quicksettings.PreferencesTile;
 import com.android.systemui.quicksettings.QuickSettingsTile;
@@ -51,7 +52,7 @@ public class QuickSettingsController {
     public static final int BUG_REPORT_TILE = 12;
     public static final int WIFI_DISPLAY_TILE = 13;
     public static final int ETHERNET_TILE = 14;
-
+    public static final int HEADSUP_TILE = 15;
     public static final int USER_TILE = 99;
 
     private InputMethodTile IMETile;
@@ -71,7 +72,8 @@ public class QuickSettingsController {
         quicksettings.add(REBOOT_TILE);
         quicksettings.add(GPS_TILE);
         quicksettings.add(SCREENSHOT_TILE);
-
+        quicksettings.add(HEADSUP_TILE);
+;
         // Temporary tiles. These toggles must be the last ones added to the view, as they will show only when they are needed
         quicksettings.add(ALARM_TILE);
         quicksettings.add(BUG_REPORT_TILE);
@@ -137,6 +139,9 @@ public class QuickSettingsController {
             case IME_TILE:
                 IMETile = new InputMethodTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);
                 qs = IMETile;
+                break;
+            case HEADSUP_TILE:
+                qs = new HeadsUpTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);
                 break;
             case USER_TILE:
                 qs = new UserTile(mContext, inflater, (QuickSettingsContainerView) mContainerView, this);
