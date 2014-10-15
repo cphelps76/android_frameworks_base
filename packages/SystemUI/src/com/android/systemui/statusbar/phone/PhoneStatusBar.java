@@ -324,9 +324,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         @Override
         public void onChange(boolean selfChange) {
             boolean wasUsing = mUseHeadsUp;
-            mUseHeadsUp = ENABLE_HEADS_UP && Settings.System.getIntForUser(
+            mUseHeadsUp = ENABLE_HEADS_UP && Settings.System.getInt(
                     mContext.getContentResolver(),
-                    Settings.System.HEADS_UP_NOTIFICATION, 0, UserHandle.USER_CURRENT) == 1;
+                    Settings.System.HEADS_UP_NOTIFICATION, 0) == 1;
             Log.d(TAG, "heads up is " + (mUseHeadsUp ? "enabled" : "disabled"));
             if (wasUsing != mUseHeadsUp) {
                 if (!mUseHeadsUp) {
@@ -372,7 +372,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         if (ENABLE_HEADS_UP) {
             mContext.getContentResolver().registerContentObserver(
                     Settings.System.getUriFor(Settings.System.HEADS_UP_NOTIFICATION), true,
-                    mHeadsUpObserver, mCurrentUserId);
+                    mHeadsUpObserver);
         }
     }
 
@@ -886,12 +886,14 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
     }
 
     private void addHeadsUpView() {
+        if (mHeadsUpNotificationView != null && mHeadsUpNotificationView.isAttachedToWindow()) {
+            return;
+        }
+
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL, // above the status bar!
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                      | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                      | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                       | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
                       | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
                 PixelFormat.TRANSPARENT);
@@ -911,7 +913,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
     }
 
     private void removeHeadsUpView() {
-        mWindowManager.removeView(mHeadsUpNotificationView);
+        if (mHeadsUpNotificationView != null && mHeadsUpNotificationView.isAttachedToWindow()) {
+            mWindowManager.removeView(mHeadsUpNotificationView);
+        }
     }
 
     public void refreshAllStatusBarIcons() {
@@ -2629,10 +2633,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
     private void setHeadsUpVisibility(boolean vis) {
         if (!ENABLE_HEADS_UP) return;
         if (DEBUG) Log.v(TAG, (vis ? "showing" : "hiding") + " heads up window");
-        mHeadsUpNotificationView.setVisibility(vis ? View.VISIBLE : View.GONE);
-        if (!vis) {
-            if (DEBUG) Log.d(TAG, "setting heads up entry to null");
-            mInterruptingNotificationEntry = null;
+        if (mHeadsUpNotificationView != null && mHeadsUpNotificationView.isAttachedToWindow()) {
+            mHeadsUpNotificationView.setVisibility(vis ? View.VISIBLE : View.GONE);
+            if (!vis) {
+                if (DEBUG) Log.d(TAG, "setting heads up entry to null");
+                mInterruptingNotificationEntry = null;
+            }
         }
     }
 

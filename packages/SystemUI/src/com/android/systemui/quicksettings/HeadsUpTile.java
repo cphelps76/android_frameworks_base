@@ -23,7 +23,6 @@ import android.content.Intent;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.UserHandle;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,9 +46,9 @@ public class HeadsUpTile extends QuickSettingsTile {
 
             @Override
             public void onClick(View v) {
-                Settings.System.putIntForUser(mContext.getContentResolver(),
+                Settings.System.putInt(mContext.getContentResolver(),
                         Settings.System.HEADS_UP_NOTIFICATION,
-                        isEnabled() ? 0 : 1, UserHandle.USER_CURRENT);
+                        isEnabled() ? 0 : 1);
                 updateResources();
                 mQsc.mBar.collapseAllPanels(true);
             }
@@ -100,7 +99,7 @@ public class HeadsUpTile extends QuickSettingsTile {
     }
 
     private boolean isEnabled() {
-        return Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.HEADS_UP_NOTIFICATION, 0, UserHandle.USER_CURRENT) != 0;
+        return Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.HEADS_UP_NOTIFICATION, 0) != 0;
     }
 }

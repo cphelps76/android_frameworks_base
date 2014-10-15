@@ -185,4 +185,7 @@
 
     <!-- Default Blacklist values of Settings.System.HEADS_UP_NOTIFICATION -->
     <string name="def_heads_up_notification_blacklist_values"></string>
+
+    <!-- Default values of Settings.System.HEADS_UP_NOTIFICATION -->
+    <string name="def_heads_up_notification_values">1</string>
 </resources>
