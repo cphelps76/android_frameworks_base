@@ -56,6 +56,7 @@ public class CommandQueue extends IStatusBar.Stub {
     private static final int MSG_PRELOAD_RECENT_APPS        = 14 << MSG_SHIFT;
     private static final int MSG_CANCEL_PRELOAD_RECENT_APPS = 15 << MSG_SHIFT;
     private static final int MSG_SET_WINDOW_STATE           = 16 << MSG_SHIFT;
+    private static final int MSG_UPDATE_HEADS_UP_POSITION   = 17 << MSG_SHIFT;
 
     public static final int FLAG_EXCLUDE_NONE = 0;
     public static final int FLAG_EXCLUDE_SEARCH_PANEL = 1 << 0;
@@ -89,6 +90,7 @@ public class CommandQueue extends IStatusBar.Stub {
         public void animateCollapsePanels(int flags);
         public void animateExpandSettingsPanel();
         public void setSystemUiVisibility(int vis, int mask);
+        public void updateHeadsUpPosition(boolean statusBarShows);
         public void topAppWindowChanged(boolean visible);
         public void setImeWindowStatus(IBinder token, int vis, int backDisposition);
         public void setHardKeyboardStatus(boolean available, boolean enabled);
@@ -177,6 +179,14 @@ public class CommandQueue extends IStatusBar.Stub {
         synchronized (mList) {
             mHandler.removeMessages(MSG_SET_SYSTEMUI_VISIBILITY);
             mHandler.obtainMessage(MSG_SET_SYSTEMUI_VISIBILITY, vis, mask, null).sendToTarget();
+        }
+    }
+
+    public void updateHeadsUpPosition(boolean statusBarShows) {
+        synchronized (mList) {
+            mHandler.removeMessages(MSG_UPDATE_HEADS_UP_POSITION);
+            mHandler.obtainMessage(MSG_UPDATE_HEADS_UP_POSITION,
+                    statusBarShows ? 1 : 0, 0, null).sendToTarget();
         }
     }
 
@@ -290,6 +300,9 @@ public class CommandQueue extends IStatusBar.Stub {
                     break;
                 case MSG_SET_SYSTEMUI_VISIBILITY:
                     mCallbacks.setSystemUiVisibility(msg.arg1, msg.arg2);
+                    break;
+                case MSG_UPDATE_HEADS_UP_POSITION:
+                    mCallbacks.updateHeadsUpPosition(msg.arg1 != 0);
                     break;
                 case MSG_TOP_APP_WINDOW_CHANGED:
                     mCallbacks.topAppWindowChanged(msg.arg1 != 0);

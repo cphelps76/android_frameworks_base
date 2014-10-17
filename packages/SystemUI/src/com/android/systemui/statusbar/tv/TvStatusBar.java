@@ -92,6 +92,10 @@ public class TvStatusBar extends BaseStatusBar {
     public void setWindowState(int window, int state) {
     }
 
+    @Override // CommandQueue
+    public void updateHeadsUpPosition(boolean statusBarShows) {
+    }
+
     @Override
     protected void createAndAddWindows() {
     }
