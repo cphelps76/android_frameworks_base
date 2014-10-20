@@ -188,4 +188,7 @@
 
     <!-- Default values of Settings.System.HEADS_UP_NOTIFICATION -->
     <string name="def_heads_up_notification_values">1</string>
+
+    <!-- Default values of Settings.System.HEADS_UP_GRAVITY_BOTTOM -->
+    <string name="def_heads_up_notification_gravity">1</string>
 </resources>
