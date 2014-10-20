@@ -1047,12 +1047,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (intent != null) {
             // Retrieve current sticky dock event broadcast.
             boolean plugged = intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, false);
-                    
+
             // This dance forces the code in setHdmiPlugged to run.
             // Always do this so the sticky intent is stuck (to false) if there is no hdmi.
             mHdmiPlugged = !plugged;
             setHdmiPlugged(!mHdmiPlugged);
-        } 
+        }
 
         // monitor for system gestures
         mSystemGestures = new SystemGesturesPointerEventListener(context,
@@ -3989,15 +3989,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             Intent intent = new Intent(ACTION_HDMI_HW_PLUGGED);
             intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
             intent.putExtra(EXTRA_HDMI_HW_PLUGGED_STATE, plugged);
-            mContext.sendStickyBroadcast(intent);
-            
+            mContext.sendStickyBroadcastAsUser(intent, UserHandle.CURRENT_OR_SELF);
+
             if (SystemProperties.getBoolean("ro.vout.dualdisplay", false)) {
                 setDualDisplay(plugged);
-                    
                 Intent it = new Intent(WindowManagerPolicy.ACTION_HDMI_PLUGGED);
                 it.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                 it.putExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, plugged);
-                mContext.sendStickyBroadcast(it);
+                mContext.sendStickyBroadcastAsUser(it, UserHandle.CURRENT_OR_SELF);
             }
         }
     }
@@ -4105,8 +4104,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         // Always do this so the sticky intent is stuck (to false) if there is no hdmi.
         //mHdmiHwPlugged = !plugged;
         //setHdmiHwPlugged(!mHdmiHwPlugged);
-        
-        mHdmiHwPlugged =  plugged;
+
+        mHdmiHwPlugged = plugged;
         if (!SystemProperties.getBoolean("ro.vout.dualdisplay", false)) {
             if (getCurDisplayMode().equals("panel") || !plugged || SystemProperties.getBoolean("ro.platform.has.mbxuimode", false)) {
                 plugged = false;
@@ -4116,16 +4115,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (SystemProperties.getBoolean("ro.vout.dualdisplay", false)) {
             setDualDisplay(plugged);
         }
-        
+
         if (SystemProperties.getBoolean("ro.vout.dualdisplay2", false)) {
             plugged = false;
             setDualDisplay(plugged);
-        }        
+        }
 
         Intent it = new Intent(WindowManagerPolicy.ACTION_HDMI_PLUGGED);
         it.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         it.putExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, plugged);
-        mContext.sendStickyBroadcast(it);
+        mContext.sendStickyBroadcastAsUser(it, UserHandle.CURRENT_OR_SELF);
     }
 
     void initializedHoldkeyState(  IWindowManager windowManager ) {
