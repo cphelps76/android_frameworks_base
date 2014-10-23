@@ -134,7 +134,10 @@ public final class ShutdownThread extends Thread {
                     .setMessage(resourceId)
                     .setPositiveButton(com.android.internal.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            beginShutdownSequence(context);
+                            /* MX cannot shutdown gracefully due to lack of PMU */
+                            sConfirmDialog.dismiss();
+                            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                            pm.goToSleep(SystemClock.uptimeMillis());
                         }
                     })
                     .setNegativeButton(com.android.internal.R.string.no, null)

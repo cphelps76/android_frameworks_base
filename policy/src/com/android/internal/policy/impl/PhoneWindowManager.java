@@ -1047,12 +1047,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (intent != null) {
             // Retrieve current sticky dock event broadcast.
             boolean plugged = intent.getBooleanExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, false);
-                    
+
             // This dance forces the code in setHdmiPlugged to run.
             // Always do this so the sticky intent is stuck (to false) if there is no hdmi.
             mHdmiPlugged = !plugged;
             setHdmiPlugged(!mHdmiPlugged);
-        } 
+        }
 
         // monitor for system gestures
         mSystemGestures = new SystemGesturesPointerEventListener(context,
@@ -2082,8 +2082,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
 //    private static boolean mVolumeMute = false;
     private static int mPreVolume = 0;
-    
-    private static final String KEY_DOWN_HAPPEN = "com.android.internal.policy.impl.KEY_DOWN_HAPPEN";  
+
+    private static final String KEY_DOWN_HAPPEN = "com.android.internal.policy.impl.KEY_DOWN_HAPPEN";
     private static final String TV_MENU_STOP = "com.amlogic.tv.tvmenu.stop";
      private static final String KEY_DOWN_HAPPEN_LOCK = "com.android.internal.policy.impl.KEY_DOWN_HAPPEN_LOCK";
      private static final String KEY_DOWN_HAPPEN_CHILD_LOCK = "com.android.internal.policy.impl.KEY_DOWN_HAPPEN_SHILD_LOCK";
@@ -2097,30 +2097,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         final int flags = event.getFlags();
         final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
         final boolean canceled = event.isCanceled();
- 
+
         if (DEBUG_INPUT) {
             Log.d(TAG, "interceptKeyTi keyCode=" + keyCode + " down=" + down + " repeatCount="
                     + repeatCount + " keyguardOn=" + keyguardOn + " mHomePressed=" + mHomePressed
                     + " canceled=" + canceled);}
-        if(keyCode==KeyEvent.KEYCODE_HOME){
-        	Intent dvbplayer_homekey=new Intent("com.amlogic.dvbplayer.homekey");
-        	mContext.sendBroadcast(dvbplayer_homekey);
-        }
 
-        if(keyCode==KeyEvent.KEYCODE_TV_WASU){
-         Intent mIntent = new Intent();
-    	   mIntent.setClassName("cn.com.wasu.main", "cn.com.wasu.main.WelcomeActivity");
-    	   mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    	   mContext.startActivity(mIntent);   
-        } 
-        if(keyCode==KeyEvent.KEYCODE_TV_VTION){
-         Intent mIntent = new Intent();
-    	   mIntent.setClassName("cn.vtion.vmarkettv.tv.vstoresubclient", "cn.vtion.vmarkettv.tv.vstoresubclient.MainActivity");
-    	   mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    	   mContext.startActivity(mIntent);
-        }
-        if(keyCode==KeyEvent.KEYCODE_TV_BROWSER){
-         Intent mIntent = new Intent("android.intent.action.VIEW"); 
+        if(keyCode == KeyEvent.KEYCODE_TV_BROWSER){
+         Intent mIntent = new Intent("android.intent.action.VIEW");
     	   mIntent.setClassName("com.android.browser", "com.android.browser.BrowserActivity");
     	   mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     	   mContext.startActivity(mIntent);
@@ -2142,81 +2126,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     mVolumeDownKeyConsumedByScreenshotChord = false;
                 }
                 return -1;
-            }
-        }
-
-        String Tvmenu_flag = SystemProperties.get("tv.TvMenu_Runing_Flag" );
-        if( (keyCode == KeyEvent.KEYCODE_HOME) && Tvmenu_flag.equals("true")){
-	        Log.i(TAG , " TV Source filter HOME Key !" ) ;
-	        return -1 ;
-	        }
-	      
-        if((!SystemProperties.getBoolean("tv.tvstart_status",false))){
-        	if(keyCode==KeyEvent.KEYCODE_CLEAR)
-        	{
-        		 if(down)
-        	  sendKeyEvent(KeyEvent.KEYCODE_BACK);
-        	Log.d(TAG , " KEYCODE_CLEAR to KEYCODE_BACK!!!" ) ;
-        	return -1 ;
-        }
-        }
-        if(SystemProperties.getBoolean("ro.tv.shortcutkey", false)) {
-         	  if(SystemProperties.getBoolean("tv.tvstart_status", false)&&(keyCode == KeyEvent.KEYCODE_HOME)) {
-         	  	Intent stoptv=new Intent(TV_MENU_STOP);
-         	    mContext.sendBroadcast(stoptv);
-         	  }
-
-           if(keyCode == KeyEvent.KEYCODE_TV_SHORTCUTKEY_TVINFO) {
-               if(down) {
-                    Intent intent1=new Intent(KEY_DOWN_HAPPEN);
-                    intent1.putExtra("keyNum",keyCode);
-                    mContext.sendBroadcast(intent1);  
-                } 
-            }          
-
-            if ((SystemProperties.getBoolean("tv.globalsetup_show_status",
-                false) && (keyCode != KeyEvent.KEYCODE_TV_SHORTCUTKEY_TVINFO)&& (keyCode != KeyEvent.KEYCODE_MENU))
-                || (keyCode == KeyEvent.KEYCODE_TV_SHORTCUTKEY_SOURCE_LIST)
-                || (keyCode == KeyEvent.KEYCODE_TV_SLEEP)
-                || (keyCode == KeyEvent.KEYCODE_VOLUME_UP)
-                || (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
-                || (keyCode == KeyEvent.KEYCODE_TV_SHORTCUTKEY_3DMODE)
-                || (keyCode == KeyEvent.KEYCODE_TV_SHORTCUTKEY_DISPAYMODE)
-                || (keyCode == KeyEvent.KEYCODE_TV_SHORTCUTKEY_VIEWMODE)
-                || (keyCode == KeyEvent.KEYCODE_TV_SHORTCUTKEY_VOICEMODE)
-                || (keyCode == KeyEvent.KEYCODE_MUTE)
-                || (keyCode == KeyEvent.KEYCODE_EARLY_POWER)
-                || (keyCode == KeyEvent.KEYCODE_MANNER_MODE)
-                || (keyCode == KeyEvent.KEYCODE_TV_BROWSER)
-                || (keyCode == KeyEvent.KEYCODE_SETTINGS)) {
-                if (down) {
-                    Intent intent1 = new Intent(KEY_DOWN_HAPPEN);
-                    intent1.putExtra("keyNum", keyCode);
-                    mContext.sendBroadcast(intent1);
-                    Log.d(TAG,"sendBroadcast KEY_DOWN_HAPPEN keycode="+keyCode);
-                }
-                return -1;
-            }
-            
-            if ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT)
-                || (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT)) {
-                	if (SystemProperties.getBoolean("tv.shortcutkey_show", false)) {
-                    if (down) {
-                      Intent intent1 = new Intent(KEY_DOWN_HAPPEN);
-                      intent1.putExtra("keyNum", keyCode);
-                      mContext.sendBroadcast(intent1);
-                    }
-                  }
-            }
-            if ((keyCode == KeyEvent.KEYCODE_BACK)
-                || (keyCode == KeyEvent.KEYCODE_CLEAR)) {
-                if (SystemProperties.getBoolean("tv.shortcutkey_show", false)) {
-                    if (down) {
-                        Intent intent1 = new Intent(KEY_DOWN_HAPPEN);
-                        intent1.putExtra("keyNum", keyCode);
-                        mContext.sendBroadcast(intent1);
-                    }
-                }
             }
         }
 
@@ -3989,15 +3898,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             Intent intent = new Intent(ACTION_HDMI_HW_PLUGGED);
             intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
             intent.putExtra(EXTRA_HDMI_HW_PLUGGED_STATE, plugged);
-            mContext.sendStickyBroadcast(intent);
-            
+            mContext.sendStickyBroadcastAsUser(intent, UserHandle.CURRENT_OR_SELF);
+
             if (SystemProperties.getBoolean("ro.vout.dualdisplay", false)) {
                 setDualDisplay(plugged);
-                    
                 Intent it = new Intent(WindowManagerPolicy.ACTION_HDMI_PLUGGED);
                 it.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                 it.putExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, plugged);
-                mContext.sendStickyBroadcast(it);
+                mContext.sendStickyBroadcastAsUser(it, UserHandle.CURRENT_OR_SELF);
             }
         }
     }
@@ -4105,8 +4013,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         // Always do this so the sticky intent is stuck (to false) if there is no hdmi.
         //mHdmiHwPlugged = !plugged;
         //setHdmiHwPlugged(!mHdmiHwPlugged);
-        
-        mHdmiHwPlugged =  plugged;
+
+        mHdmiHwPlugged = plugged;
         if (!SystemProperties.getBoolean("ro.vout.dualdisplay", false)) {
             if (getCurDisplayMode().equals("panel") || !plugged || SystemProperties.getBoolean("ro.platform.has.mbxuimode", false)) {
                 plugged = false;
@@ -4116,16 +4024,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (SystemProperties.getBoolean("ro.vout.dualdisplay", false)) {
             setDualDisplay(plugged);
         }
-        
+
         if (SystemProperties.getBoolean("ro.vout.dualdisplay2", false)) {
             plugged = false;
             setDualDisplay(plugged);
-        }        
+        }
 
         Intent it = new Intent(WindowManagerPolicy.ACTION_HDMI_PLUGGED);
         it.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         it.putExtra(WindowManagerPolicy.EXTRA_HDMI_PLUGGED_STATE, plugged);
-        mContext.sendStickyBroadcast(it);
+        mContext.sendStickyBroadcastAsUser(it, UserHandle.CURRENT_OR_SELF);
     }
 
     void initializedHoldkeyState(  IWindowManager windowManager ) {

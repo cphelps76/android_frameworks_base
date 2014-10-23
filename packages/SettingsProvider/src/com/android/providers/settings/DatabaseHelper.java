@@ -1963,6 +1963,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+
+    private void loadHeadsUpSetting(SQLiteStatement stmt) {
+        String headsUpValues = mContext.getResources()
+                .getString(R.string.def_heads_up_notification_values);
+        String headsUpGravity = mContext.getResources()
+                .getString(R.string.def_heads_up_notification_gravity);
+        String dndValues = mContext.getResources()
+                .getString(R.string.def_heads_up_notification_dnd_values);
+        String blackListValues = mContext.getResources()
+                .getString(R.string.def_heads_up_notification_blacklist_values);
+        loadSetting(stmt, Settings.System.HEADS_UP_NOTIFICATION, headsUpValues);
+        loadSetting(stmt, Settings.System.HEADS_UP_GRAVITY_BOTTOM, headsUpGravity);
+        if (!TextUtils.isEmpty(dndValues)) {
+            loadSetting(stmt, Settings.System.HEADS_UP_CUSTOM_VALUES, dndValues);
+            loadSetting(stmt, Settings.System.HEADS_UP_BLACKLIST_VALUES, blackListValues);
+        }
+    }
+
     private void loadSettings(SQLiteDatabase db) {
         loadSystemSettings(db);
         loadSecureSettings(db);
@@ -2022,6 +2040,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             //loadFractionSetting(stmt, Settings.System.FONT_SCALE,
             //        R.fraction.def_font_scale,1);
+
+            loadHeadsUpSetting(stmt);
+
         } finally {
             if (stmt != null) stmt.close();
         }
