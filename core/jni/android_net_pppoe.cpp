@@ -420,7 +420,7 @@ static jint android_net_pppoe_initPppoeNative
         ALOGE("Can not collect the interface list");
         goto error;
     }
-    ALOGE("%s exited with success",__FUNCTION__);
+    ALOGD("%s exited with success",__FUNCTION__);
     return ret;
 error:
     ALOGE("%s exited with error",__FUNCTION__);
