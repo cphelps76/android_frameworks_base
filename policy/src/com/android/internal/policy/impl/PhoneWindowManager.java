@@ -1146,8 +1146,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (mContext == null || display.getDisplayId() != Display.DEFAULT_DISPLAY) {
             return;
         }
-        Log.e(TAG,"-----width:"+width+"height:"+height);
-        Log.e(TAG,"-----density:"+density);
+        Log.d(TAG,"-----width:"+width+" height:"+height);
+        Log.d(TAG,"-----density:"+density);
         mDisplay = display;
 
         final Resources res = mContext.getResources();
@@ -3893,7 +3893,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     void setHdmiHwPlugged(boolean plugged) {
         if (mHdmiHwPlugged != plugged) {
-            Slog.e(TAG, "setHdmiHwPlugged " + plugged);
+            Slog.d(TAG, "setHdmiHwPlugged " + plugged);
             mHdmiHwPlugged = plugged;
             Intent intent = new Intent(ACTION_HDMI_HW_PLUGGED);
             intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
@@ -3926,22 +3926,22 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private static int writeSysfs(String path, String val) {
         if (!new File(path).exists()) {
             Log.e(TAG, "File not found: " + path);
-            return 1; 
+            return 1;
         }
-        
+
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(path), 64);
             try {
                 writer.write(val);
             } finally {
                 writer.close();
-            }    		
+            }
             return 0;
-        		
-        } catch (IOException e) { 
+
+        } catch (IOException e) {
             Log.e(TAG, "IO Exception when write: " + path, e);
             return 1;
-        }                 
+        }
     }
     private static void setDualDisplay(boolean hdmiPlugged) {
         String isCameraBusy = SystemProperties.get("camera.busy", "0");
@@ -3968,13 +3968,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(DISPLAY_MODE_PATH), 32);
             try {
-                modeStr = reader.readLine();  
+                modeStr = reader.readLine();
             } finally {
                 reader.close();
-            } 
-            return (modeStr == null)? "panel" : modeStr; 
+            }
+            return (modeStr == null)? "panel" : modeStr;
 
-        } catch (IOException e) { 
+        } catch (IOException e) {
             Log.e(TAG, "IO Exception when read: " + DISPLAY_MODE_PATH, e);
             return "panel";
         }
@@ -4266,19 +4266,17 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     continue;
                 }
                 mMapKeyList.add(key);
-                
                 Log.i(TAG, "mapkey info:" + key);
-            }             
-        }catch(IOException ex){ 
+            }
+        }catch(IOException ex){
             Log.e(TAG, "mapkey exception:" + ex);
         }finally{
             try {
                 if(null != br){
-                    br.close(); 
+                    br.close();
                 }
-            } catch (IOException ex) {
-            }
-        }  
+            } catch (IOException ignored) {}
+        }
     }
 
     private void startSendKeyTimer(long delay, long period){
@@ -4545,10 +4543,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     if("true".equalsIgnoreCase(SystemProperties.get("ro.platform.has.mbxuimode"))) {
                         Intent inte=new Intent("com.android.music.musicservicecommand.pause");
                         mContext.sendBroadcast(inte);
-                        
+
                         OnAudioFocusChangeListener mAudioFocusListener = new OnAudioFocusChangeListener() {
                             public void onAudioFocusChange(int focusChange) {
-                                Log.e(TAG, "+++****====: onAudioFocusChange");
+                                Log.d(TAG, "+++****====: onAudioFocusChange");
                             }
                         };
                         AudioManager mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
