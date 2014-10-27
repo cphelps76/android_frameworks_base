@@ -103,20 +103,19 @@ import com.android.internal.statusbar.IStatusBarService;
 import com.android.internal.telephony.ITelephony;
 import com.android.internal.widget.PointerLocationView;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.NullPointerException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 import java.util.HashSet;
 
 import static android.view.WindowManager.LayoutParams.*;
@@ -2418,11 +2417,31 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         // Handle application launch keys.
         if (down && repeatCount == 0 && !keyguardOn) {
             String category = sApplicationLaunchKeyCategories.get(keyCode);
+            Intent customIntent;
             if (category != null) {
-                Intent intent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, category);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (category.equals(Intent.CATEGORY_APP_BROWSER)) {
+                    String customButtonUri = Settings.Secure.getString(mContext.getContentResolver(),
+                            Settings.Secure.CUSTOM_BUTTON_URI);
+                    Log.d(TAG, "customButton being launched. Launching -> " + customButtonUri);
+                    try {
+                        customIntent = Intent.parseUri(customButtonUri, 0);
+                    } catch (URISyntaxException e) {
+                        Log.e(TAG, "URISyntaxException. Defaulting to kodi");
+                        customIntent = new Intent("android.intent.action.VIEW");
+                        customIntent.setClassName("org.xbmc.kodi", "org.xbmc.kodi.Splash");
+                        customIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    } catch (NullPointerException npe) {
+                        Log.e(TAG, "NullpointerException. Defaulting to kodi");
+                        customIntent = new Intent("android.intent.action.VIEW");
+                        customIntent.setClassName("org.xbmc.kodi", "org.xbmc.kodi.Splash");
+                        customIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    }
+                } else {
+                     customIntent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, category);
+                     customIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                }
                 try {
-                    mContext.startActivityAsUser(intent, UserHandle.CURRENT);
+                    mContext.startActivityAsUser(customIntent, UserHandle.CURRENT);
                 } catch (ActivityNotFoundException ex) {
                     Slog.w(TAG, "Dropping application launch key because "
                             + "the activity to which it is registered was not found: "
