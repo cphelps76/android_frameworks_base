@@ -5476,7 +5476,7 @@ public class WindowManagerService extends IWindowManager.Stub
 			sw.writeSysfs("/sys/class/graphics/fb0/free_scale_axis","0 0 "+curPosition[6]+" "+curPosition[7]);
                 sw.writeSysfs("/sys/class/graphics/fb0/window_axis", curPosition[0]+" "+curPosition[1]+" "+(curPosition[0]+curPosition[2]-1)+" "+(curPosition[1]+curPosition[3]-1));
                 sw.writeSysfs("/sys/class/display/axis",curPosition[0]+" "+curPosition[1]+" "+(curPosition[6]+1)+" "+(curPosition[7]+1)+" "+curPosition[0]+" "+curPosition[1]+" 18 18");
-                 
+
                 if(curPosition[5] != 0) {
                     sw.writeSysfs("/sys/class/graphics/fb0/free_scale","0x10001");
                     sw.writeSysfs("/sys/class/graphics/fb1/free_scale","1");
@@ -5484,8 +5484,8 @@ public class WindowManagerService extends IWindowManager.Stub
                     sw.writeSysfs("/sys/class/graphics/fb0/free_scale","0");
                     sw.writeSysfs("/sys/class/graphics/fb1/free_scale","0");
                 }
-                
-                Slog.e(TAG, "framework:ro.platform.has.realoutputmode");
+
+                Slog.d(TAG, "framework:ro.platform.has.realoutputmode");
             }
             // Enable input dispatch.
             mInputMonitor.setEventDispatchingLw(mEventDispatchingEnabled);

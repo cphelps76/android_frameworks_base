@@ -3389,6 +3389,15 @@ public final class Settings {
         public static final String HDMI_AUTO_ADJUST = "hdmi_auto_adjust";
 
         /**
+         * User selected custom button function for the IR remote
+         * This is the intent or keyevent that the button will trigger
+         *
+         * Default is org.xbmc.kodi/.Splash saved as Uri
+         * @hide
+         */
+        public static final String CUSTOM_BUTTON_URI = "custom_button_uri";
+
+        /**
          * A 64-bit number (as a hex string) that is randomly
          * generated on the device's first boot and should remain
          * constant for the lifetime of the device.  (The value may
